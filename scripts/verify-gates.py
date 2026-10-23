@@ -8,6 +8,10 @@ A gate that silently stops running looks exactly like a gate that passes. So:
   `// expect: <gate>:<rule>` on the line a gate must report. Each static gate
   (build, format, layout, inspect) runs against it; every marker must be
   matched by a finding, and every gate must have at least one marker.
+* The coverage gate is proven by adding a throwaway uncovered class to
+  ParameterValidation.Contracts/ - its tests must then fail with none of them
+  failing, and the coverage report must show the class was measured: a
+  coverlet that measures nothing fails the threshold too, for the wrong reason.
 * run-tests.py's INCONCLUSIVE verdict is proven by hiding one test module's
   apphost, so it cannot start - the way Smart App Control blocks one on
   Windows - and requiring that verdict instead of dotnet test's "Passed!".
@@ -18,10 +22,12 @@ Every temporary change is undone again, however the run ends. Run after
 Usage: verify-gates.py
 Exits 1, naming every gate that missed something, if any gate is unproven.
 """
+import glob
 import os
 import re
 import subprocess
 import sys
+import xml.etree.ElementTree as ElementTree
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CANARY_PROJECT = os.path.join("StyleCanary", "StyleCanary.csproj")
@@ -40,6 +46,20 @@ BUILD_ERROR = re.compile(r"(?P<path>[^\s(:]+\.cs)\((?P<line>\d+),\d+\): error (?
 # inspect-code.py print.
 COLON_DIAGNOSTIC = re.compile(r"^(?P<path>[^\s:]+\.cs):(?P<line>\d+): (?P<rule>[\w.-]+):", re.M)
 
+UNCOVERED_PATH = os.path.join("ParameterValidation.Contracts", "GateCanaryUncovered.cs")
+UNCOVERED_CLASS = "GateCanaryUncovered"
+UNCOVERED_SOURCE = """namespace Net.NowhereAtAll.ParameterValidation.Contracts;
+
+/// <summary>Written and removed by scripts/verify-gates.py - never tested, on purpose.</summary>
+internal static class GateCanaryUncovered
+{
+    public static int Answer() => 42;
+}
+"""
+COVERAGE_PROJECT = os.path.join("ParameterValidation.Contracts.Test", "ParameterValidation.Contracts.Test.csproj")
+COVERAGE_REPORTS = os.path.join(
+    "ParameterValidation.Contracts.Test", "bin", "Debug", "net10.0", "TestResults", "coverage.cobertura.*.xml"
+)
 UNSTARTABLE_PROJECT = os.path.join("ParameterValidation.CodeFixes.Test", "ParameterValidation.CodeFixes.Test.csproj")
 UNSTARTABLE_APPHOST = os.path.join(
     "ParameterValidation.CodeFixes.Test", "bin", "Debug", "net10.0",
@@ -105,6 +125,42 @@ def verify_static_gates() -> bool:
     return not missed and not unproven
 
 
+def with_temporary_file(path: str, content: str, check):
+    absolute = os.path.join(ROOT, path)
+    with open(absolute, "w", encoding="utf-8", newline="") as fh:
+        fh.write(content)
+    try:
+        return check()
+    finally:
+        os.remove(absolute)
+
+
+def latest_report_measured_uncovered_class() -> bool:
+    """The newest coverage report lists the canary class, with no line of it hit."""
+    reports = glob.glob(os.path.join(ROOT, COVERAGE_REPORTS))
+    if not reports:
+        return False
+    report = ElementTree.parse(max(reports, key=os.path.getmtime))
+    canary = [
+        element for element in report.iter("class")
+        if element.get("name", "").endswith("." + UNCOVERED_CLASS)
+    ]
+    return bool(canary) and all(element.get("line-rate") == "0" for element in canary)
+
+
+def coverage_gate_fails() -> bool:
+    """The Contracts tests must fail on the threshold - every test passing, the canary measured."""
+    def check() -> bool:
+        code, output = run(["dotnet", "test", "--project", COVERAGE_PROJECT])
+        ran_tests = re.search(r"total: [1-9]", output) is not None
+        no_test_failed = re.search(r"failed: 0\b", output) is not None
+        return code != 0 and ran_tests and no_test_failed and latest_report_measured_uncovered_class()
+
+    caught = with_temporary_file(UNCOVERED_PATH, UNCOVERED_SOURCE, check)
+    print(f"coverage gate caught an uncovered class: {caught}")
+    return caught
+
+
 def runner_reports_an_unstarted_module() -> bool:
     """With one module unable to start, run-tests.py must say INCONCLUSIVE, not pass."""
     build_code, _ = run(["dotnet", "build", UNSTARTABLE_PROJECT, "-nologo"])
@@ -126,6 +182,7 @@ def runner_reports_an_unstarted_module() -> bool:
 def main() -> int:
     results = {
         "static gates": verify_static_gates(),
+        "coverage": coverage_gate_fails(),
         "inconclusive runs": runner_reports_an_unstarted_module(),
     }
     failed = [name for name, proven in results.items() if not proven]

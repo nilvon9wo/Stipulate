@@ -22,7 +22,8 @@ change to the real repository, always undone afterwards:
 
 - **coverage**: an uncovered class is added to `ParameterValidation.Contracts/`;
   `ParameterValidation.Contracts.Test` must then fail its 100% threshold, with
-  every test passing;
+  every test passing and the class measured (a coverlet that measures nothing
+  fails the threshold too, for the wrong reason);
 - **INCONCLUSIVE test runs**: one test module's apphost is hidden so it cannot
   start; `scripts/run-tests.py` must then report `INCONCLUSIVE` instead of
   `dotnet test`'s "Passed!".
