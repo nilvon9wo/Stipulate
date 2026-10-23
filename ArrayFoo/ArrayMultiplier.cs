@@ -10,5 +10,11 @@ public static class ArrayMultiplier
 
     /// <summary>Multiplies each element by the one before it.</summary>
     public static int[] Multiply([Required, MinLength(1)] int[] array)
-        => [.. array.Prepend(FirstMultiplier).Zip(array, static (previous, current) => previous * current)];
+        => [
+            .. array.Prepend(FirstMultiplier)
+                .Zip(
+                array,
+                static (previous, current) => previous * current
+                )
+            ];
 }
