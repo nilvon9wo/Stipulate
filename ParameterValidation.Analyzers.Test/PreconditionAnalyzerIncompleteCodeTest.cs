@@ -62,7 +62,8 @@ public class PreconditionAnalyzerIncompleteCodeTest
     }
 
     [Theory]
-    [InlineData("public class Shape { [ComparableValidation(\"Shape\", ValidationComparison.Flag)] public void Draw() { } }")]
+    [InlineData(
+        "public class Shape { [ComparableValidation(\"Shape\", ValidationComparison.Flag)] public void Draw() { } }")]
     [InlineData("[return: ComparableValidation(\"Shape\", ValidationComparison.Flag)] public class Shape { }")]
     [InlineData("[ComparableValidation(\"Shape\", ValidationComparison.Flag)] public enum Shape { }")]
     public async Task Analyze_WhenAMarkerIsWhereItCannotBe_ReportsNothing(string source)
@@ -81,7 +82,10 @@ public class PreconditionAnalyzerIncompleteCodeTest
     private static CSharpCompilation Compile(string source)
     {
         CSharpCompilation compilation = TestCompilation.Compile(TestCompilation.Usings + source);
-        Assert.Contains(compilation.GetDiagnostics(), static diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning);
+        Assert.Contains(
+            compilation.GetDiagnostics(),
+            static diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning
+        );
         return compilation;
     }
 }
