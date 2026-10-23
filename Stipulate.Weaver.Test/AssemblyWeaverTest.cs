@@ -2,9 +2,9 @@ using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Mono.Cecil;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.Stipulate.Weaver.Test;
 
 /// <summary>Weaving one assembly on disk: which methods, how often, and what happens to its symbols.</summary>
 public class AssemblyWeaverTest
@@ -166,10 +166,32 @@ public class AssemblyWeaverTest
         Assert.Equal(2, wovenCount);
         Assert.Equal(symbols, File.ReadAllBytes(directory.SymbolsPath));
         Assert.Equal(
-            $"{directory.SymbolsPath} : warning PV0006: The symbols don't match the assembly, so they were left "
+            $"{directory.SymbolsPath} : warning ST0006: The symbols don't match the assembly, so they were left "
             + "unchanged; debugging the woven code may not work.",
             output.ToString().TrimEnd()
         );
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Weave_WhenItIsDone_HoldsNoFileOpen(bool areSymbolsMismatched)
+    {
+        // Arrange - Windows can't replace or delete a file while anything holds it open
+        using WeavingDirectory directory = WeavingDirectory.Create();
+        directory.Compile(TwoChecked);
+        if (areSymbolsMismatched)
+        {
+            directory.WriteMismatchedSymbols("public static class Other { }");
+        }
+
+        // Act
+        _ = directory.Weave();
+
+        // Assert - opening a file for exclusive use fails while it is still held, on Linux as well
+        using FileStream assembly = OpenExclusively(directory.AssemblyPath);
+        using FileStream symbols = OpenExclusively(directory.SymbolsPath);
+        Assert.True(assembly.CanWrite && symbols.CanWrite);
     }
 
     [Fact]
@@ -254,6 +276,9 @@ public class AssemblyWeaverTest
         File.WriteAllBytes(libraryPath, [.. TestCompilation.Emit(compilation)]);
         return libraryPath;
     }
+
+    private static FileStream OpenExclusively(string path)
+        => new(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 
     private static void Unexpected(TimeSpan delay) => Assert.Fail($"Paused for {delay}, so it retried.");
 }

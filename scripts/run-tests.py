@@ -19,13 +19,16 @@ and exits with INCONCLUSIVE_EXIT_CODE, never 0. Otherwise it exits with
 `dotnet test`'s own code.
 
 Usage: run-tests.py [any dotnet test arguments]
-    run-tests.py --solution ParameterValidation.slnx
+    run-tests.py --solution Stipulate.slnx
 """
 import re
 import subprocess
 import sys
 
 INCONCLUSIVE_EXIT_CODE = 3
+# Terminal colours: the test platform colours its output on CI runners (GitHub
+# Actions), which would otherwise break the patterns below.
+ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 # "The following exception occurred when running the test module with
 # RunCommand '<path>' ..." - the module's process never started.
 NEVER_STARTED = re.compile(r"exception occurred when running the test module with RunCommand '([^']+)'")
@@ -52,7 +55,8 @@ def main(arguments: list) -> int:
         sys.stdout.write(line)
         captured.append(line)
     exit_code = process.wait()
-    output = "".join(captured)
+    # Match against uncoloured text: the test platform colours its output on CI runners.
+    output = ANSI_ESCAPE.sub("", "".join(captured))
 
     did_not_run = sorted(
         {module_name(path) for path in NEVER_STARTED.findall(output)}

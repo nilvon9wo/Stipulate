@@ -1,7 +1,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace Net.NowhereAtAll.ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.Stipulate.Weaver;
 
 /// <summary>Weaves every method of one assembly, in place, along with its symbols.</summary>
 /// <param name="output">Where warnings, in MSBuild's canonical format, are written.</param>
@@ -18,10 +18,13 @@ internal sealed class AssemblyWeaver(TextWriter output, FileRetry retry)
         using DefaultAssemblyResolver resolver = CreateResolver(assemblyPath, referencePaths);
         string symbolsPath = Path.ChangeExtension(assemblyPath, SymbolsExtension);
         bool hasSymbolsFile = File.Exists(symbolsPath);
+        string? existingSymbolsPath = hasSymbolsFile
+            ? symbolsPath
+            : null;
         using ModuleDefinition module = this._retry.Run(
             "read the assembly",
-            (Path: assemblyPath, Resolver: resolver, HasSymbolsFile: hasSymbolsFile),
-            static read => ReadModule(read.Path, read.Resolver, read.HasSymbolsFile)
+            (Path: assemblyPath, Resolver: resolver, SymbolsPath: existingSymbolsPath),
+            static read => ReadModule(read.Path, read.Resolver, read.SymbolsPath)
         );
         return WovenMarker.IsWoven(module)
             ? null
@@ -60,7 +63,14 @@ internal sealed class AssemblyWeaver(TextWriter output, FileRetry retry)
         return resolver;
     }
 
-    private static ModuleDefinition ReadModule(string assemblyPath, IAssemblyResolver resolver, bool hasSymbolsFile)
+    /// <remarks>
+    /// Both files are read into memory, so neither is held open: Cecil leaves a symbols file it
+    /// opened itself open when the symbols don't match, and Windows then can't replace it.
+    /// </remarks>
+    /// <param name="assemblyPath">The assembly to read.</param>
+    /// <param name="resolver">Finds the assemblies it references.</param>
+    /// <param name="symbolsPath">The symbols file, or <c>null</c> if there is none.</param>
+    private static ModuleDefinition ReadModule(string assemblyPath, IAssemblyResolver resolver, string? symbolsPath)
         => ModuleDefinition.ReadModule(
             assemblyPath,
             new ReaderParameters
@@ -68,7 +78,10 @@ internal sealed class AssemblyWeaver(TextWriter output, FileRetry retry)
                 AssemblyResolver = resolver,
                 ReadingMode = ReadingMode.Immediate,
                 InMemory = true,
-                ReadSymbols = hasSymbolsFile,
+                ReadSymbols = symbolsPath is not null,
+                SymbolStream = symbolsPath is null
+                    ? null
+                    : new MemoryStream(File.ReadAllBytes(symbolsPath)),
                 ThrowIfSymbolsAreNotMatching = false,
             }
         );
