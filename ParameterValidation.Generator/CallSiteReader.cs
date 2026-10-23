@@ -60,7 +60,8 @@ internal static class CallSiteReader
         return location is null
             ? null
             : new CallSite(
-                method.GetDocumentationCommentId() ?? method.ToDisplayString(),
+                // Only local functions and anonymous or erroneous methods lack an ID; none is interceptable.
+                method.GetDocumentationCommentId()!,
                 BuildSignature(method),
                 BuildForwardingCall(method),
                 method.ReturnsVoid,
@@ -83,7 +84,7 @@ internal static class CallSiteReader
     {
         string arguments = string.Join(
             ArgumentSeparator,
-            attribute.ConstructorArguments.Select(static argument => argument.ToCSharpString())
+            attribute.ConstructorArguments.Select(ConstantWriter.Write)
         );
         string type = attribute.AttributeClass!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         string construction = $"new {type}({arguments})";
@@ -95,7 +96,7 @@ internal static class CallSiteReader
     private static string BuildInitializers(AttributeData attribute)
         => string.Join(
             ArgumentSeparator,
-            attribute.NamedArguments.Select(static named => $"{named.Key} = {named.Value.ToCSharpString()}")
+            attribute.NamedArguments.Select(static named => $"{named.Key} = {ConstantWriter.Write(named.Value)}")
         );
 
     private static string BuildSignature(IMethodSymbol method)
