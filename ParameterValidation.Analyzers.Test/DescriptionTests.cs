@@ -76,7 +76,7 @@ public class DescriptionTests
 			""").ConfigureAwait(true));
 
 		Assert.Equal(
-			"Parameter 'n' of 'Counter.Count(int)': [Even(4)] can't be compared with the precondition of 'ICounter.Count(int)'. "
+			"Parameter 'n' of 'Counter.Count(int)': [Even(4)] can't be compared with the attributes of 'ICounter.Count(int)'. "
 				+ "Describe 'EvenAttribute' with [ComparableValidation], or repeat the contract's attribute exactly.",
 			diagnostic.GetMessage());
 	}
@@ -105,7 +105,7 @@ public class DescriptionTests
 			references: CompileToImage(Vendor, "Vendor")).ConfigureAwait(true));
 
 		Assert.Equal(
-			"Parameter 'b' of 'Counter.Count(int, int)': [Vendor.Even(4)] can't be compared with the precondition of 'ICounter.Count(int, int)', "
+			"Parameter 'b' of 'Counter.Count(int, int)': [Vendor.Even(4)] can't be compared with the attributes of 'ICounter.Count(int, int)', "
 				+ "because 'Vendor.EvenAttribute' comes from 'Vendor', outside this solution. "
 				+ "Repeat the contract's attribute exactly, or describe it with [assembly: ComparableValidation(typeof(Vendor.EvenAttribute), ...)].",
 			diagnostic.GetMessage());

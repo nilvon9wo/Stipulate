@@ -80,10 +80,19 @@ public class PropertyTests
 		""");
 
 	[Fact]
-	public Task SettableProperty_SameOrWeakerAttribute_IsAllowed() => VerifyAsync(Widget + """
+	public Task SettableProperty_SameAttribute_IsAllowed() => VerifyAsync(Widget + """
 		public class Widget : IWidget
 		{
-			[Range(0, 10)] public int Size { get; set; }
+			[Range(1, 10)] public int Size { get; set; }
+		}
+		""");
+
+	[Fact]
+	public Task SetOnlyProperty_WeakerAttribute_IsAllowed() => VerifyAsync("""
+		public interface IWidget { [Range(1, 10)] int Size { set; } }
+		public class Widget : IWidget
+		{
+			[Range(0, 10)] public int Size { set { } }
 		}
 		""");
 
@@ -112,10 +121,11 @@ public class PropertyTests
 	}
 
 	[Fact]
-	public Task SettableProperty_MissingAttribute_IsReported() => VerifyAsync(Widget + """
+	public Task SetOnlyProperty_MissingAttribute_IsReported() => VerifyAsync("""
+		public interface IWidget { [Range(1, 10)] int Size { set; } }
 		public class Widget : IWidget
 		{
-			public int {|PV1003:Size|} { get; set; }
+			public int {|PV1003:Size|} { set { } }
 		}
 		""");
 
@@ -129,11 +139,11 @@ public class PropertyTests
 		""");
 
 	[Fact]
-	public Task SettableProperty_DroppedRequired_OnNullableProperty_IsExplicit() => VerifyAsync("""
-		public interface INamed { [Required] string Name { get; set; } }
+	public Task SetOnlyProperty_DroppedRequired_OnNullableProperty_IsExplicit() => VerifyAsync("""
+		public interface INamed { [Required] string Name { set; } }
 		public class Named : INamed
 		{
-			public string? Name { get; set; }
+			public string? Name { set { } }
 		}
 		""");
 

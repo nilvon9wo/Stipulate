@@ -82,12 +82,18 @@ internal static class AnalyzerVerifier
 		return MetadataReference.CreateFromImage(ImmutableArray.Create(stream.ToArray()), filePath: filePath);
 	}
 
+	public static ImmutableArray<MetadataReference> References => PlatformReferences.Value;
+
+	public static CSharpParseOptions ParseOptions { get; } = new(LanguageVersion.Latest);
+
+	public static CSharpCompilationOptions CompilationOptions { get; } = new(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable);
+
 	public static CSharpCompilation Compile(string source, string assemblyName, params MetadataReference[] references)
 		=> CSharpCompilation.Create(
 			assemblyName,
-			[CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest), cancellationToken: TestContext.Current.CancellationToken)],
+			[CSharpSyntaxTree.ParseText(source, ParseOptions, cancellationToken: TestContext.Current.CancellationToken)],
 			[.. PlatformReferences.Value, .. references],
-			new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+			CompilationOptions);
 
 	private static (string Source, List<(string Id, TextSpan Span)> Expected) Parse(string markup)
 	{

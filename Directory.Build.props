@@ -19,9 +19,10 @@
 
   <!--
     Whatever the mode, ParameterValidation.Analyzers checks that implementations and overrides
-    don't strengthen their contract's validation attributes (PV1001-PV1006), live in the IDE and
-    in the build. ParameterValidation.Contracts provides [ComparableValidation], which describes a
-    custom validation attribute so the analyzer can compare it.
+    don't strengthen their contract's preconditions or weaken its guarantees (PV1001-PV1007), live
+    in the IDE and in the build; ParameterValidation.CodeFixes offers to restate a missing attribute.
+    ParameterValidation.Contracts provides [ComparableValidation], which describes a custom
+    validation attribute so the analyzer can compare it.
 
     Assemblies whose files are under ParameterValidationSolutionRoot count as part of the
     solution: an attribute declared in one that can't be compared is reported as PV1002 ("add a
@@ -36,6 +37,10 @@
     <CompilerVisibleProperty Include="ParameterValidationSolutionRoot" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)ParameterValidation.Contracts\ParameterValidation.Contracts.csproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)ParameterValidation.Analyzers\ParameterValidation.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+    <!-- Its code fixes (lightbulbs) only run in the IDE; the compiler ignores them. -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)ParameterValidation.CodeFixes\ParameterValidation.CodeFixes.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>

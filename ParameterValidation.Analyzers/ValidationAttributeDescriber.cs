@@ -55,8 +55,7 @@ internal sealed class ValidationAttributeDescriber
 			new(Dimensions.Length, ConstraintKind.UpperBound, "maximumLength"),
 		],
 
-		// Range(typeof(T), "min", "max") has string bounds, which ToBound rejects, so it can only be
-		// compared with an identical usage.
+		// Range(typeof(T), "min", "max")'s string bounds are read by ToRangeLimit.
 		[DataAnnotations + "RangeAttribute"] =
 		[
 			new(Dimensions.Value, ConstraintKind.LowerBound, "minimum", ExclusiveArgument: "MinimumIsExclusive"),
@@ -311,7 +310,7 @@ internal sealed class ValidationAttributeDescriber
 			}
 
 			object? value = descriptor.Argument is not null && GetArgument(attribute, descriptor.Argument) is { } argument
-				? IsBound(descriptor.Kind) ? ToBound(argument) : ToValues(argument)
+				? IsBound(descriptor.Kind) ? ToBound(argument) ?? ToRangeLimit(argument, attribute) : ToValues(argument)
 				: descriptor.Value;
 			bool isExclusive = descriptor.ExclusiveArgument is not null && GetArgument(attribute, descriptor.ExclusiveArgument) is { Value: bool exclusive }
 				? exclusive
@@ -320,6 +319,9 @@ internal sealed class ValidationAttributeDescriber
 			{
 				case double bound:
 					constraints.Add(new Constraint(descriptor.Dimension, descriptor.Kind, bound, isExclusive, []));
+					break;
+				case ParsedBound parsed:
+					constraints.Add(new Constraint(descriptor.Dimension, descriptor.Kind, parsed.Value, isExclusive, [], parsed.Display));
 					break;
 				case ImmutableArray<string> values:
 					constraints.Add(new Constraint(descriptor.Dimension, descriptor.Kind, 0, IsExclusive: false, values));
@@ -384,6 +386,78 @@ internal sealed class ValidationAttributeDescriber
 		=> constant.Kind == TypedConstantKind.Primitive && constant.Value is IConvertible number and not (bool or char or string)
 			? Convert.ToDouble(number, CultureInfo.InvariantCulture)
 			: null;
+
+	/// <summary>
+	/// Reads one of <c>Range(typeof(T), "minimum", "maximum")</c>'s limits, which RangeAttribute
+	/// parses with T's TypeConverter in the current culture, unless
+	/// <c>ParseLimitsInInvariantCulture</c> is set.
+	/// </summary>
+	/// <returns>
+	/// The limit, or <c>null</c> if T isn't supported, the value might depend on the culture, or it
+	/// can't be represented exactly enough as a <see cref="double"/> to compare.
+	/// </returns>
+	private static ParsedBound? ToRangeLimit(TypedConstant constant, AttributeData attribute)
+	{
+		if (constant.Value is not string text
+			|| attribute.AttributeClass?.ToDisplayString() != DataAnnotations + "RangeAttribute"
+			|| attribute.ConstructorArguments.Length != 3
+			|| attribute.ConstructorArguments[0].Value is not ITypeSymbol operandType)
+		{
+			return null;
+		}
+
+		text = text.Trim();
+		bool invariant = GetArgument(attribute, "ParseLimitsInInvariantCulture") is { Value: true };
+		bool digitsOnly = text.Length > 0 && text.All(static c => c is >= '0' and <= '9');
+		CultureInfo culture = CultureInfo.InvariantCulture;
+		double? value = operandType.SpecialType switch
+		{
+			SpecialType.System_SByte => Integer(sbyte.MinValue, sbyte.MaxValue),
+			SpecialType.System_Byte => Integer(byte.MinValue, byte.MaxValue),
+			SpecialType.System_Int16 => Integer(short.MinValue, short.MaxValue),
+			SpecialType.System_UInt16 => Integer(ushort.MinValue, ushort.MaxValue),
+			SpecialType.System_Int32 => Integer(int.MinValue, int.MaxValue),
+			SpecialType.System_UInt32 => Integer(uint.MinValue, uint.MaxValue),
+			SpecialType.System_Int64 => Integer(long.MinValue, long.MaxValue),
+			SpecialType.System_UInt64 => Integer(ulong.MinValue, ulong.MaxValue),
+			SpecialType.System_Single => (invariant || digitsOnly) && float.TryParse(text, NumberStyles.Float, culture, out float single) ? single : null,
+			SpecialType.System_Double => (invariant || digitsOnly) && double.TryParse(text, NumberStyles.Float, culture, out double number) ? number : null,
+			SpecialType.System_Decimal => (invariant || digitsOnly) && decimal.TryParse(text, NumberStyles.Number, culture, out decimal money) && SignificantDigits(money) <= 15
+				? (double)money
+				: null,
+			SpecialType.System_DateTime => invariant ? Ticks(ParseDateTime(["yyyy-MM-dd", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss"])?.Ticks) : null,
+			_ => operandType.ToDisplayString() switch
+			{
+				"System.DateOnly" => invariant && ParseDateTime(["yyyy-MM-dd"]) is { } date ? date.Ticks / TimeSpan.TicksPerDay : null,
+				"System.TimeOnly" => invariant ? Ticks(ParseDateTime(["HH:mm", "HH:mm:ss"])?.TimeOfDay.Ticks) : null,
+
+				// [-][d.]hh:mm[:ss] is parsed the same in every culture.
+				"System.TimeSpan" => System.Text.RegularExpressions.Regex.IsMatch(text, @"^-?([0-9]+\.)?[0-9]{1,2}:[0-9]{2}(:[0-9]{2})?$")
+					&& TimeSpan.TryParse(text, culture, out TimeSpan span)
+					? Ticks(span.Ticks)
+					: null,
+				_ => null,
+			},
+		};
+		return value is { } bound && !double.IsNaN(bound) ? new ParsedBound(bound, text) : null;
+
+		// Plain digits mean the same in every culture; a sign might not.
+		double? Integer(decimal min, decimal max)
+			=> (invariant || digitsOnly)
+				&& decimal.TryParse(text, NumberStyles.Integer, culture, out decimal integer)
+				&& integer >= min && integer <= max
+				&& Math.Abs(integer) <= 9007199254740992m
+				? (double)integer
+				: null;
+
+		DateTime? ParseDateTime(string[] formats)
+			=> System.DateTime.TryParseExact(text, formats, culture, DateTimeStyles.None, out DateTime parsed) ? parsed : null;
+
+		static double? Ticks(long? ticks) => ticks is { } exact && (long)(double)exact == exact ? exact : null;
+
+		static int SignificantDigits(decimal number)
+			=> Math.Abs(number).ToString(CultureInfo.InvariantCulture).Replace(".", "").TrimStart('0').TrimEnd('0').Length;
+	}
 
 	/// <returns>The array's elements as C# literals, or <c>null</c> if it isn't an array.</returns>
 	private static object? ToValues(TypedConstant constant)

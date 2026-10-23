@@ -30,7 +30,12 @@ internal sealed record Descriptor(
 
 /// <summary>One usage's constraint on one dimension.</summary>
 /// <param name="Values">For <see cref="ConstraintKind.AllowedValues"/> and <see cref="ConstraintKind.DeniedValues"/>: the values, as C# literals.</param>
-internal sealed record Constraint(string Dimension, ConstraintKind Kind, double Bound, bool IsExclusive, ImmutableArray<string> Values);
+/// <param name="BoundDisplay">How to show <paramref name="Bound"/>, if not as a number: e.g. a date, as written.</param>
+internal sealed record Constraint(string Dimension, ConstraintKind Kind, double Bound, bool IsExclusive, ImmutableArray<string> Values, string? BoundDisplay = null);
+
+/// <summary>A bound read from a string, such as <c>Range(typeof(DateTime), "2020-01-01", ...)</c>'s.</summary>
+/// <param name="Display">The string as written.</param>
+internal sealed record ParsedBound(double Value, string Display);
 
 /// <summary>A validation attribute on a parameter, with what it constrains.</summary>
 /// <param name="Key">Equal for two usages of the same attribute class with the same arguments.</param>

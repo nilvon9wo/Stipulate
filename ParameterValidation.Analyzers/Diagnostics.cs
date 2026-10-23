@@ -22,14 +22,14 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor NotComparableInSolution = new(
 		"PV1002",
 		"Validation attribute can't be compared with the contract",
-		"{0}: [{2}] can't be compared with the precondition of '{1}'. Describe '{3}' with [ComparableValidation], or repeat the contract's attribute exactly.",
+		"{0}: [{2}] can't be compared with the attributes of '{1}'. Describe '{3}' with [ComparableValidation], or repeat the contract's attribute exactly.",
 		Category,
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
 		description: "The analyzer can only tell whether an attribute is weaker than the contract if it knows what the attribute constrains. The attribute is declared in this solution, so its class can be given a [ComparableValidation] description.");
 
 	public static readonly DiagnosticDescriptor Dropped = new(
-		"PV1003",
+		RestateProperties.DroppedId,
 		"Implementation doesn't restate its contract's validation attribute",
 		"{0} doesn't restate [{2}] from '{1}'. Restate it, or state a weaker constraint on the same dimension to accept more on purpose.",
 		Category,
@@ -40,7 +40,7 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor NotComparableExternal = new(
 		"PV1005",
 		"Validation attribute from outside the solution can't be compared with the contract",
-		"{0}: [{2}] can't be compared with the precondition of '{1}', because '{3}' comes from '{4}', outside this solution. Repeat the contract's attribute exactly, or describe it with [assembly: ComparableValidation(typeof({3}), ...)].",
+		"{0}: [{2}] can't be compared with the attributes of '{1}', because '{3}' comes from '{4}', outside this solution. Repeat the contract's attribute exactly, or describe it with [assembly: ComparableValidation(typeof({3}), ...)].",
 		Category,
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
@@ -54,4 +54,13 @@ internal static class Diagnostics
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
 		description: "An attribute class with an invalid description is treated as undescribed, so it can only be compared with identical usages.");
+
+	public static readonly DiagnosticDescriptor Weakened = new(
+		RestateProperties.WeakenedId,
+		"Implementation weakens its contract's guarantee",
+		"{0} weakens the guarantee of '{1}': {2}",
+		Category,
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		description: "What an implementation hands back (a property's value, an out or ref parameter) must satisfy everything its contract promises: its validation attributes may be stronger than the contract's, but not weaker or missing. A property with both a getter and a setter, or a ref parameter, both takes and hands back values, so its attributes must match its contract's.");
 }

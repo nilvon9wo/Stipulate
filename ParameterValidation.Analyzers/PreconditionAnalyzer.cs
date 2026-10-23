@@ -12,12 +12,13 @@ namespace ParameterValidation.Analyzers;
 /// <summary>
 /// Checks that every implementation of an interface method, property or indexer, and every
 /// override, accepts all the arguments and values its contract's <c>ValidationAttribute</c>s accept,
-/// and says so explicitly.
+/// hands back only values they promise, and says so explicitly.
 /// </summary>
 /// <remarks>
-/// Preconditions may be weakened by an implementation but never strengthened (the Liskov
-/// substitution principle). Which checks run at run time doesn't matter here: a caller through the
-/// interface is held to the interface's attributes, a caller through the class to the class's.
+/// Preconditions may be weakened by an implementation but never strengthened, and guarantees
+/// strengthened but never weakened (the Liskov substitution principle). Which checks run at run time
+/// doesn't matter here: a caller through the interface is held to the interface's attributes, a
+/// caller through the class to the class's.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PreconditionAnalyzer : DiagnosticAnalyzer
@@ -32,6 +33,7 @@ public sealed class PreconditionAnalyzer : DiagnosticAnalyzer
 		Diagnostics.Dropped,
 		Diagnostics.NotComparableExternal,
 		Diagnostics.InvalidDescription,
+		Diagnostics.Weakened,
 	];
 
 	public override void Initialize(AnalysisContext context)
@@ -50,7 +52,7 @@ public sealed class PreconditionAnalyzer : DiagnosticAnalyzer
 
 	private static void AnalyzeMember(SymbolAnalysisContext context, ValidationAttributeDescriber describer)
 	{
-		if (!HasPreconditions(context.Symbol))
+		if (!IsChecked(context.Symbol))
 		{
 			return;
 		}
@@ -62,14 +64,13 @@ public sealed class PreconditionAnalyzer : DiagnosticAnalyzer
 	}
 
 	/// <summary>
-	/// Whether <paramref name="member"/> takes anything validation attributes could constrain:
-	/// parameters, or for a property, the value it's set to. Accessors are checked as part of their
-	/// property.
+	/// Whether <paramref name="member"/> has anything validation attributes could constrain:
+	/// parameters, or a property's value. Accessors are checked as part of their property.
 	/// </summary>
-	private static bool HasPreconditions(ISymbol member) => member switch
+	private static bool IsChecked(ISymbol member) => member switch
 	{
 		IMethodSymbol method => !method.Parameters.IsEmpty && method.MethodKind is MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation,
-		IPropertySymbol property => !property.Parameters.IsEmpty || property.SetMethod is not null,
+		IPropertySymbol => true,
 		_ => false,
 	};
 
@@ -136,7 +137,7 @@ public sealed class PreconditionAnalyzer : DiagnosticAnalyzer
 
 		foreach (INamedTypeSymbol @interface in type.AllInterfaces)
 		{
-			foreach (ISymbol member in @interface.GetMembers().Where(HasPreconditions))
+			foreach (ISymbol member in @interface.GetMembers().Where(IsChecked))
 			{
 				if (type.FindImplementationForInterfaceMember(member) is not { } implementation
 					|| SymbolEqualityComparer.Default.Equals(implementation.ContainingType, type)
@@ -175,18 +176,21 @@ public sealed class PreconditionAnalyzer : DiagnosticAnalyzer
 		{
 			IParameterSymbol parameter = implementationParameters[i];
 			Compare(
-				context, describer, contractParameters[i], parameter, parameter.Type, parameter.NullableAnnotation,
-				$"Parameter '{parameter.Name}' of '{implementationName}'{inherited}", contractName, inheritingType);
+				context, describer, contract, contractParameters[i], parameter, parameter.Type, parameter.NullableAnnotation,
+				$"Parameter '{parameter.Name}' of '{implementationName}'{inherited}", contractName, inheritingType,
+				preconditions: parameter.RefKind != RefKind.Out,
+				guarantees: parameter.RefKind is RefKind.Out or RefKind.Ref);
 		}
 
-		// A property's attributes limit what it may be set to, so they're preconditions of its
-		// setter. A get-only contract's attributes describe what it returns instead, which an
-		// implementation may narrow, so they're not compared.
-		if (contract is IPropertySymbol { SetMethod: not null } && implementation is IPropertySymbol { SetMethod: not null } property)
+		// A property's attributes describe its value: what its setter accepts, and what its getter
+		// hands back.
+		if (contract is IPropertySymbol contractProperty && implementation is IPropertySymbol property)
 		{
 			Compare(
-				context, describer, contract, property, property.Type, property.NullableAnnotation,
-				$"{(property.IsIndexer ? "Indexer" : "Property")} '{implementationName}'{inherited}", contractName, inheritingType);
+				context, describer, contract, contractProperty, property, property.Type, property.NullableAnnotation,
+				$"{(property.IsIndexer ? "Indexer" : "Property")} '{implementationName}'{inherited}", contractName, inheritingType,
+				preconditions: contractProperty.SetMethod is not null && property.SetMethod is not null,
+				guarantees: contractProperty.GetMethod is not null && property.GetMethod is not null);
 		}
 	}
 
@@ -202,42 +206,91 @@ public sealed class PreconditionAnalyzer : DiagnosticAnalyzer
 	private static void Compare(
 		SymbolAnalysisContext context,
 		ValidationAttributeDescriber describer,
+		ISymbol contract,
 		ISymbol contractTarget,
 		ISymbol target,
 		ITypeSymbol type,
 		NullableAnnotation nullability,
 		string subject,
 		string contractName,
-		INamedTypeSymbol? inheritingType)
+		INamedTypeSymbol? inheritingType,
+		bool preconditions,
+		bool guarantees)
 	{
 		ImmutableArray<DescribedAttribute> contractAttributes = describer.GetValidationAttributes(contractTarget, context.CancellationToken);
 		ImmutableArray<DescribedAttribute> implementationAttributes = describer.GetValidationAttributes(target, context.CancellationToken);
-		if (contractAttributes.IsEmpty && implementationAttributes.IsEmpty)
+		if (contractAttributes.IsEmpty && implementationAttributes.IsEmpty || !preconditions && !guarantees)
 		{
 			return;
 		}
 
-		bool acceptsNull = nullability == NullableAnnotation.Annotated
+		bool isNullable = nullability == NullableAnnotation.Annotated
 			|| type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
 
-		foreach (Problem problem in PreconditionComparer.Compare(contractAttributes, implementationAttributes, acceptsNull))
+		// When both apply, a missing attribute is reported once, as a weakened guarantee (which is
+		// an error, where a dropped precondition is only a warning); and an attribute that can't be
+		// compared once, on the implementation's attribute.
+		List<(Problem Problem, bool IsGuarantee)> problems = [];
+		if (guarantees)
 		{
-			// A dropped attribute is the contract's, so it's reported on the parameter or property that lacks it.
+			problems.AddRange(PreconditionComparer.CompareGuarantees(contractAttributes, implementationAttributes, isNullable)
+				.Where(problem => !preconditions || problem.Kind != ProblemKind.NotComparable)
+				.Select(static problem => (problem, true)));
+		}
+
+		if (preconditions)
+		{
+			problems.AddRange(PreconditionComparer.ComparePreconditions(contractAttributes, implementationAttributes, isNullable)
+				.Where(problem => !guarantees || problem.Kind != ProblemKind.Dropped)
+				.Select(static problem => (problem, false)));
+		}
+
+		foreach ((Problem problem, bool isGuarantee) in problems)
+		{
+			// The implementation's own attributes are reported where they're applied; the contract's
+			// (every guarantee problem's, and a dropped precondition's) on the parameter or property.
+			bool onImplementationAttribute = !isGuarantee && problem.Kind != ProblemKind.Dropped;
 			Location location = inheritingType?.Locations.FirstOrDefault()
-				?? (problem.Kind == ProblemKind.Dropped ? null : problem.Attribute.Data.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation())
+				?? (onImplementationAttribute ? problem.Attribute.Data.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation() : null)
 				?? target.Locations.FirstOrDefault()
 				?? Location.None;
 			INamedTypeSymbol attributeClass = problem.Attribute.Data.AttributeClass!;
 			context.ReportDiagnostic(problem.Kind switch
 			{
 				ProblemKind.Strengthened => Diagnostic.Create(Diagnostics.Strengthened, location, subject, contractName, problem.Detail),
-				ProblemKind.Dropped => Diagnostic.Create(Diagnostics.Dropped, location, subject, contractName, problem.Attribute.Display),
+				ProblemKind.Weakened => Diagnostic.Create(Diagnostics.Weakened, location, subject, contractName, problem.Detail),
+				ProblemKind.Dropped => Diagnostic.Create(
+					isGuarantee ? Diagnostics.Weakened : Diagnostics.Dropped,
+					location,
+					inheritingType is null ? GetRestateProperties(contract, contractTarget, problem.Attribute) : null,
+					subject,
+					contractName,
+					isGuarantee ? $"it doesn't restate [{problem.Attribute.Display}]" : problem.Attribute.Display),
 				_ when describer.IsInSolution(attributeClass) => Diagnostic.Create(
 					Diagnostics.NotComparableInSolution, location, subject, contractName, problem.Attribute.Display, attributeClass.ToDisplayString()),
 				_ => Diagnostic.Create(
 					Diagnostics.NotComparableExternal, location, subject, contractName, problem.Attribute.Display, attributeClass.ToDisplayString(), attributeClass.ContainingAssembly.Name),
 			});
 		}
+	}
+
+	/// <summary>What the code fix needs to restate a missing attribute; see <see cref="RestateProperties"/>.</summary>
+	private static ImmutableDictionary<string, string?>? GetRestateProperties(ISymbol contract, ISymbol contractTarget, DescribedAttribute attribute)
+	{
+		int index = contractTarget.GetAttributes().IndexOf(attribute.Data);
+		string? id = DocumentationCommentId.CreateDeclarationId(contract.OriginalDefinition);
+		if (index < 0 || id is null)
+		{
+			return null;
+		}
+
+		return ImmutableDictionary<string, string?>.Empty
+			.Add(RestateProperties.Contract, id)
+			.Add(RestateProperties.Target, contractTarget is IParameterSymbol parameter
+				? parameter.Ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture)
+				: RestateProperties.PropertyValue)
+			.Add(RestateProperties.AttributeIndex, index.ToString(System.Globalization.CultureInfo.InvariantCulture))
+			.Add(RestateProperties.AttributeDisplay, attribute.Display);
 	}
 
 	/// <summary>Reports a <c>[ComparableValidation]</c> that the describer would have to ignore.</summary>

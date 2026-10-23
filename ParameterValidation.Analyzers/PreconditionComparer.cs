@@ -16,21 +16,32 @@ internal enum ProblemKind
 
 	/// <summary>The implementation doesn't restate the contract's attribute.</summary>
 	Dropped,
+
+	/// <summary>The contract's attribute promises something the implementation's attributes don't.</summary>
+	Weakened,
 }
 
-/// <param name="Attribute">The implementation's attribute, or for <see cref="ProblemKind.Dropped"/> the contract's.</param>
-/// <param name="Detail">For <see cref="ProblemKind.Strengthened"/>: what the attribute rejects that the contract accepts.</param>
+/// <param name="Attribute">
+/// The implementation's attribute; or the contract's, for <see cref="ProblemKind.Dropped"/> and for every
+/// problem with a guarantee.
+/// </param>
+/// <param name="Detail">
+/// For <see cref="ProblemKind.Strengthened"/>: what the attribute rejects that the contract accepts.
+/// For <see cref="ProblemKind.Weakened"/>: what the contract promises that the implementation doesn't.
+/// </param>
 internal sealed record Problem(ProblemKind Kind, DescribedAttribute Attribute, string Detail = "");
 
 /// <summary>
-/// Checks that one parameter's validation attributes in an implementation accept everything that
-/// the corresponding parameter's attributes in its contract accept.
+/// Compares the validation attributes on one parameter or property of an implementation with those
+/// on its contract: as preconditions, which the implementation may weaken but not strengthen, and as
+/// guarantees, which it may strengthen but not weaken.
 /// </summary>
 /// <remarks>
-/// A parameter's attributes all have to accept a value, so the contract's constraints on a
-/// dimension combine into the strongest of them; each of the implementation's constraints must be
-/// no stronger than that. Undescribed attributes in the contract are ignored, which can only
-/// produce extra reports, never miss one.
+/// A value has to satisfy all of a parameter's attributes, so one side's constraints on a dimension
+/// combine into the strongest of them. For preconditions each of the implementation's constraints
+/// must be no stronger than the contract's combination; for guarantees each of the contract's must
+/// be no stronger than the implementation's. Undescribed attributes on the side that's combined
+/// are ignored, which can only produce extra reports, never miss one.
 /// </remarks>
 internal static class PreconditionComparer
 {
@@ -38,7 +49,7 @@ internal static class PreconditionComparer
 	/// Whether the implementation's parameter is annotated as nullable, which explicitly drops a
 	/// contract's <c>[Required]</c>.
 	/// </param>
-	public static IEnumerable<Problem> Compare(
+	public static IEnumerable<Problem> ComparePreconditions(
 		ImmutableArray<DescribedAttribute> contract,
 		ImmutableArray<DescribedAttribute> implementation,
 		bool implementationAcceptsNull)
@@ -59,7 +70,7 @@ internal static class PreconditionComparer
 				continue;
 			}
 
-			if (constraints.Select(constraint => FindStrengthening(constraint, contractConstraints)).FirstOrDefault(static detail => detail is not null) is { } strengthening)
+			if (constraints.Select(constraint => FindStrengthening(constraint, contractConstraints, "the contract")).FirstOrDefault(static detail => detail is not null) is { } strengthening)
 			{
 				yield return new Problem(ProblemKind.Strengthened, attribute, $"[{attribute.Display}] {strengthening}");
 			}
@@ -87,24 +98,79 @@ internal static class PreconditionComparer
 		}
 	}
 
-	/// <returns>What <paramref name="constraint"/> rejects that the contract accepts, or <c>null</c> if nothing.</returns>
-	private static string? FindStrengthening(Constraint constraint, List<Constraint> contract)
+	/// <summary>
+	/// Compares attributes on something the implementation hands back, such as a property's value
+	/// or an <c>out</c> parameter: they must promise everything the contract's promise.
+	/// </summary>
+	/// <param name="implementationIsNullable">
+	/// Whether the implementation's type is annotated as nullable, which says it may hand back null.
+	/// </param>
+	public static IEnumerable<Problem> CompareGuarantees(
+		ImmutableArray<DescribedAttribute> contract,
+		ImmutableArray<DescribedAttribute> implementation,
+		bool implementationIsNullable)
+	{
+		HashSet<string> implementationKeys = [.. implementation.Select(static attribute => attribute.Key)];
+		List<Constraint> implementationConstraints = [.. implementation.SelectMany(static attribute => attribute.Constraints ?? [])];
+		HashSet<string> implementationDimensions = [.. implementationConstraints.Select(static constraint => constraint.Dimension)];
+		if (implementationIsNullable)
+		{
+			implementationDimensions.Add(Dimensions.NotNull);
+		}
+
+		foreach (DescribedAttribute attribute in contract)
+		{
+			if (implementationKeys.Contains(attribute.Key))
+			{
+				continue;
+			}
+
+			if (attribute.Constraints is not { } constraints)
+			{
+				bool sameClass = implementation.Any(other => SymbolEqualityComparer.Default.Equals(other.Data.AttributeClass?.OriginalDefinition, attribute.Data.AttributeClass?.OriginalDefinition));
+				yield return new Problem(sameClass ? ProblemKind.NotComparable : ProblemKind.Dropped, attribute);
+				continue;
+			}
+
+			List<Constraint> promises = [.. constraints.Where(static constraint => !IsVacuous(constraint))];
+			if (promises.Count == 0)
+			{
+				continue;
+			}
+
+			if (!promises.Any(constraint => implementationDimensions.Contains(constraint.Dimension)))
+			{
+				yield return new Problem(ProblemKind.Dropped, attribute);
+				continue;
+			}
+
+			if (promises.Select(constraint => FindStrengthening(constraint, implementationConstraints, "the implementation")).FirstOrDefault(static detail => detail is not null) is { } weakening)
+			{
+				yield return new Problem(ProblemKind.Weakened, attribute, $"[{attribute.Display}] {weakening}");
+			}
+		}
+	}
+
+	/// <param name="combined">The other side's constraints, all of which a value must satisfy.</param>
+	/// <param name="side">The other side, as the message names it: "the contract" or "the implementation".</param>
+	/// <returns>What <paramref name="constraint"/> rejects that <paramref name="combined"/> accepts, or <c>null</c> if nothing.</returns>
+	private static string? FindStrengthening(Constraint constraint, List<Constraint> combined, string side)
 	{
 		if (IsVacuous(constraint))
 		{
 			return null;
 		}
 
-		List<Constraint> sameDimension = [.. contract.Where(other => other.Dimension == constraint.Dimension)];
+		List<Constraint> sameDimension = [.. combined.Where(other => other.Dimension == constraint.Dimension)];
 		List<Constraint> sameKind = [.. sameDimension.Where(other => other.Kind == constraint.Kind)];
 		switch (constraint.Kind)
 		{
 			case ConstraintKind.Flag:
 				return sameKind.Count > 0 ? null : constraint.Dimension switch
 				{
-					Dimensions.NotNull => "rejects null, which the contract accepts",
-					Dimensions.NotBlank => "rejects empty and whitespace-only strings, which the contract accepts",
-					_ => $"imposes '{constraint.Dimension}', which the contract doesn't",
+					Dimensions.NotNull => $"rejects null, which {side} accepts",
+					Dimensions.NotBlank => $"rejects empty and whitespace-only strings, which {side} accepts",
+					_ => $"imposes '{constraint.Dimension}', which {side} doesn't",
 				};
 
 			case ConstraintKind.LowerBound:
@@ -112,12 +178,12 @@ internal static class PreconditionComparer
 				bool isLower = constraint.Kind == ConstraintKind.LowerBound;
 				if (sameKind.Count == 0)
 				{
-					return $"requires {DescribeBound(constraint)}, but the contract has no {(isLower ? "lower" : "upper")} bound on {constraint.Dimension}";
+					return $"requires {DescribeBound(constraint)}, but {side} has no {(isLower ? "lower" : "upper")} bound on {constraint.Dimension}";
 				}
 
 				Constraint strongest = sameKind.Aggregate((a, b) => IsStronger(b, a) ? b : a);
 				return IsStronger(constraint, strongest)
-					? $"requires {DescribeBound(constraint)}, but the contract accepts {DescribeBound(strongest)}"
+					? $"requires {DescribeBound(constraint)}, but {side} accepts {DescribeBound(strongest)}"
 					: null;
 
 			case ConstraintKind.AllowedValues:
@@ -125,12 +191,12 @@ internal static class PreconditionComparer
 				List<Constraint> allowed = sameKind;
 				if (allowed.Count == 0)
 				{
-					return $"accepts only {string.Join(", ", constraint.Values)}, but the contract doesn't limit {constraint.Dimension} to a list";
+					return $"accepts only {string.Join(", ", constraint.Values)}, but {side} doesn't limit {constraint.Dimension} to a list";
 				}
 
 				HashSet<string> denied = [.. sameDimension.Where(static other => other.Kind == ConstraintKind.DeniedValues).SelectMany(static other => other.Values)];
 				string? missing = Intersect(allowed).FirstOrDefault(value => !constraint.Values.Contains(value) && !denied.Contains(value));
-				return missing is null ? null : $"rejects {missing}, which the contract accepts";
+				return missing is null ? null : $"rejects {missing}, which {side} accepts";
 			}
 
 			case ConstraintKind.DeniedValues:
@@ -139,7 +205,7 @@ internal static class PreconditionComparer
 				List<Constraint> allowed = [.. sameDimension.Where(static other => other.Kind == ConstraintKind.AllowedValues)];
 				HashSet<string>? accepted = allowed.Count == 0 ? null : Intersect(allowed);
 				string? extra = constraint.Values.FirstOrDefault(value => !denied.Contains(value) && (accepted is null || accepted.Contains(value)));
-				return extra is null ? null : $"rejects {extra}, which the contract accepts";
+				return extra is null ? null : $"rejects {extra}, which {side} accepts";
 			}
 
 			default:
@@ -189,7 +255,8 @@ internal static class PreconditionComparer
 			(_, false) => "<=",
 			(_, true) => "<",
 		};
-		string value = double.IsInfinity(bound.Bound) ? "infinity" : bound.Bound.ToString("R", CultureInfo.InvariantCulture);
+		string value = bound.BoundDisplay
+			?? (double.IsInfinity(bound.Bound) ? "infinity" : bound.Bound.ToString("R", CultureInfo.InvariantCulture));
 		return $"{bound.Dimension} {comparison} {value}";
 	}
 }
