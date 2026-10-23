@@ -16,7 +16,11 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          # 8.0.x as well: the weaver targets .NET 8 and rolls forward, so with
+          # 8 installed every weaving build here runs it on .NET 8.
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Restore
         run: dotnet restore ParameterValidation.slnx
@@ -85,7 +89,11 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          # 8.0.x as well: the weaver targets .NET 8 and rolls forward, so with
+          # 8 installed every weaving build here runs it on .NET 8.
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       # The weaver runs through MSBuild's Exec with Windows paths and quoting,
       # which the Linux job never exercises; the integration tests build a

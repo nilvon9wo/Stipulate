@@ -72,7 +72,9 @@ internal sealed class ArgumentValueEmitter(
         TypeReference elementType = this._references.Module.ImportReference(((ArrayType)argument.Type).ElementType);
         this._buffer.Emit(OpCodes.Ldc_I4, elements.Length);
         this._buffer.Emit(OpCodes.Newarr, elementType);
-        foreach ((int index, CustomAttributeArgument element) in elements.Index())
+        IEnumerable<(CustomAttributeArgument Element, int Index)> indexed =
+            elements.Select(static (element, index) => (element, index));
+        foreach ((CustomAttributeArgument element, int index) in indexed)
         {
             this._buffer.Emit(OpCodes.Dup);
             this._buffer.Emit(OpCodes.Ldc_I4, index);
