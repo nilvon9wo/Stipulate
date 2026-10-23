@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator;
+namespace Net.NowhereAtAll.Stipulate.Generator;
 
 /// <summary>Writes the interceptors for every call site: one per method, validating, then forwarding.</summary>
 internal static class InterceptorSourceWriter
 {
-    public const string HintName = "ParameterValidationInterceptors.g.cs";
+    public const string HintName = "StipulateInterceptors.g.cs";
 
     private const string ValidationAttributeArray =
         "global::System.ComponentModel.DataAnnotations.ValidationAttribute[]";
@@ -29,9 +29,9 @@ internal static class InterceptorSourceWriter
             }
         }
 
-        namespace Net.NowhereAtAll.ParameterValidation.Generated
+        namespace Net.NowhereAtAll.Stipulate.Generated
         {
-            file static class ParameterValidationInterceptors
+            file static class StipulateInterceptors
             {
 
         """;

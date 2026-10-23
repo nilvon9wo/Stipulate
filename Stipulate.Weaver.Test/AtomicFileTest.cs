@@ -1,11 +1,11 @@
-namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.Stipulate.Weaver.Test;
 
 /// <summary>Replacing a file through a temporary one beside it, which never outlives the replacement.</summary>
 public sealed class AtomicFileTest : IDisposable
 {
     private const string TemporarySuffix = ".weaving";
 
-    private readonly string _directory = Directory.CreateTempSubdirectory("ParameterValidation.Weaver.Test.").FullName;
+    private readonly string _directory = Directory.CreateTempSubdirectory("Stipulate.Weaver.Test.").FullName;
 
     [Fact]
     public void Replace_WhenTheFileExists_ReplacesItsContents()

@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator.Test;
+namespace Net.NowhereAtAll.Stipulate.Generator.Test;
 
 /// <summary>
 /// The generator runs on every keystroke in the IDE, so a change that leaves the call sites as they

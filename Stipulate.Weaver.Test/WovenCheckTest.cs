@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.Stipulate.Weaver.Test;
 
 /// <summary>
 /// What a woven method does on entry: it checks each validation attribute on each parameter and

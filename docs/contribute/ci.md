@@ -29,7 +29,7 @@ proves each one still catches what it should, and undoes every temporary change 
 | Gate | Proven by |
 |---|---|
 | build, format, layout, inspect | `StyleCanary/`: deliberately non-compliant code, each violation tagged `// expect: <gate>:<rule>` on the line the gate must report. Every tag must be matched, and every gate must have at least one. |
-| coverage | A temporary class no test covers, in `ParameterValidation.Contracts`: its tests must fail with every test passing, and the coverage report must show the class was measured. |
+| coverage | A temporary class no test covers, in `Stipulate.Contracts`: its tests must fail with every test passing, and the coverage report must show the class was measured. |
 | `run-tests.py`'s INCONCLUSIVE verdict | One test module's apphost is hidden, so it can't start; the verdict must be INCONCLUSIVE, not "Passed!". |
 | documentation examples | A temporary page whose example claims a diagnostic the analyzer doesn't report: the analyzer's tests must fail on it. |
 | documentation links | The same page, with a broken link: `verify-doc-links.py` must report it. |

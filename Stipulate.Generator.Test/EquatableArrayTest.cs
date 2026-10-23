@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator.Test;
+namespace Net.NowhereAtAll.Stipulate.Generator.Test;
 
 /// <summary>An array compared by its elements, so the incremental pipeline can cache what holds one.</summary>
 public class EquatableArrayTest

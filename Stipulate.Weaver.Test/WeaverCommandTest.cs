@@ -1,7 +1,7 @@
 using System.Reflection;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.Stipulate.Weaver.Test;
 
 /// <summary>
 /// The weaver as the build runs it: its arguments, what it prints, and its exit codes, which
@@ -27,7 +27,7 @@ public class WeaverCommandTest
         // Assert
         Assert.Equal(WeaverCommand.ReportedFailureExitCode, exitCode);
         Assert.Equal(
-            "Usage: Net.NowhereAtAll.ParameterValidation.Weaver <assembly> <references-file>",
+            "Usage: Net.NowhereAtAll.Stipulate.Weaver <assembly> <references-file>",
             error.ToString().TrimEnd()
         );
     }
@@ -45,7 +45,7 @@ public class WeaverCommandTest
 
         // Assert
         Assert.Equal(WeaverCommand.SuccessExitCode, exitCode);
-        Assert.Equal("ParameterValidation: wove 1 method(s) in Test.dll.", output.ToString().TrimEnd());
+        Assert.Equal("Stipulate: wove 1 method(s) in Test.dll.", output.ToString().TrimEnd());
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class WeaverCommandTest
 
         // Assert
         Assert.Equal(WeaverCommand.SuccessExitCode, exitCode);
-        Assert.Equal("ParameterValidation: Test.dll is already woven.", output.ToString().TrimEnd());
+        Assert.Equal("Stipulate: Test.dll is already woven.", output.ToString().TrimEnd());
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class WeaverCommandTest
         // Assert
         Assert.Equal(WeaverCommand.ReportedFailureExitCode, exitCode);
         Assert.Equal(
-            $"{directory.AssemblyPath} : error PV0001: Could not resolve type 'PositiveAttribute': its assembly "
+            $"{directory.AssemblyPath} : error ST0001: Could not resolve type 'PositiveAttribute': its assembly "
                 + "'Library, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' is not among the references.",
             error.ToString().TrimEnd()
         );
@@ -106,7 +106,7 @@ public class WeaverCommandTest
         // Assert
         Assert.Equal(WeaverCommand.ReportedFailureExitCode, exitCode);
         Assert.StartsWith(
-            $"{directory.AssemblyPath} : error PV0003: Unexpected FileNotFoundException: ",
+            $"{directory.AssemblyPath} : error ST0003: Unexpected FileNotFoundException: ",
             error.ToString(),
             StringComparison.Ordinal
         );

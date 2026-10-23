@@ -1,9 +1,9 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>Every rule a <c>[ComparableValidation]</c> must follow, and the reason it gives when broken.</summary>
 public class DescriptionAnalyzerTest
@@ -80,7 +80,7 @@ public class DescriptionAnalyzerTest
 
     [Theory]
     [MemberData(nameof(InvalidClassMarkers))]
-    public async Task Analyze_WhenAClassMarkerIsInvalid_ReportsPV2003WithTheReason(string arguments, string reason)
+    public async Task Analyze_WhenAClassMarkerIsInvalid_ReportsST2003WithTheReason(string arguments, string reason)
     {
         // Arrange
         DiagnosticMarkup markup = new($"[ComparableValidation({arguments})]\n{Subject}");
@@ -108,10 +108,10 @@ public class DescriptionAnalyzerTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAClassMarkerIsInvalid_ReportsPV2003OnTheMarker()
+    public async Task Analyze_WhenAClassMarkerIsInvalid_ReportsST2003OnTheMarker()
     {
         // Arrange
-        const string marker = "[{|PV2003:ComparableValidation(\"Shape\", ValidationComparison.Flag, Value = 1)|}]\n";
+        const string marker = "[{|ST2003:ComparableValidation(\"Shape\", ValidationComparison.Flag, Value = 1)|}]\n";
         DiagnosticMarkup markup = new(marker + Subject);
 
         // Act
@@ -122,11 +122,11 @@ public class DescriptionAnalyzerTest
     }
 
     [Fact]
-    public async Task Analyze_WhenTheMarkerIsOnAClassThatIsNotAValidationAttribute_ReportsPV2003()
+    public async Task Analyze_WhenTheMarkerIsOnAClassThatIsNotAValidationAttribute_ReportsST2003()
     {
         // Arrange
         DiagnosticMarkup markup = new("""
-            [{|PV2003:ComparableValidation("Shape", ValidationComparison.Flag)|}]
+            [{|ST2003:ComparableValidation("Shape", ValidationComparison.Flag)|}]
             public sealed class ShapeAttribute : System.Attribute { }
             """);
 
@@ -156,10 +156,10 @@ public class DescriptionAnalyzerTest
     [Theory]
     [InlineData("typeof(string), \"Shape\", ValidationComparison.Flag")]
     [InlineData("\"Shape\", ValidationComparison.Flag")]
-    public async Task Analyze_WhenAnAssemblyMarkerIsInvalid_ReportsPV2003OnTheMarker(string arguments)
+    public async Task Analyze_WhenAnAssemblyMarkerIsInvalid_ReportsST2003OnTheMarker(string arguments)
     {
         // Arrange
-        DiagnosticMarkup markup = new($"[assembly: {{|PV2003:ComparableValidation({arguments})|}}]\n{Subject}");
+        DiagnosticMarkup markup = new($"[assembly: {{|ST2003:ComparableValidation({arguments})|}}]\n{Subject}");
 
         // Act
         ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
@@ -190,7 +190,7 @@ public class DescriptionAnalyzerTest
     {
         // Arrange
         const string markers = "[ComparableValidation(\"Shape\", ValidationComparison.Flag)]\n"
-            + "[{|PV2003:ComparableValidation(\"Shape\", ValidationComparison.Flag, Value = 1)|}]\n";
+            + "[{|ST2003:ComparableValidation(\"Shape\", ValidationComparison.Flag, Value = 1)|}]\n";
         DiagnosticMarkup markup = new(markers + Subject);
 
         // Act
@@ -202,11 +202,11 @@ public class DescriptionAnalyzerTest
 
     /// <remarks>A class of the contracts' name in source shadows theirs (warning CS0436).</remarks>
     [Fact]
-    public async Task Analyze_WhenAMarkerHasTooFewArguments_ReportsPV2003()
+    public async Task Analyze_WhenAMarkerHasTooFewArguments_ReportsST2003()
     {
         // Arrange
         const string shadow = """
-            namespace Net.NowhereAtAll.ParameterValidation.Contracts
+            namespace Net.NowhereAtAll.Stipulate.Contracts
             {
                 [System.AttributeUsage(System.AttributeTargets.Class)]
                 public sealed class ComparableValidationAttribute(string dimension) : System.Attribute
@@ -216,7 +216,7 @@ public class DescriptionAnalyzerTest
             }
 
             """;
-        DiagnosticMarkup markup = new(shadow + "[{|PV2003:ComparableValidation(\"Shape\")|}]\n" + Subject);
+        DiagnosticMarkup markup = new(shadow + "[{|ST2003:ComparableValidation(\"Shape\")|}]\n" + Subject);
 
         // Act
         ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);

@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>
 /// <c>Range(typeof(T), "minimum", "maximum")</c>, whose limits are compared when they can't depend
@@ -109,14 +109,14 @@ public class PreconditionAnalyzerRangeLimitTest
 
     [Theory]
     [MemberData(nameof(StrongerLimits))]
-    public async Task Analyze_WhenTheImplementationsLimitsAreStronger_ReportsPV1001(
+    public async Task Analyze_WhenTheImplementationsLimitsAreStronger_ReportsST1001(
         string contract,
         string implementation,
         string type
     )
     {
         // Arrange
-        DiagnosticMarkup markup = new(ContractSource.ForParameter(contract, $"{{|PV1001:{implementation}|}}", type));
+        DiagnosticMarkup markup = new(ContractSource.ForParameter(contract, $"{{|ST1001:{implementation}|}}", type));
 
         // Act
         ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
@@ -127,14 +127,14 @@ public class PreconditionAnalyzerRangeLimitTest
 
     [Theory]
     [MemberData(nameof(IncomparableLimits))]
-    public async Task Analyze_WhenTheImplementationsLimitsCannotBeCompared_ReportsPV2002(
+    public async Task Analyze_WhenTheImplementationsLimitsCannotBeCompared_ReportsST2002(
         string contract,
         string implementation,
         string type
     )
     {
         // Arrange
-        DiagnosticMarkup markup = new(ContractSource.ForParameter(contract, $"{{|PV2002:{implementation}|}}", type));
+        DiagnosticMarkup markup = new(ContractSource.ForParameter(contract, $"{{|ST2002:{implementation}|}}", type));
 
         // Act
         ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);

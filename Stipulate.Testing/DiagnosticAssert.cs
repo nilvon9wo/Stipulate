@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace Net.NowhereAtAll.ParameterValidation.Testing;
+namespace Net.NowhereAtAll.Stipulate.Testing;
 
 /// <summary>Asserts that diagnostics are exactly the ones marked up in the source.</summary>
 public static class DiagnosticAssert

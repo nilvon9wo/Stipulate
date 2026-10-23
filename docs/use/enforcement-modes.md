@@ -1,18 +1,18 @@
 # Enforcement modes
 
-The `ParameterValidationMode` MSBuild property chooses how the validation attributes are enforced
+The `StipulateMode` MSBuild property chooses how the validation attributes are enforced
 at run time:
 
 | Mode | How | Validates |
 |---|---|---|
-| `Weaving` (default) | After each project compiles, `ParameterValidation.Weaver` rewrites its assembly so that every method with validated parameters checks them on entry. | Every call, from anywhere: other assemblies, reflection, delegates. |
-| `Interceptors` | `ParameterValidation.Generator` intercepts each call to such a method at compile time, checking the arguments before forwarding them. | Only calls compiled in a project that uses the generator. |
+| `Weaving` (default) | After each project compiles, `Stipulate.Weaver` rewrites its assembly so that every method with validated parameters checks them on entry. | Every call, from anywhere: other assemblies, reflection, delegates. |
+| `Interceptors` | `Stipulate.Generator` intercepts each call to such a method at compile time, checking the arguments before forwarding them. | Only calls compiled in a project that uses the generator. |
 | `None` | Nothing at run time. | Nothing; the analyzer still checks contracts. |
 
 Set it for every project in `Directory.Build.props`, or for one build:
 
 ```shell
-dotnet build -p:ParameterValidationMode=Interceptors
+dotnet build -p:StipulateMode=Interceptors
 ```
 
 Whatever the mode, a check fails the same way:
@@ -43,7 +43,7 @@ arguments however it is called.
 - **Incremental builds**: an assembly is woven once. A build that skips compiling leaves the
   woven assembly in place, and the weaver recognises it ("is already woven").
 - **Debugging**: the weaver rewrites the symbols (`.pdb`) along with the assembly. If they don't
-  match, it leaves them alone and warns (PV0006).
+  match, it leaves them alone and warns (ST0006).
 
 If weaving fails, the build fails with one of the [build errors](../rules/build-errors.md).
 

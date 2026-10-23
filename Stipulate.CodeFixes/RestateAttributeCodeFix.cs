@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Net.NowhereAtAll.ParameterValidation.Analyzers;
+using Net.NowhereAtAll.Stipulate.Analyzers;
 
-namespace Net.NowhereAtAll.ParameterValidation.CodeFixes;
+namespace Net.NowhereAtAll.Stipulate.CodeFixes;
 
 /// <summary>
-/// Restates a contract's validation attribute that an implementation leaves out (PV1002, or PV1003
+/// Restates a contract's validation attribute that an implementation leaves out (ST1002, or ST1003
 /// when the attribute is missing altogether), adding a <c>using</c> for it if needed.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(RestateAttributeCodeFix))]

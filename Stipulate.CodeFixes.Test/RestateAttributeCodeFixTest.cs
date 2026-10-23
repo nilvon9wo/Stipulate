@@ -3,17 +3,17 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Text;
-using Net.NowhereAtAll.ParameterValidation.Analyzers;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Analyzers;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.CodeFixes.Test;
+namespace Net.NowhereAtAll.Stipulate.CodeFixes.Test;
 
 /// <summary>The code fix that restates a contract's missing attribute, one at a time or all at once.</summary>
 public class RestateAttributeCodeFixTest
 {
     private const string Usings = "using System.ComponentModel.DataAnnotations;\n\n";
 
-    /// <summary>The analyzer's PV1002, for diagnostics a test builds by hand.</summary>
+    /// <summary>The analyzer's ST1002, for diagnostics a test builds by hand.</summary>
     private static readonly DiagnosticDescriptor Dropped = new PreconditionAnalyzer().SupportedDiagnostics
         .Single(static descriptor => descriptor.Id == DiagnosticIds.PreconditionDropped);
 

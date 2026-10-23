@@ -3,11 +3,11 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
-using Net.NowhereAtAll.ParameterValidation.Contracts;
+using Net.NowhereAtAll.Stipulate.Contracts;
 
-namespace Net.NowhereAtAll.ParameterValidation.Testing;
+namespace Net.NowhereAtAll.Stipulate.Testing;
 
-/// <summary>Compiles C# source in memory, against the running .NET and ParameterValidation.Contracts.</summary>
+/// <summary>Compiles C# source in memory, against the running .NET and Stipulate.Contracts.</summary>
 public static class TestCompilation
 {
     public const string AssemblyName = "Test";
@@ -15,17 +15,17 @@ public static class TestCompilation
     /// <summary>The usings every analyzer test source starts with.</summary>
     public const string Usings = """
         using System.ComponentModel.DataAnnotations;
-        using Net.NowhereAtAll.ParameterValidation.Contracts;
+        using Net.NowhereAtAll.Stipulate.Contracts;
 
         """;
 
     private const string TrustedPlatformAssemblies = "TRUSTED_PLATFORM_ASSEMBLIES";
-    private const string ToolAssemblyPrefix = "Net.NowhereAtAll.ParameterValidation.";
+    private const string ToolAssemblyPrefix = "Net.NowhereAtAll.Stipulate.";
 
     /// <summary>
-    /// The running .NET's framework assemblies plus ParameterValidation.Contracts. The trusted
+    /// The running .NET's framework assemblies plus Stipulate.Contracts. The trusted
     /// platform assemblies only sometimes include the test's own dependencies (it depends on the
-    /// test host), so Contracts is added explicitly, and every other ParameterValidation assembly
+    /// test host), so Contracts is added explicitly, and every other Stipulate assembly
     /// left out.
     /// </summary>
     private static readonly Lazy<ImmutableArray<MetadataReference>> PlatformReferences = new(LoadPlatformReferences);

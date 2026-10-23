@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ArrayFoo;
 
-/// <summary>The sample that inspired ParameterValidation: its attributes are enforced by the weaver.</summary>
+/// <summary>The sample that inspired Stipulate: its attributes are enforced by the weaver.</summary>
 public static class ArrayMultiplier
 {
     /// <summary>What the first element is multiplied by, having no element before it.</summary>

@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator.Test;
+namespace Net.NowhereAtAll.Stipulate.Generator.Test;
 
 /// <summary>
 /// What an intercepted call does: it checks each validation attribute on each parameter, as the

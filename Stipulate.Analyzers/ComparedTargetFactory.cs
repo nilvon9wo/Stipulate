@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.Stipulate.Analyzers;
 
 /// <summary>Pairs each parameter of an implementation, and a property's value, with the contract's.</summary>
 internal static class ComparedTargetFactory

@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.Stipulate.Analyzers;
 
 internal enum ProblemKind
 {

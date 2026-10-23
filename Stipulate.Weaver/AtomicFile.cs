@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.Stipulate.Weaver;
 
 /// <summary>Replaces a file by writing a temporary one beside it and moving that over it.</summary>
 internal static class AtomicFile

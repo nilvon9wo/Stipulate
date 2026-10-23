@@ -11,7 +11,7 @@ public static class Multiplier
 }
 ```
 
-ParameterValidation then does two things.
+Stipulate then does two things.
 
 **It enforces them when the method is called.** `Multiplier.Multiply([])` throws an
 `ArgumentException` whose message is the attribute's own ("The field array must be a string or
@@ -31,7 +31,7 @@ public interface IMultiplier
 
 public class Multiplier : IMultiplier
 {
-    // error PV1001: Parameter 'array' of 'Multiplier.Multiply(int[])' strengthens the
+    // error ST1001: Parameter 'array' of 'Multiplier.Multiply(int[])' strengthens the
     // precondition of 'IMultiplier.Multiply(int[])': [MinLength(2)] requires Length >= 2,
     // but the contract accepts Length >= 1
     public int[] Multiply([MinLength(2)] int[] array) => array;
@@ -57,12 +57,12 @@ See [contracts](contracts.md) for everything the analyzer checks.
 
 ## Setting it up
 
-NuGet packages are planned. Until then, ParameterValidation is wired in by this repository's
+NuGet packages are planned. Until then, Stipulate is wired in by this repository's
 `Directory.Build.props` and `Directory.Build.targets`: every project under the repository's
 folder (as `ArrayFoo` is) gets
 
 - the analyzer and its code fix, live in the IDE and in the build;
-- `ParameterValidation.Contracts`, for [describing custom attributes](custom-attributes.md);
+- `Stipulate.Contracts`, for [describing custom attributes](custom-attributes.md);
 - run-time enforcement, by default by weaving (see [enforcement modes](enforcement-modes.md)).
 
 Requires the .NET 10 SDK. After rebuilding the analyzer or the code fix, restart Visual Studio:

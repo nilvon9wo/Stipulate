@@ -9,7 +9,7 @@ A gate that silently stops running looks exactly like a gate that passes. So:
   (build, format, layout, inspect) runs against it; every marker must be
   matched by a finding, and every gate must have at least one marker.
 * The coverage gate is proven by adding a throwaway uncovered class to
-  ParameterValidation.Contracts/ - its tests must then fail with none of them
+  Stipulate.Contracts/ - its tests must then fail with none of them
   failing, and the coverage report must show the class was measured: a
   coverlet that measures nothing fails the threshold too, for the wrong reason.
 * The doc gates are proven by a temporary page, docs/gate-canary.md, with a
@@ -37,6 +37,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CANARY_PROJECT = os.path.join("StyleCanary", "StyleCanary.csproj")
 CANARY_SOURCE = os.path.join("StyleCanary", "Violations.cs")
 
+ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 EXPECT_MARKER = re.compile(r"// expect: (?P<gate>[\w-]+):(?P<rule>[\w.-]+)")
 # `File.cs(line,col): error RULE` - MSBuild's diagnostic shape, which both
 # `dotnet build` and `dotnet format` use. `info` counts: format fails on it.
@@ -50,9 +51,9 @@ BUILD_ERROR = re.compile(r"(?P<path>[^\s(:]+\.cs)\((?P<line>\d+),\d+\): error (?
 # inspect-code.py print.
 COLON_DIAGNOSTIC = re.compile(r"^(?P<path>[^\s:]+\.cs):(?P<line>\d+): (?P<rule>[\w.-]+):", re.M)
 
-UNCOVERED_PATH = os.path.join("ParameterValidation.Contracts", "GateCanaryUncovered.cs")
+UNCOVERED_PATH = os.path.join("Stipulate.Contracts", "GateCanaryUncovered.cs")
 UNCOVERED_CLASS = "GateCanaryUncovered"
-UNCOVERED_SOURCE = """namespace Net.NowhereAtAll.ParameterValidation.Contracts;
+UNCOVERED_SOURCE = """namespace Net.NowhereAtAll.Stipulate.Contracts;
 
 /// <summary>Written and removed by scripts/verify-gates.py - never tested, on purpose.</summary>
 internal static class GateCanaryUncovered
@@ -67,21 +68,21 @@ Written and removed by scripts/verify-gates.py: a [link to nowhere](gate-canary-
 and an example that claims a diagnostic the analyzer doesn't report.
 
 ```csharp
-// error PV1001: nothing here strengthens anything
+// error ST1001: nothing here strengthens anything
 public interface IGateCanary { void Accept(int value); }
 ```
 """
 ANALYZERS_TEST_PROJECT = os.path.join(
-    "ParameterValidation.Analyzers.Test", "ParameterValidation.Analyzers.Test.csproj"
+    "Stipulate.Analyzers.Test", "Stipulate.Analyzers.Test.csproj"
 )
-COVERAGE_PROJECT = os.path.join("ParameterValidation.Contracts.Test", "ParameterValidation.Contracts.Test.csproj")
+COVERAGE_PROJECT = os.path.join("Stipulate.Contracts.Test", "Stipulate.Contracts.Test.csproj")
 COVERAGE_REPORTS = os.path.join(
-    "ParameterValidation.Contracts.Test", "bin", "Debug", "net10.0", "TestResults", "coverage.cobertura.*.xml"
+    "Stipulate.Contracts.Test", "bin", "Debug", "net10.0", "TestResults", "coverage.cobertura.*.xml"
 )
-UNSTARTABLE_PROJECT = os.path.join("ParameterValidation.CodeFixes.Test", "ParameterValidation.CodeFixes.Test.csproj")
+UNSTARTABLE_PROJECT = os.path.join("Stipulate.CodeFixes.Test", "Stipulate.CodeFixes.Test.csproj")
 UNSTARTABLE_APPHOST = os.path.join(
-    "ParameterValidation.CodeFixes.Test", "bin", "Debug", "net10.0",
-    "Net.NowhereAtAll.ParameterValidation.CodeFixes.Test" + (".exe" if os.name == "nt" else ""),
+    "Stipulate.CodeFixes.Test", "bin", "Debug", "net10.0",
+    "Net.NowhereAtAll.Stipulate.CodeFixes.Test" + (".exe" if os.name == "nt" else ""),
 )
 
 
@@ -89,7 +90,9 @@ def run(command: list) -> tuple:
     completed = subprocess.run(
         command, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace"
     )
-    return completed.returncode, completed.stdout + completed.stderr
+    # Strip terminal colours: the test platform colours its output on CI runners
+    # (GitHub Actions), which would otherwise break every pattern matched against it.
+    return completed.returncode, ANSI_ESCAPE.sub("", completed.stdout + completed.stderr)
 
 
 def python_script(name: str, *arguments: str) -> list:
@@ -183,7 +186,7 @@ def doc_examples_gate_fails() -> bool:
     """The analyzer's tests must fail on the canary page's false claim, and name the page."""
     def check() -> bool:
         code, output = run(
-            ["dotnet", "test", "--project", ANALYZERS_TEST_PROJECT, "-p:ParameterValidationCoverage=false"]
+            ["dotnet", "test", "--project", ANALYZERS_TEST_PROJECT, "-p:StipulateCoverage=false"]
         )
         return code != 0 and "gate-canary.md" in output
 

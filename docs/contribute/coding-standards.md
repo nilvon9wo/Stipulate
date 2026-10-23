@@ -64,7 +64,7 @@ why, and is called out in the commit message.
 
 Every assembly and namespace starts with `Net.NowhereAtAll.`, as XFTY's do;
 `Directory.Build.props` sets it from the project name, so the folders and projects keep the
-short name (`ParameterValidation.Weaver` builds `Net.NowhereAtAll.ParameterValidation.Weaver.dll`).
+short name (`Stipulate.Weaver` builds `Net.NowhereAtAll.Stipulate.Weaver.dll`).
 
 A primary-constructor parameter that a class keeps is held in a `private readonly` field, not
 captured: the field names the state.
@@ -105,11 +105,11 @@ CI (`.github/workflows/ci.yml`) fails the build on any of:
 | Gate | Covers |
 |---|---|
 | `dotnet build` (`EnforceCodeStyleInBuild`, `TreatWarningsAsErrors`) | compilation, with every warning an error, and every `.editorconfig` rule that runs in the build |
-| `dotnet format ParameterValidation.slnx --verify-no-changes --severity info` | whitespace and formatting, and a second pass over the style rules |
+| `dotnet format Stipulate.slnx --verify-no-changes --severity info` | whitespace and formatting, and a second pass over the style rules |
 | `scripts/inspect-code.py` (ReSharper `inspectcode`) | what Roslyn misses, such as unnecessary usings and unresolvable doc-comment references; every finding fails |
 | `scripts/check-line-layout.py` | the 120-character ceiling and wrapped-`)` placement |
 | `scripts/run-tests.py`, in Debug and Release | every test, with **100% line and branch coverage** of each package; a module that never ran makes the run `INCONCLUSIVE`, not "Passed!" |
-| the documentation examples (in `ParameterValidation.Analyzers.Test`) and `scripts/verify-doc-links.py` | every C# example in the docs does what its comments say; every relative link resolves |
+| the documentation examples (in `Stipulate.Analyzers.Test`) and `scripts/verify-doc-links.py` | every C# example in the docs does what its comments say; every relative link resolves |
 | `scripts/verify-gates.py` | every gate above still fires; see [ci](ci.md#proving-the-gates-fire) |
 
 Run the same checks locally before pushing; see [local-development](local-development.md).

@@ -1,6 +1,6 @@
-# ParameterValidation documentation
+# Stipulate documentation
 
-ParameterValidation makes the `System.ComponentModel.DataAnnotations` validation attributes on
+Stipulate makes the `System.ComponentModel.DataAnnotations` validation attributes on
 method parameters mean something: it enforces them when the method is called, and checks at
 compile time that implementations and overrides honour the attributes of the contracts they
 implement.

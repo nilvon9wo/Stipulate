@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>
 /// Which members are compared with a contract: implementations of interface members, however they
@@ -25,7 +25,7 @@ public class PreconditionAnalyzerContractTest
         DiagnosticMarkup markup = new(Multiplier + """
             public class Multiplier : IMultiplier
             {
-                public int[] Multiply([{|PV1001:MinLength(2)|}] int[] array) => array;
+                public int[] Multiply([{|ST1001:MinLength(2)|}] int[] array) => array;
             }
             """);
 
@@ -43,7 +43,7 @@ public class PreconditionAnalyzerContractTest
         DiagnosticMarkup markup = new(Multiplier + """
             public class Multiplier : IMultiplier
             {
-                public int[] Multiply([{|PV1001:MinLength(2)|}] int[] values) => values;
+                public int[] Multiply([{|ST1001:MinLength(2)|}] int[] values) => values;
             }
             """);
 
@@ -61,7 +61,7 @@ public class PreconditionAnalyzerContractTest
         DiagnosticMarkup markup = new(Multiplier + """
             public class Multiplier : IMultiplier
             {
-                int[] IMultiplier.Multiply([{|PV1001:MinLength(2)|}] int[] array) => array;
+                int[] IMultiplier.Multiply([{|ST1001:MinLength(2)|}] int[] array) => array;
             }
             """);
 
@@ -80,7 +80,7 @@ public class PreconditionAnalyzerContractTest
             public interface IParser { static abstract int Parse([MinLength(1)] string text); }
             public class Parser : IParser
             {
-                public static int Parse([{|PV1001:MinLength(2)|}] string text) => 0;
+                public static int Parse([{|ST1001:MinLength(2)|}] string text) => 0;
             }
             """);
 
@@ -99,7 +99,7 @@ public class PreconditionAnalyzerContractTest
             public interface IStore<T> { void Add([Required] T item); }
             public class Store : IStore<string>
             {
-                public void Add(string {|PV1002:item|}) { }
+                public void Add(string {|ST1002:item|}) { }
             }
             """);
 
@@ -118,7 +118,7 @@ public class PreconditionAnalyzerContractTest
             public abstract class Base { public abstract void Add([MinLength(1)] int[] items); }
             public class Derived : Base
             {
-                public override void Add([{|PV1001:MinLength(2)|}] int[] items) { }
+                public override void Add([{|ST1001:MinLength(2)|}] int[] items) { }
             }
             """);
 
@@ -140,7 +140,7 @@ public class PreconditionAnalyzerContractTest
             }
             public class Derived : Multiplier
             {
-                public override int[] Multiply([{|PV1001:MinLength(2)|}] int[] array) => array;
+                public override int[] Multiply([{|ST1001:MinLength(2)|}] int[] array) => array;
             }
             """);
 
@@ -160,7 +160,7 @@ public class PreconditionAnalyzerContractTest
             {
                 public int[] Multiply([MinLength(2)] int[] array) => array;
             }
-            public class {|PV1001:Derived|} : Base, IMultiplier { }
+            public class {|ST1001:Derived|} : Base, IMultiplier { }
             """);
 
         // Act
@@ -177,7 +177,7 @@ public class PreconditionAnalyzerContractTest
         DiagnosticMarkup markup = new(Multiplier + """
             public class Base : IMultiplier
             {
-                public int[] Multiply([{|PV1001:MinLength(2)|}] int[] array) => array;
+                public int[] Multiply([{|ST1001:MinLength(2)|}] int[] array) => array;
             }
             public class Derived : Base, IMultiplier { }
             """);
@@ -196,7 +196,7 @@ public class PreconditionAnalyzerContractTest
         DiagnosticMarkup markup = new(Multiplier + """
             public interface IDoubler : IMultiplier
             {
-                int[] IMultiplier.Multiply(int[] {|PV1002:array|}) => array;
+                int[] IMultiplier.Multiply(int[] {|ST1002:array|}) => array;
             }
             public class Doubler : IDoubler { }
             """);
@@ -233,7 +233,7 @@ public class PreconditionAnalyzerContractTest
         DiagnosticMarkup markup = new(Multiplier + """
             public struct Multiplier : IMultiplier
             {
-                public int[] Multiply([{|PV1001:MinLength(2)|}] int[] array) => array;
+                public int[] Multiply([{|ST1001:MinLength(2)|}] int[] array) => array;
             }
             """);
 
@@ -268,7 +268,7 @@ public class PreconditionAnalyzerContractTest
             "namespace Library;\npublic class Base { public int[] Multiply([MinLength(2)] int[] array) => array; }",
             "Library"
         );
-        DiagnosticMarkup markup = new(Multiplier + "public class {|PV1001:Derived|} : Library.Base, IMultiplier { }");
+        DiagnosticMarkup markup = new(Multiplier + "public class {|ST1001:Derived|} : Library.Base, IMultiplier { }");
 
         // Act
         ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup, library);
@@ -278,7 +278,7 @@ public class PreconditionAnalyzerContractTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAnInheritedImplementationDropsAnAttribute_ReportsPV1002OnTheClass()
+    public async Task Analyze_WhenAnInheritedImplementationDropsAnAttribute_ReportsST1002OnTheClass()
     {
         // Arrange
         DiagnosticMarkup markup = new(Multiplier + """
@@ -286,7 +286,7 @@ public class PreconditionAnalyzerContractTest
             {
                 public int[] Multiply(int[] array) => array;
             }
-            public class {|PV1002:Derived|} : Base, IMultiplier { }
+            public class {|ST1002:Derived|} : Base, IMultiplier { }
             """);
 
         // Act

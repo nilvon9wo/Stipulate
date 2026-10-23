@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Code fixes for ParameterValidation.Analyzers' diagnostics. They need the Workspaces API, which
+    Code fixes for Stipulate.Analyzers' diagnostics. They need the Workspaces API, which
     the compiler doesn't provide, so they're kept out of the analyzer assembly (RS1038).
   -->
   <PropertyGroup>
@@ -15,13 +15,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\ParameterValidation.Analyzers\RestateProperties.cs" Link="Linked\RestateProperties.cs" />
-    <Compile Include="..\ParameterValidation.Analyzers\DiagnosticIds.cs" Link="Linked\DiagnosticIds.cs" />
+    <Compile Include="..\Stipulate.Analyzers\RestateProperties.cs" Link="Linked\RestateProperties.cs" />
+    <Compile Include="..\Stipulate.Analyzers\DiagnosticIds.cs" Link="Linked\DiagnosticIds.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- The tests exercise the internal collaborators directly. Internal, so no consumer sees them. -->
-    <InternalsVisibleTo Include="Net.NowhereAtAll.ParameterValidation.CodeFixes.Test" />
+    <InternalsVisibleTo Include="Net.NowhereAtAll.Stipulate.CodeFixes.Test" />
   </ItemGroup>
 
 </Project>

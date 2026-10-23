@@ -1,6 +1,6 @@
-# Contributing to ParameterValidation
+# Contributing to Stipulate
 
-You are here to work on ParameterValidation itself: the weaver, the generator, the analyzer and
+You are here to work on Stipulate itself: the weaver, the generator, the analyzer and
 its code fix, the contracts, their tests and documentation.
 
 | Page | Covers |

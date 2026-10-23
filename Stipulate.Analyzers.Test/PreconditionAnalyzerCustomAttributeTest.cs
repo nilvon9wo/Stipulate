@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>
 /// Custom validation attributes: comparable once described with <c>[ComparableValidation]</c>, and
@@ -76,10 +76,10 @@ public class PreconditionAnalyzerCustomAttributeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAnAttributeInThisProjectIsNotDescribed_ReportsPV2001()
+    public async Task Analyze_WhenAnAttributeInThisProjectIsNotDescribed_ReportsST2001()
     {
         // Arrange
-        DiagnosticMarkup markup = new(Even + ContractSource.ForParameter("Even(2)", "{|PV2001:Even(4)|}", "int"));
+        DiagnosticMarkup markup = new(Even + ContractSource.ForParameter("Even(2)", "{|ST2001:Even(4)|}", "int"));
 
         // Act
         ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
@@ -113,13 +113,13 @@ public class PreconditionAnalyzerCustomAttributeTest
     }
 
     [Theory]
-    [InlineData("NotEmpty", "{|PV1001:MinLength(2)|}", "int[]")]
-    [InlineData("AtLeast(5)", "{|PV1001:AtLeast(6)|}", "int")]
-    [InlineData("", "{|PV1001:Odd|}", "int")]
-    [InlineData("AtMost(5)", "{|PV1001:AtMost(5, IsExclusive = true)|}", "int")]
-    [InlineData("AllowedValues(1, 2, 3)", "{|PV1001:OneOrTwo|}", "int")]
-    [InlineData("AllowedValues(1, 2, 3), OneOrTwo", "{|PV1001:AllowedValues(1)|}", "int")]
-    public async Task Analyze_WhenADescribedImplementationIsStronger_ReportsPV1001(
+    [InlineData("NotEmpty", "{|ST1001:MinLength(2)|}", "int[]")]
+    [InlineData("AtLeast(5)", "{|ST1001:AtLeast(6)|}", "int")]
+    [InlineData("", "{|ST1001:Odd|}", "int")]
+    [InlineData("AtMost(5)", "{|ST1001:AtMost(5, IsExclusive = true)|}", "int")]
+    [InlineData("AllowedValues(1, 2, 3)", "{|ST1001:OneOrTwo|}", "int")]
+    [InlineData("AllowedValues(1, 2, 3), OneOrTwo", "{|ST1001:AllowedValues(1)|}", "int")]
+    public async Task Analyze_WhenADescribedImplementationIsStronger_ReportsST1001(
         string contract,
         string implementation,
         string type
@@ -136,10 +136,10 @@ public class PreconditionAnalyzerCustomAttributeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenADescribedAttributeLeavesABoundUnstated_ReportsPV1002()
+    public async Task Analyze_WhenADescribedAttributeLeavesABoundUnstated_ReportsST1002()
     {
         // Arrange
-        string parameter = $"{{|PV1002:{ContractSource.Parameter}|}}";
+        string parameter = $"{{|ST1002:{ContractSource.Parameter}|}}";
         string usage = ContractSource.ForParameter("Range(5, 100)", "AtLeast(5)", "int", parameter);
         DiagnosticMarkup markup = new(Described + usage);
 
@@ -157,7 +157,7 @@ public class PreconditionAnalyzerCustomAttributeTest
         DiagnosticMarkup markup = new(
             Described
             + "public sealed class AtLeastOrZeroAttribute(int minimum) : AtLeastAttribute(minimum) { }\n"
-            + ContractSource.ForParameter("AtLeast(5)", "AtLeast(5), {|PV2001:AtLeastOrZero(5)|}", "int")
+            + ContractSource.ForParameter("AtLeast(5)", "AtLeast(5), {|ST2001:AtLeastOrZero(5)|}", "int")
         );
 
         // Act
@@ -172,7 +172,7 @@ public class PreconditionAnalyzerCustomAttributeTest
     [InlineData("true")]
     [InlineData("new[] { 1 }")]
     [InlineData("'a'")]
-    public async Task Analyze_WhenAUsagesArgumentIsNotANumber_ReportsPV2001(string argument)
+    public async Task Analyze_WhenAUsagesArgumentIsNotANumber_ReportsST2001(string argument)
     {
         // Arrange
         const string declaration = """
@@ -184,7 +184,7 @@ public class PreconditionAnalyzerCustomAttributeTest
 
             """;
         DiagnosticMarkup markup = new(
-            declaration + ContractSource.ForParameter("AtLeast(1)", $"{{|PV2001:AtLeast({argument})|}}", "int")
+            declaration + ContractSource.ForParameter("AtLeast(1)", $"{{|ST2001:AtLeast({argument})|}}", "int")
         );
 
         // Act
@@ -195,7 +195,7 @@ public class PreconditionAnalyzerCustomAttributeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAnAttributeFromAPackageIsNotDescribed_ReportsPV2002()
+    public async Task Analyze_WhenAnAttributeFromAPackageIsNotDescribed_ReportsST2002()
     {
         // Arrange
         MetadataReference vendor = TestCompilation.CompileToImage(Vendor, "Vendor");
@@ -209,7 +209,7 @@ public class PreconditionAnalyzerCustomAttributeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAnAttributeFromAProjectReferenceIsNotDescribed_ReportsPV2001()
+    public async Task Analyze_WhenAnAttributeFromAProjectReferenceIsNotDescribed_ReportsST2001()
     {
         // Arrange
         MetadataReference vendor = TestCompilation
@@ -227,7 +227,7 @@ public class PreconditionAnalyzerCustomAttributeTest
     [Theory]
     [InlineData("/repo/Vendor/bin/Debug/Vendor.dll")]
     [InlineData(@"\repo\Vendor\bin\Debug\Vendor.dll")]
-    public async Task Analyze_WhenAnAttributeFromAFileUnderTheSolutionRootIsNotDescribed_ReportsPV2001(string filePath)
+    public async Task Analyze_WhenAnAttributeFromAFileUnderTheSolutionRootIsNotDescribed_ReportsST2001(string filePath)
     {
         // Arrange
         MetadataReference vendor = TestCompilation.CompileToImage(Vendor, "Vendor", filePath);
@@ -244,7 +244,7 @@ public class PreconditionAnalyzerCustomAttributeTest
     [InlineData(RepositoryRoot, "/home/me/.nuget/packages/vendor/1.0.0/lib/Vendor.dll")]
     [InlineData(" ", "/repo/Vendor/bin/Debug/Vendor.dll")]
     [InlineData(null, "/repo/Vendor/bin/Debug/Vendor.dll")]
-    public async Task Analyze_WhenAnAttributeFromAFileOutsideTheSolutionRootIsNotDescribed_ReportsPV2002(
+    public async Task Analyze_WhenAnAttributeFromAFileOutsideTheSolutionRootIsNotDescribed_ReportsST2002(
         string? solutionRoot,
         string filePath
     )
@@ -270,7 +270,7 @@ public class PreconditionAnalyzerCustomAttributeTest
         // Arrange
         MetadataReference vendor = TestCompilation.CompileToImage(Vendor, "Vendor");
         DiagnosticMarkup markup = new(
-            VendorDescription + ContractSource.ForParameter("Vendor.NonEmpty", "{|PV1001:MinLength(2)|}", "int[]")
+            VendorDescription + ContractSource.ForParameter("Vendor.NonEmpty", "{|ST1001:MinLength(2)|}", "int[]")
         );
 
         // Act
@@ -287,7 +287,7 @@ public class PreconditionAnalyzerCustomAttributeTest
         MetadataReference vendor = TestCompilation.CompileToImage(Vendor, "Vendor");
         MetadataReference descriptions =
             TestCompilation.CompileToImage(VendorDescription, "Descriptions", references: vendor);
-        string usage = ContractSource.ForParameter("Vendor.NonEmpty", "{|PV1001:MinLength(2)|}", "int[]");
+        string usage = ContractSource.ForParameter("Vendor.NonEmpty", "{|ST1001:MinLength(2)|}", "int[]");
         DiagnosticMarkup markup = new(usage);
 
         // Act
@@ -302,12 +302,12 @@ public class PreconditionAnalyzerCustomAttributeTest
     {
         // Arrange
         const string declaration = """
-            [{|PV2003:ComparableValidation(ValidationDimensions.Length, ValidationComparison.LowerBound)|}]
+            [{|ST2003:ComparableValidation(ValidationDimensions.Length, ValidationComparison.LowerBound)|}]
             public sealed class NoBoundAttribute(int length) : ValidationAttribute { public int Length => length; }
 
             """;
         DiagnosticMarkup markup = new(
-            declaration + ContractSource.ForParameter("NoBound(1)", "{|PV2001:NoBound(0)|}", "int[]")
+            declaration + ContractSource.ForParameter("NoBound(1)", "{|ST2001:NoBound(0)|}", "int[]")
         );
 
         // Act

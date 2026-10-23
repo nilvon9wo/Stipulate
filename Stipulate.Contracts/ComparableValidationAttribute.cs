@@ -1,10 +1,10 @@
 using System;
 
-namespace Net.NowhereAtAll.ParameterValidation.Contracts;
+namespace Net.NowhereAtAll.Stipulate.Contracts;
 
 /// <summary>
 /// Describes one way in which a <c>System.ComponentModel.DataAnnotations.ValidationAttribute</c>
-/// restricts the values it accepts, so that the ParameterValidation analyzer can tell whether an
+/// restricts the values it accepts, so that the Stipulate analyzer can tell whether an
 /// implementation's attributes accept everything its contract's attributes accept.
 /// </summary>
 /// <remarks>

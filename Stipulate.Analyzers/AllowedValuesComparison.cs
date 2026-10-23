@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.Stipulate.Analyzers;
 
 /// <summary>A list of allowed values: a shorter one is stronger.</summary>
 internal sealed class AllowedValuesComparison : IConstraintComparing

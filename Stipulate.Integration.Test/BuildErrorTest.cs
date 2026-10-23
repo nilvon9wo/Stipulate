@@ -1,7 +1,7 @@
-namespace Net.NowhereAtAll.ParameterValidation.Integration.Test;
+namespace Net.NowhereAtAll.Stipulate.Integration.Test;
 
 /// <summary>
-/// The errors a consumer's build reports, with their codes, when ParameterValidation can't do its job.
+/// The errors a consumer's build reports, with their codes, when Stipulate can't do its job.
 /// </summary>
 public class BuildErrorTest
 {
@@ -17,22 +17,22 @@ public class BuildErrorTest
         """;
 
     [Fact]
-    public void Build_WhenTheWeaverHasNotBeenBuilt_ReportsPV0005()
+    public void Build_WhenTheWeaverHasNotBeenBuilt_ReportsST0005()
     {
         // Arrange
         using ConsumerProject project = ConsumerProject.Create(Program);
         string missing = Path.Combine(project.Path, "missing", "Weaver.dll");
 
         // Act
-        ProcessResult build = project.Build($"ParameterValidationWeaverPath={missing}");
+        ProcessResult build = project.Build($"StipulateWeaverPath={missing}");
 
         // Assert
         Assert.NotEqual(0, build.ExitCode);
-        Assert.Contains("error PV0005", build.Output, StringComparison.Ordinal);
+        Assert.Contains("error ST0005", build.Output, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Build_WhenTheWeaverCannotStart_ReportsPV0004()
+    public void Build_WhenTheWeaverCannotStart_ReportsST0004()
     {
         // Arrange - dotnet refuses to run a file that isn't an assembly
         using ConsumerProject project = ConsumerProject.Create(Program);
@@ -40,15 +40,15 @@ public class BuildErrorTest
         string broken = Path.Combine(project.Path, "Broken.dll");
 
         // Act
-        ProcessResult build = project.Build($"ParameterValidationWeaverPath={broken}");
+        ProcessResult build = project.Build($"StipulateWeaverPath={broken}");
 
         // Assert
         Assert.NotEqual(0, build.ExitCode);
-        Assert.Contains("error PV0004", build.Output, StringComparison.Ordinal);
+        Assert.Contains("error ST0004", build.Output, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Build_WhenAnImplementationDropsAPrecondition_ReportsPV1002()
+    public void Build_WhenAnImplementationDropsAPrecondition_ReportsST1002()
     {
         // Arrange - the analyzer runs in the build, and its warnings fail it
         using ConsumerProject project = ConsumerProject.Create("""
@@ -69,6 +69,6 @@ public class BuildErrorTest
 
         // Assert
         Assert.NotEqual(0, build.ExitCode);
-        Assert.Contains("error PV1002", build.Output, StringComparison.Ordinal);
+        Assert.Contains("error ST1002", build.Output, StringComparison.Ordinal);
     }
 }

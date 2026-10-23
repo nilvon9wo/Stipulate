@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>Recognising a <c>[ComparableValidation]</c>.</summary>
 public class ComparableValidationMarkerTest

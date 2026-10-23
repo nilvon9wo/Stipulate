@@ -1,4 +1,4 @@
-# ParameterValidation
+# Stipulate
 
 Make `System.ComponentModel.DataAnnotations` validation attributes on method parameters mean
 something: enforce them at run time, and check at compile time that implementations and overrides
@@ -12,7 +12,7 @@ public interface IMultiplier
 
 public class Multiplier : IMultiplier
 {
-    // error PV1001: Parameter 'array' of 'Multiplier.Multiply(int[])' strengthens the
+    // error ST1001: Parameter 'array' of 'Multiplier.Multiply(int[])' strengthens the
     // precondition of 'IMultiplier.Multiply(int[])': [MinLength(2)] requires Length >= 2,
     // but the contract accepts Length >= 1
     public int[] Multiply([MinLength(2)] int[] array) => array;
@@ -23,15 +23,15 @@ public class Multiplier : IMultiplier
 
 | Project | What it does |
 |---|---|
-| `ParameterValidation.Weaver` | Rewrites each compiled assembly's IL so attributed methods validate their own arguments (the default). |
-| `ParameterValidation.Generator` | Alternatively, intercepts call sites at compile time so callers validate the arguments they pass. |
-| `ParameterValidation.Analyzers` | Checks implementations and overrides against their contracts, live in the IDE and in the build. |
-| `ParameterValidation.CodeFixes` | IDE quick fix that restates a contract's missing attribute. |
-| `ParameterValidation.Contracts` | `[ComparableValidation]`, which describes a custom validation attribute so the analyzer can compare it. |
+| `Stipulate.Weaver` | Rewrites each compiled assembly's IL so attributed methods validate their own arguments (the default). |
+| `Stipulate.Generator` | Alternatively, intercepts call sites at compile time so callers validate the arguments they pass. |
+| `Stipulate.Analyzers` | Checks implementations and overrides against their contracts, live in the IDE and in the build. |
+| `Stipulate.CodeFixes` | IDE quick fix that restates a contract's missing attribute. |
+| `Stipulate.Contracts` | `[ComparableValidation]`, which describes a custom validation attribute so the analyzer can compare it. |
 
 `ArrayFoo` and `ArrayFooTest` are the sample that inspired the project.
 
-Choose the run-time enforcement with the `ParameterValidationMode` MSBuild property: `Weaving`
+Choose the run-time enforcement with the `StipulateMode` MSBuild property: `Weaving`
 (default), `Interceptors` or `None`. See [enforcement modes](docs/use/enforcement-modes.md).
 
 ## The rules
@@ -41,12 +41,12 @@ contract promises (the Liskov substitution principle).
 
 | ID | Severity | Meaning |
 |---|---|---|
-| [PV1001](docs/rules/PV1001.md) | Error | The implementation's attribute rejects something the contract accepts. |
-| [PV1002](docs/rules/PV1002.md) | Warning | The implementation doesn't restate one of the contract's attributes. Restate it, or state a weaker constraint for each of its bounds (e.g. `[MinLength(0)]`, `[MaxLength]`). |
-| [PV1003](docs/rules/PV1003.md) | Error | The implementation weakens a guarantee: what a getter, `out` or `ref` parameter hands back. |
-| [PV2001](docs/rules/PV2001.md) | Error | An attribute declared in this solution can't be compared; describe it with `[ComparableValidation]`. |
-| [PV2002](docs/rules/PV2002.md) | Error | An attribute from outside the solution can't be compared; repeat it exactly, or describe it from your assembly. |
-| [PV2003](docs/rules/PV2003.md) | Error | A `[ComparableValidation]` description is invalid. |
+| [ST1001](docs/rules/ST1001.md) | Error | The implementation's attribute rejects something the contract accepts. |
+| [ST1002](docs/rules/ST1002.md) | Warning | The implementation doesn't restate one of the contract's attributes. Restate it, or state a weaker constraint for each of its bounds (e.g. `[MinLength(0)]`, `[MaxLength]`). |
+| [ST1003](docs/rules/ST1003.md) | Error | The implementation weakens a guarantee: what a getter, `out` or `ref` parameter hands back. |
+| [ST2001](docs/rules/ST2001.md) | Error | An attribute declared in this solution can't be compared; describe it with `[ComparableValidation]`. |
+| [ST2002](docs/rules/ST2002.md) | Error | An attribute from outside the solution can't be compared; repeat it exactly, or describe it from your assembly. |
+| [ST2003](docs/rules/ST2003.md) | Error | A `[ComparableValidation]` description is invalid. |
 
 Parameters, properties and indexers are checked, for interface implementations (implicit, explicit,
 inherited and `static abstract`) and overrides. A property's attributes are preconditions of its
@@ -56,7 +56,7 @@ for describing your own.
 
 ## Documentation
 
-[docs/](docs/README.md): using ParameterValidation, every rule with an example and its fix, and
+[docs/](docs/README.md): using Stipulate, every rule with an example and its fix, and
 contributing. Every C# example in it, and in this README, is compiled by a test that checks the
 analyzer reports exactly what the example shows.
 

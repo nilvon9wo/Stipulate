@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <!-- The tests exercise the internal collaborators directly. Internal, so no consumer sees them. -->
-    <InternalsVisibleTo Include="Net.NowhereAtAll.ParameterValidation.Weaver.Test" />
+    <InternalsVisibleTo Include="Net.NowhereAtAll.Stipulate.Weaver.Test" />
   </ItemGroup>
 
 </Project>

@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <!-- The tests exercise the internal collaborators directly. Internal, so no consumer sees them. -->
-    <InternalsVisibleTo Include="Net.NowhereAtAll.ParameterValidation.Analyzers.Test" />
+    <InternalsVisibleTo Include="Net.NowhereAtAll.Stipulate.Analyzers.Test" />
   </ItemGroup>
 
 </Project>

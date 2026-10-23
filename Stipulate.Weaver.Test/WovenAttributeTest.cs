@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.Stipulate.Weaver.Test;
 
 /// <summary>
 /// The woven check rebuilds each attribute from the constants stored in metadata: every kind of

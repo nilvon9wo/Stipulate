@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Contracts;
+namespace Net.NowhereAtAll.Stipulate.Contracts;
 
 /// <summary>
 /// The dimensions the analyzer uses to describe the built-in <c>DataAnnotations</c> attributes.

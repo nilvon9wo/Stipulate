@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ParameterValidation.Testing\ParameterValidation.Testing.csproj" />
-    <ProjectReference Include="..\ParameterValidation.Generator\ParameterValidation.Generator.csproj" />
+    <ProjectReference Include="..\Stipulate.Testing\Stipulate.Testing.csproj" />
+    <ProjectReference Include="..\Stipulate.Generator\Stipulate.Generator.csproj" />
   </ItemGroup>
 
   <ItemGroup>

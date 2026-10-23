@@ -15,104 +15,104 @@
   </PropertyGroup>
 
   <!--
-    Like XFTY, every ParameterValidation assembly and namespace lives under Net.NowhereAtAll, so
-    ParameterValidation.Weaver builds Net.NowhereAtAll.ParameterValidation.Weaver.dll; the folders,
+    Like XFTY, every Stipulate assembly and namespace lives under Net.NowhereAtAll, so
+    Stipulate.Weaver builds Net.NowhereAtAll.Stipulate.Weaver.dll; the folders,
     projects and (later) package IDs keep the short name.
   -->
-  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('ParameterValidation.'))">
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Stipulate.'))">
     <AssemblyName>Net.NowhereAtAll.$(MSBuildProjectName)</AssemblyName>
     <RootNamespace>Net.NowhereAtAll.$(MSBuildProjectName)</RootNamespace>
   </PropertyGroup>
 
   <!--
-    Coverage is not an optional extra: every `dotnet test` of a ParameterValidation.*.Test
+    Coverage is not an optional extra: every `dotnet test` of a Stipulate.*.Test
     project, local or CI, measures the one package that project tests and fails below 100% line
     AND branch coverage (docs/contribute/coverage-standards.md).
 
     - coverlet.MTP, not coverlet.collector: global.json selects the Microsoft Testing Platform
       runner, under which coverlet.collector silently measures nothing.
-    - The include filter is derived from the project name (ParameterValidation.Weaver.Test
-      measures Net.NowhereAtAll.ParameterValidation.Weaver), so neither the test assembly, the
-      shared ParameterValidation.Testing helpers nor xunit's own DLLs drag the numbers down.
+    - The include filter is derived from the project name (Stipulate.Weaver.Test
+      measures Net.NowhereAtAll.Stipulate.Weaver), so neither the test assembly, the
+      shared Stipulate.Testing helpers nor xunit's own DLLs drag the numbers down.
     - The exclude filter must be given explicitly. Left to its default, coverlet.MTP excludes every
       assembly loaded alongside the tests, cut to its first two name segments: one
-      Net.NowhereAtAll.ParameterValidation.* assembly becomes [Net.NowhereAtAll.*]*, which excludes
+      Net.NowhereAtAll.Stipulate.* assembly becomes [Net.NowhereAtAll.*]*, which excludes
       the measured assembly too, and the threshold then fails on "No coverable data".
-    - ParameterValidation.Integration.Test builds a consumer project with `dotnet build`; it
+    - Stipulate.Integration.Test builds a consumer project with `dotnet build`; it
       measures no one assembly, so it is not measured.
     - Running a filtered subset (one class, say) cannot reach 100%: pass
-      `-p:ParameterValidationCoverage=false` to `dotnet test` for those runs.
+      `-p:StipulateCoverage=false` to `dotnet test` for those runs.
   -->
-  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('ParameterValidation.')) And $(MSBuildProjectName.EndsWith('.Test')) And '$(MSBuildProjectName)' != 'ParameterValidation.Integration.Test'">
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Stipulate.')) And $(MSBuildProjectName.EndsWith('.Test')) And '$(MSBuildProjectName)' != 'Stipulate.Integration.Test'">
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
-    <ParameterValidationCoverage Condition="'$(ParameterValidationCoverage)' == ''">true</ParameterValidationCoverage>
-    <ParameterValidationCoveredAssembly>Net.NowhereAtAll.$(MSBuildProjectName.Substring(0, $(MSBuildProjectName.LastIndexOf('.Test'))))</ParameterValidationCoveredAssembly>
+    <StipulateCoverage Condition="'$(StipulateCoverage)' == ''">true</StipulateCoverage>
+    <StipulateCoveredAssembly>Net.NowhereAtAll.$(MSBuildProjectName.Substring(0, $(MSBuildProjectName.LastIndexOf('.Test'))))</StipulateCoveredAssembly>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(ParameterValidationCoverage)' == 'true' And '$(ParameterValidationCoveredAssembly)' != ''">
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet --coverlet-include "[$(ParameterValidationCoveredAssembly)]*" --coverlet-exclude "[Net.NowhereAtAll.ParameterValidation.Testing]*" --coverlet-output-format cobertura --coverlet-threshold 100 --coverlet-threshold-type line --coverlet-threshold-type branch</TestingPlatformCommandLineArguments>
+  <PropertyGroup Condition="'$(StipulateCoverage)' == 'true' And '$(StipulateCoveredAssembly)' != ''">
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet --coverlet-include "[$(StipulateCoveredAssembly)]*" --coverlet-exclude "[Net.NowhereAtAll.Stipulate.Testing]*" --coverlet-output-format cobertura --coverlet-threshold 100 --coverlet-threshold-type line --coverlet-threshold-type branch</TestingPlatformCommandLineArguments>
   </PropertyGroup>
-  <ItemGroup Condition="'$(ParameterValidationCoveredAssembly)' != ''">
+  <ItemGroup Condition="'$(StipulateCoveredAssembly)' != ''">
     <PackageReference Include="coverlet.MTP" Version="10.1.0" />
   </ItemGroup>
 
   <!--
     Enforce DataAnnotations validation attributes on method parameters. Two interchangeable approaches:
 
-      Weaving       (default) After each project compiles, ParameterValidation.Weaver rewrites the
+      Weaving       (default) After each project compiles, Stipulate.Weaver rewrites the
                     assembly's IL so every attributed method validates its own arguments.
                     See Directory.Build.targets.
-      Interceptors  ParameterValidation.Generator intercepts each call site at compile time, so
+      Interceptors  Stipulate.Generator intercepts each call site at compile time, so
                     only callers built in this folder are validated.
       None          No enforcement.
 
-    Override per build with e.g. -p:ParameterValidationMode=Interceptors.
+    Override per build with e.g. -p:StipulateMode=Interceptors.
   -->
   <PropertyGroup>
-    <ParameterValidationMode Condition="'$(ParameterValidationMode)' == ''">Weaving</ParameterValidationMode>
-    <IsParameterValidationTool Condition="$(MSBuildProjectName.StartsWith('ParameterValidation.'))">true</IsParameterValidationTool>
+    <StipulateMode Condition="'$(StipulateMode)' == ''">Weaving</StipulateMode>
+    <IsStipulateTool Condition="$(MSBuildProjectName.StartsWith('Stipulate.'))">true</IsStipulateTool>
   </PropertyGroup>
 
   <!--
-    Whatever the mode, ParameterValidation.Analyzers checks that implementations and overrides
-    don't strengthen their contract's preconditions or weaken its guarantees (PV1001-PV1003), live
-    in the IDE and in the build; ParameterValidation.CodeFixes offers to restate a missing attribute.
-    ParameterValidation.Contracts provides [ComparableValidation], which describes a custom
+    Whatever the mode, Stipulate.Analyzers checks that implementations and overrides
+    don't strengthen their contract's preconditions or weaken its guarantees (ST1001-ST1003), live
+    in the IDE and in the build; Stipulate.CodeFixes offers to restate a missing attribute.
+    Stipulate.Contracts provides [ComparableValidation], which describes a custom
     validation attribute so the analyzer can compare it.
 
-    Assemblies whose files are under ParameterValidationSolutionRoot count as part of the
-    solution: an attribute declared in one that can't be compared is reported as PV2001 ("add a
-    [ComparableValidation]") rather than PV2002 ("it's someone else's; describe it from your
+    Assemblies whose files are under StipulateSolutionRoot count as part of the
+    solution: an attribute declared in one that can't be compared is reported as ST2001 ("add a
+    [ComparableValidation]") rather than ST2002 ("it's someone else's; describe it from your
     assembly").
   -->
   <PropertyGroup>
-    <ParameterValidationSolutionRoot Condition="'$(ParameterValidationSolutionRoot)' == ''">$(MSBuildThisFileDirectory)</ParameterValidationSolutionRoot>
+    <StipulateSolutionRoot Condition="'$(StipulateSolutionRoot)' == ''">$(MSBuildThisFileDirectory)</StipulateSolutionRoot>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(IsParameterValidationTool)' != 'true'">
-    <CompilerVisibleProperty Include="ParameterValidationSolutionRoot" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)ParameterValidation.Contracts\ParameterValidation.Contracts.csproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)ParameterValidation.Analyzers\ParameterValidation.Analyzers.csproj"
+  <ItemGroup Condition="'$(IsStipulateTool)' != 'true'">
+    <CompilerVisibleProperty Include="StipulateSolutionRoot" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Stipulate.Contracts\Stipulate.Contracts.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Stipulate.Analyzers\Stipulate.Analyzers.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
     <!-- Its code fixes (lightbulbs) only run in the IDE; the compiler ignores them. -->
-    <ProjectReference Include="$(MSBuildThisFileDirectory)ParameterValidation.CodeFixes\ParameterValidation.CodeFixes.csproj"
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Stipulate.CodeFixes\Stipulate.CodeFixes.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(ParameterValidationMode)' == 'Interceptors' And '$(IsParameterValidationTool)' != 'true'">
-    <InterceptorsNamespaces>$(InterceptorsNamespaces);Net.NowhereAtAll.ParameterValidation.Generated</InterceptorsNamespaces>
+  <PropertyGroup Condition="'$(StipulateMode)' == 'Interceptors' And '$(IsStipulateTool)' != 'true'">
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Net.NowhereAtAll.Stipulate.Generated</InterceptorsNamespaces>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(ParameterValidationMode)' == 'Interceptors' And '$(IsParameterValidationTool)' != 'true'">
-    <ProjectReference Include="$(MSBuildThisFileDirectory)ParameterValidation.Generator\ParameterValidation.Generator.csproj"
+  <ItemGroup Condition="'$(StipulateMode)' == 'Interceptors' And '$(IsStipulateTool)' != 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Stipulate.Generator\Stipulate.Generator.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <!-- Build-order only: the weaver must be built before any project it rewrites. -->
-  <ItemGroup Condition="'$(ParameterValidationMode)' == 'Weaving' And '$(IsParameterValidationTool)' != 'true'">
-    <ProjectReference Include="$(MSBuildThisFileDirectory)ParameterValidation.Weaver\ParameterValidation.Weaver.csproj"
+  <ItemGroup Condition="'$(StipulateMode)' == 'Weaving' And '$(IsStipulateTool)' != 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Stipulate.Weaver\Stipulate.Weaver.csproj"
                       ReferenceOutputAssembly="false"
                       Private="false" />
   </ItemGroup>

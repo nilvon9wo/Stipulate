@@ -8,9 +8,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Simplification;
-using Net.NowhereAtAll.ParameterValidation.Analyzers;
+using Net.NowhereAtAll.Stipulate.Analyzers;
 
-namespace Net.NowhereAtAll.ParameterValidation.CodeFixes;
+namespace Net.NowhereAtAll.Stipulate.CodeFixes;
 
 /// <summary>Restates the contract's attributes that diagnostics point to on their declarations.</summary>
 internal static class AttributeRestater

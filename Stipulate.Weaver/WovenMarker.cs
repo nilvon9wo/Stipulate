@@ -1,6 +1,6 @@
 using Mono.Cecil;
 
-namespace Net.NowhereAtAll.ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.Stipulate.Weaver;
 
 /// <summary>
 /// A type added to every woven assembly so that an incremental build, which skips compilation and
@@ -8,7 +8,7 @@ namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 /// </summary>
 internal static class WovenMarker
 {
-    public const string TypeName = "<ParameterValidationWoven>";
+    public const string TypeName = "<StipulateWoven>";
 
     public static bool IsWoven(ModuleDefinition module) => module.Types.Any(static type => type.Name == TypeName);
 

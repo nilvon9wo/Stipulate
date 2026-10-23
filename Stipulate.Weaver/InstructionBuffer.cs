@@ -1,7 +1,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace Net.NowhereAtAll.ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.Stipulate.Weaver;
 
 /// <summary>The instructions to insert at the start of a method, in order.</summary>
 internal sealed class InstructionBuffer

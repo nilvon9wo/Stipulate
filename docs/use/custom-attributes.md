@@ -22,12 +22,12 @@ public class Thermostat : IThermostat
 
 public class OpenThermostat : IThermostat
 {
-    // error PV2001: [AtLeast(0)] can't be compared with the attributes of 'IThermostat.Set(int)'
+    // error ST2001: [AtLeast(0)] can't be compared with the attributes of 'IThermostat.Set(int)'
     public void Set([AtLeast(0)] int degrees) { }
 }
 ```
 
-`[ComparableValidation]`, from `ParameterValidation.Contracts`, describes what an attribute
+`[ComparableValidation]`, from `Stipulate.Contracts`, describes what an attribute
 constrains, so the analyzer can compare it with others.
 
 ## Describing your own attribute
@@ -51,7 +51,7 @@ public class Tagger : ITagger
 
 public class StrictTagger : ITagger
 {
-    // error PV1001: [MinLength(3)] rejects lengths 1 and 2, which the contract accepts
+    // error ST1001: [MinLength(3)] rejects lengths 1 and 2, which the contract accepts
     public void Tag([MinLength(3)] string tag) { }
 }
 ```
@@ -104,7 +104,7 @@ public class OpenThermostat : IThermostat
 public class BoundedThermostat : IThermostat
 {
     // The same lower bound, but [Range(5, 30)] adds an upper one, which the contract doesn't have.
-    // error PV1001: [Range(5, 30)] rejects values above 30, which the contract accepts
+    // error ST1001: [Range(5, 30)] rejects values above 30, which the contract accepts
     public void Set([Range(5, 30)] int degrees) { }
 }
 ```
@@ -135,7 +135,7 @@ public interface ILimiter { void Limit([AtMost(10)] int count); }
 
 public class Limiter : ILimiter
 {
-    // error PV1001: below 10 rejects 10, which the contract accepts
+    // error ST1001: below 10 rejects 10, which the contract accepts
     public void Limit([AtMost(10, IsExclusive = true)] int count) { }
 }
 ```
@@ -182,8 +182,8 @@ public class Labeller : ILabeller
 }
 ```
 
-An undescribed attribute from outside the solution is reported as [PV2002](../rules/PV2002.md)
-rather than [PV2001](../rules/PV2001.md), because the fix differs: the class isn't yours to
+An undescribed attribute from outside the solution is reported as [ST2002](../rules/ST2002.md)
+rather than [ST2001](../rules/ST2001.md), because the fix differs: the class isn't yours to
 describe directly.
 
 ```csharp
@@ -191,7 +191,7 @@ public interface IThermostat { void Set([Vendor.AtLeast(5)] int degrees); }
 
 public class OpenThermostat : IThermostat
 {
-    // error PV2002: [Vendor.AtLeast(0)] can't be compared with the attributes of
+    // error ST2002: [Vendor.AtLeast(0)] can't be compared with the attributes of
     // 'IThermostat.Set(int)', because 'Vendor.AtLeastAttribute' comes from 'Vendor'
     public void Set([Vendor.AtLeast(0)] int degrees) { }
 }
@@ -208,5 +208,5 @@ accepts, so it must describe itself. The same goes for classes derived from the 
 attributes.
 
 A description the analyzer can't use, such as a `LowerBound` with neither a `Value` nor an
-`Argument`, is reported as [PV2003](../rules/PV2003.md), and the attribute is treated as
+`Argument`, is reported as [ST2003](../rules/ST2003.md), and the attribute is treated as
 undescribed.

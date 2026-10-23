@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.Stipulate.Weaver.Test;
 
 /// <summary>
 /// Retrying a file operation while another process has the file open, and only then: a pause is
@@ -57,7 +57,7 @@ public class FileRetryTest
         Assert.Equal("done", result);
         Assert.Equal([Delay], this._pauses);
         Assert.Equal(
-            $"ParameterValidation: Could not read the assembly: {inUse.Message} Retrying (1/2)...",
+            $"Stipulate: Could not read the assembly: {inUse.Message} Retrying (1/2)...",
             this._log.ToString().TrimEnd()
         );
     }

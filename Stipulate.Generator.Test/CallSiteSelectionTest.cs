@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Generator.Test;
+namespace Net.NowhereAtAll.Stipulate.Generator.Test;
 
 /// <summary>
 /// Which calls the generator intercepts: only those to a plain method with validated parameters

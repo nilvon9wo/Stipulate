@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.Stipulate.Analyzers;
 
 /// <summary>
 /// Checks that every implementation of an interface method, property or indexer, and every
@@ -23,7 +23,7 @@ namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 public sealed class PreconditionAnalyzer : DiagnosticAnalyzer
 {
     /// <summary>Set by Directory.Build.props; see <see cref="SolutionMembership"/>.</summary>
-    private const string SolutionRootProperty = "build_property.ParameterValidationSolutionRoot";
+    private const string SolutionRootProperty = "build_property.StipulateSolutionRoot";
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
     [

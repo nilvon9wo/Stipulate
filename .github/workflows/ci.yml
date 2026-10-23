@@ -23,15 +23,15 @@ jobs:
             10.0.x
 
       - name: Restore
-        run: dotnet restore ParameterValidation.slnx
+        run: dotnet restore Stipulate.slnx
 
       - name: Build (strict .editorconfig analyzers enforced)
-        run: dotnet build ParameterValidation.slnx --no-restore
+        run: dotnet build Stipulate.slnx --no-restore
 
       # Every whitespace/formatting rule, and a second pass over the style and
       # naming analyzers the build already runs.
       - name: Verify code style, naming, and formatting (dotnet format)
-        run: dotnet format ParameterValidation.slnx --verify-no-changes --severity info
+        run: dotnet format Stipulate.slnx --verify-no-changes --severity info
 
       # IDE0005 (unnecessary using) never fails `dotnet build`, even with
       # EnforceCodeStyleInBuild. ReSharper's inspectcode catches it and more;
@@ -48,23 +48,23 @@ jobs:
       - name: Verify line length and wrapped ')' placement
         run: python3 scripts/check-line-layout.py
 
-      # Every ParameterValidation.*.Test project also enforces 100% line and
+      # Every Stipulate.*.Test project also enforces 100% line and
       # branch coverage of its package (coverlet.MTP, wired in
-      # Directory.Build.props); ParameterValidation.Integration.Test builds a
+      # Directory.Build.props); Stipulate.Integration.Test builds a
       # consumer project in each mode. run-tests.py is dotnet test plus one
       # guarantee: a module that never started is reported INCONCLUSIVE, never
       # hidden behind "Passed!".
       - name: Test
-        run: python3 scripts/run-tests.py --solution ParameterValidation.slnx --no-build
+        run: python3 scripts/run-tests.py --solution Stipulate.slnx --no-build
 
       # Optimized IL branches differently from Debug, so 100% coverage in one
       # configuration does not imply it in the other. Testing Release here
       # means CI validates what ships.
       - name: Build (Release)
-        run: dotnet build ParameterValidation.slnx -c Release --no-restore
+        run: dotnet build Stipulate.slnx -c Release --no-restore
 
       - name: Test (Release)
-        run: python3 scripts/run-tests.py --solution ParameterValidation.slnx -c Release --no-build
+        run: python3 scripts/run-tests.py --solution Stipulate.slnx -c Release --no-build
 
       # The documentation examples are checked by the tests above
       # (DocumentationExampleTest); this checks every relative link and anchor.
@@ -99,7 +99,7 @@ jobs:
       # which the Linux job never exercises; the integration tests build a
       # consumer project through exactly that.
       - name: Build
-        run: dotnet build ParameterValidation.slnx
+        run: dotnet build Stipulate.slnx
 
       - name: Test
-        run: python scripts/run-tests.py --solution ParameterValidation.slnx --no-build
+        run: python scripts/run-tests.py --solution Stipulate.slnx --no-build

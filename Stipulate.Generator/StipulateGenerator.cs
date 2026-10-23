@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator;
+namespace Net.NowhereAtAll.Stipulate.Generator;
 
 /// <summary>
 /// Intercepts every call to a method whose parameters are decorated with
@@ -14,7 +14,7 @@ namespace Net.NowhereAtAll.ParameterValidation.Generator;
 /// any other validation failure throws <c>ArgumentException</c>.
 /// </remarks>
 [Generator(LanguageNames.CSharp)]
-public sealed class ParameterValidationGenerator : IIncrementalGenerator
+public sealed class StipulateGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {

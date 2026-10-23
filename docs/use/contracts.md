@@ -23,7 +23,7 @@ public class WideScale : IScale
 
 public class NarrowScale : IScale
 {
-    // error PV1001: [Range(2, 10)] rejects 1, which the contract accepts
+    // error ST1001: [Range(2, 10)] rejects 1, which the contract accepts
     public void Set([Range(2, 10)] int level) { }
 }
 ```
@@ -40,8 +40,8 @@ public interface IGreeter
 
 public class SilentGreeter : IGreeter
 {
-    // warning PV1002: doesn't restate [MinLength(2)]
-    // warning PV1002: doesn't restate [MaxLength(20)]
+    // warning ST1002: doesn't restate [MinLength(2)]
+    // warning ST1002: doesn't restate [MaxLength(20)]
     public void Greet([Required] string name) { }
 }
 
@@ -76,7 +76,7 @@ public class SmallInventory : IInventory
 
 public class BottomlessInventory : IInventory
 {
-    // error PV1003: [Range(0, 2000)] allows 2000, which the contract rules out
+    // error ST1003: [Range(0, 2000)] allows 2000, which the contract rules out
     [Range(0, 2000)]
     public int Count => 3;
 }
@@ -112,6 +112,6 @@ public class Book : ITitled
 - A list of `[AllowedValues]` may grow; a list of `[DeniedValues]` may shrink.
 
 Any other validation attribute is compared only with identical usages of itself, and reported as
-[PV2001](../rules/PV2001.md) or [PV2002](../rules/PV2002.md) otherwise. Describe it with
+[ST2001](../rules/ST2001.md) or [ST2002](../rules/ST2002.md) otherwise. Describe it with
 `[ComparableValidation]` to compare it like the built-in ones: see
 [custom validation attributes](custom-attributes.md).

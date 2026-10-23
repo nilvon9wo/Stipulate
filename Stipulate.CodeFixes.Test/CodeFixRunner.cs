@@ -5,10 +5,10 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
-using Net.NowhereAtAll.ParameterValidation.Analyzers;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Analyzers;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.CodeFixes.Test;
+namespace Net.NowhereAtAll.Stipulate.CodeFixes.Test;
 
 /// <summary>Applies <see cref="RestateAttributeCodeFix"/> to C# source in an in-memory workspace.</summary>
 internal static class CodeFixRunner

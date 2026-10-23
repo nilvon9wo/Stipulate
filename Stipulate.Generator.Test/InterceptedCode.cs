@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator.Test;
+namespace Net.NowhereAtAll.Stipulate.Generator.Test;
 
 /// <summary>Calls into an intercepted assembly, letting the exceptions its checks throw escape unwrapped.</summary>
 internal static class InterceptedCode

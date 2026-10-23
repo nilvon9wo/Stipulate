@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator;
+namespace Net.NowhereAtAll.Stipulate.Generator;
 
 /// <summary>Reads the call site of an invocation of a method whose parameters have validation attributes.</summary>
 internal static class CallSiteReader

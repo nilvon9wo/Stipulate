@@ -3,14 +3,14 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Net.NowhereAtAll.ParameterValidation.Analyzers;
+using Net.NowhereAtAll.Stipulate.Analyzers;
 
-namespace Net.NowhereAtAll.ParameterValidation.Testing;
+namespace Net.NowhereAtAll.Stipulate.Testing;
 
 /// <summary>Runs <see cref="PreconditionAnalyzer"/> over C# source in memory.</summary>
 public static class AnalyzerRunner
 {
-    public const string SolutionRootProperty = "build_property.ParameterValidationSolutionRoot";
+    public const string SolutionRootProperty = "build_property.StipulateSolutionRoot";
 
     public static Task<ImmutableArray<Diagnostic>> RunAsync(
         DiagnosticMarkup markup,
@@ -26,7 +26,7 @@ public static class AnalyzerRunner
         => RunAsync(markup.Source, solutionRoot, references);
 
     /// <param name="source">Source that must compile, including its usings.</param>
-    /// <param name="solutionRoot">The <c>ParameterValidationSolutionRoot</c> build property, if set.</param>
+    /// <param name="solutionRoot">The <c>StipulateSolutionRoot</c> build property, if set.</param>
     /// <param name="references">Assemblies the source references, beyond the platform's.</param>
     public static async Task<ImmutableArray<Diagnostic>> RunAsync(
         [StringSyntax("C#")] string source,

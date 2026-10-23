@@ -2,13 +2,13 @@ using System.Collections.Immutable;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>
 /// One <c>```csharp</c> example from README.md or docs/, and the diagnostics its comments say the
-/// analyzer reports on it: a comment such as <c>// error PV1001: ...</c> or <c>// warning PV1002</c>.
+/// analyzer reports on it: a comment such as <c>// error ST1001: ...</c> or <c>// warning ST1002</c>.
 /// </summary>
 /// <remarks>
 /// A fence just after <c>&lt;!-- sketch --&gt;</c> is illustrative and isn't checked. One just after
@@ -38,7 +38,7 @@ internal sealed partial record DocumentationExample(
     private const string FencePattern = @"^(?<indent>[ \t]*)(?:<!-- (?<marker>[^>]*?) -->\n\k<indent>)?"
         + @"```csharp\n(?<code>.*?)\n\k<indent>```";
 
-    private const string ShownDiagnosticPattern = @"//\s*(?<severity>error|warning) (?<id>PV\d{4})\b";
+    private const string ShownDiagnosticPattern = @"//\s*(?<severity>error|warning) (?<id>ST\d{4})\b";
 
     /// <summary>The examples the analyzer must check: every page's, except sketches and references.</summary>
     public static IEnumerable<DocumentationExample> ReadAll() => Pages().SelectMany(ReadPage);
@@ -46,7 +46,7 @@ internal sealed partial record DocumentationExample(
     public static DocumentationExample Read(string page, int line)
         => ReadPage(page).Single(example => example.Line == line);
 
-    /// <summary>What the comments show, as sorted <c>"error PV1001"</c> entries.</summary>
+    /// <summary>What the comments show, as sorted <c>"error ST1001"</c> entries.</summary>
     public ImmutableArray<string> ShownDiagnostics
         => [.. ShownDiagnostic().Matches(this.Code).Select(Describe).Order(StringComparer.Ordinal)];
 

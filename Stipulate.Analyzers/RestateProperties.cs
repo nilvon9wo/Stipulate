@@ -1,8 +1,8 @@
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.Stipulate.Analyzers;
 
 /// <summary>
-/// Set on a missing attribute's diagnostic (PV1002, or PV1003 when the attribute is missing
-/// altogether) to tell ParameterValidation.CodeFixes, which links this file, which of the contract's
+/// Set on a missing attribute's diagnostic (ST1002, or ST1003 when the attribute is missing
+/// altogether) to tell Stipulate.CodeFixes, which links this file, which of the contract's
 /// attributes to restate.
 /// </summary>
 internal static class RestateProperties

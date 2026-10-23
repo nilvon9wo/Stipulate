@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator;
+namespace Net.NowhereAtAll.Stipulate.Generator;
 
 /// <summary>
 /// An immutable array compared by its elements, so that the incremental pipeline can tell an

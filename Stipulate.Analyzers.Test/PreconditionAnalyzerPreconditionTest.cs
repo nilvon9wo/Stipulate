@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>
 /// How the built-in DataAnnotations attributes compare as preconditions: an implementation may
@@ -40,23 +40,23 @@ public class PreconditionAnalyzerPreconditionTest
     }
 
     [Theory]
-    [InlineData("MinLength(1)", "{|PV1001:MinLength(2)|}", "int[]")]
-    [InlineData("Range(1, 10)", "{|PV1001:Range(2, 10)|}", "int")]
-    [InlineData("Range(1, 10)", "{|PV1001:Range(1, 10, MinimumIsExclusive = true)|}", "int")]
-    [InlineData("Range(1, 10)", "{|PV1001:Range(1, 10, MaximumIsExclusive = true)|}", "int")]
-    [InlineData("AllowedValues(1, 2)", "{|PV1001:AllowedValues(1)|}", "int")]
-    [InlineData("DeniedValues(1, 2)", "{|PV1001:DeniedValues(1, 2, 3)|}", "int")]
-    [InlineData("AllowedValues(1, 2)", "{|PV1001:DeniedValues(2)|}", "int")]
-    [InlineData("Length(1, 10)", "MinLength(1), {|PV1001:MaxLength(5)|}", "string")]
-    [InlineData("Required(AllowEmptyStrings = true)", "{|PV1001:Required|}", "string")]
-    [InlineData("", "{|PV1001:Required|}", "string")]
-    [InlineData("", "{|PV1001:StringLength(10)|}", "string")]
-    [InlineData("", "{|PV1001:AllowedValues(1)|}", "int")]
-    [InlineData("", "{|PV1001:DeniedValues(1)|}", "int")]
-    [InlineData("DeniedValues(1)", "{|PV1001:AllowedValues(2)|}", "int")]
-    [InlineData("MinLength(1), Length(2, 10)", "{|PV1001:MinLength(3)|}, MaxLength(10)", "string")]
-    [InlineData("Length(2, 10), MinLength(1)", "{|PV1001:MinLength(3)|}, MaxLength(10)", "string")]
-    public async Task Analyze_WhenTheImplementationIsStronger_ReportsPV1001OnItsAttribute(
+    [InlineData("MinLength(1)", "{|ST1001:MinLength(2)|}", "int[]")]
+    [InlineData("Range(1, 10)", "{|ST1001:Range(2, 10)|}", "int")]
+    [InlineData("Range(1, 10)", "{|ST1001:Range(1, 10, MinimumIsExclusive = true)|}", "int")]
+    [InlineData("Range(1, 10)", "{|ST1001:Range(1, 10, MaximumIsExclusive = true)|}", "int")]
+    [InlineData("AllowedValues(1, 2)", "{|ST1001:AllowedValues(1)|}", "int")]
+    [InlineData("DeniedValues(1, 2)", "{|ST1001:DeniedValues(1, 2, 3)|}", "int")]
+    [InlineData("AllowedValues(1, 2)", "{|ST1001:DeniedValues(2)|}", "int")]
+    [InlineData("Length(1, 10)", "MinLength(1), {|ST1001:MaxLength(5)|}", "string")]
+    [InlineData("Required(AllowEmptyStrings = true)", "{|ST1001:Required|}", "string")]
+    [InlineData("", "{|ST1001:Required|}", "string")]
+    [InlineData("", "{|ST1001:StringLength(10)|}", "string")]
+    [InlineData("", "{|ST1001:AllowedValues(1)|}", "int")]
+    [InlineData("", "{|ST1001:DeniedValues(1)|}", "int")]
+    [InlineData("DeniedValues(1)", "{|ST1001:AllowedValues(2)|}", "int")]
+    [InlineData("MinLength(1), Length(2, 10)", "{|ST1001:MinLength(3)|}, MaxLength(10)", "string")]
+    [InlineData("Length(2, 10), MinLength(1)", "{|ST1001:MinLength(3)|}, MaxLength(10)", "string")]
+    public async Task Analyze_WhenTheImplementationIsStronger_ReportsST1001OnItsAttribute(
         string contract,
         string implementation,
         string type
@@ -78,14 +78,14 @@ public class PreconditionAnalyzerPreconditionTest
     [InlineData("Range(1, 10)", "", "int")]
     [InlineData("Length(1, 10)", "MinLength(1)", "string")]
     [InlineData("AllowedValues(1, 2)", "", "int")]
-    public async Task Analyze_WhenTheImplementationDropsABound_ReportsPV1002OnTheParameter(
+    public async Task Analyze_WhenTheImplementationDropsABound_ReportsST1002OnTheParameter(
         string contract,
         string implementation,
         string type
     )
     {
         // Arrange
-        string parameter = $"{{|PV1002:{ContractSource.Parameter}|}}";
+        string parameter = $"{{|ST1002:{ContractSource.Parameter}|}}";
         DiagnosticMarkup markup = new(ContractSource.ForParameter(contract, implementation, type, parameter));
 
         // Act
@@ -118,10 +118,10 @@ public class PreconditionAnalyzerPreconditionTest
     }
 
     [Fact]
-    public async Task Analyze_WhenABuiltInAttributesArgumentIsNotOfTheRightKind_ReportsPV2002()
+    public async Task Analyze_WhenABuiltInAttributesArgumentIsNotOfTheRightKind_ReportsST2002()
     {
         // Arrange
-        string source = ContractSource.ForParameter("AllowedValues(1)", "{|PV2002:AllowedValues(null)|}", "int");
+        string source = ContractSource.ForParameter("AllowedValues(1)", "{|ST2002:AllowedValues(null)|}", "int");
         DiagnosticMarkup markup = new(source);
 
         // Act
@@ -132,10 +132,10 @@ public class PreconditionAnalyzerPreconditionTest
     }
 
     [Fact]
-    public async Task Analyze_WhenABuiltInAttributeIsNotDescribed_ReportsPV2002()
+    public async Task Analyze_WhenABuiltInAttributeIsNotDescribed_ReportsST2002()
     {
         // Arrange
-        DiagnosticMarkup markup = new(ContractSource.ForParameter("", "{|PV2002:EmailAddress|}", "string"));
+        DiagnosticMarkup markup = new(ContractSource.ForParameter("", "{|ST2002:EmailAddress|}", "string"));
 
         // Act
         ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);

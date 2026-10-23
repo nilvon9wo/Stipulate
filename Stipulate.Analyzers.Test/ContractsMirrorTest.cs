@@ -1,10 +1,10 @@
 using System.Reflection;
-using Net.NowhereAtAll.ParameterValidation.Contracts;
+using Net.NowhereAtAll.Stipulate.Contracts;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>
-/// The analyzer can't reference ParameterValidation.Contracts (it would have to load it into the
+/// The analyzer can't reference Stipulate.Contracts (it would have to load it into the
 /// compiler), so it mirrors the contracts' enum and constants by value; these keep the two in step.
 /// </summary>
 public class ContractsMirrorTest

@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.Stipulate.Analyzers;
 
 /// <remarks>
 /// In the messages, {0} is the implementation's parameter or property (e.g. "Parameter 'array' of
@@ -8,7 +8,7 @@ namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 /// </remarks>
 internal static class Diagnostics
 {
-    private const string Category = "ParameterValidation";
+    private const string Category = "Stipulate";
     private const string HelpLinkBase = "https://github.com/nilvon9wo/ParameterValidation/blob/main/docs/rules/";
 
     public static readonly DiagnosticDescriptor PreconditionStrengthened = Create(

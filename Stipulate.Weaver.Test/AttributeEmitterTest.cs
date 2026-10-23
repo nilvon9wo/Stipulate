@@ -1,6 +1,6 @@
 using Mono.Cecil;
 
-namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.Stipulate.Weaver.Test;
 
 /// <summary>
 /// The emitters' own refusals. A compiler only stores constants and members the weaver supports,

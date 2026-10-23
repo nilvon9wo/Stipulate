@@ -5,7 +5,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator;
+namespace Net.NowhereAtAll.Stipulate.Generator;
 
 /// <summary>Writes an attribute argument as a C# expression that evaluates to the same value.</summary>
 /// <remarks>

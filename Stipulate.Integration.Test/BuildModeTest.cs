@@ -1,7 +1,7 @@
-namespace Net.NowhereAtAll.ParameterValidation.Integration.Test;
+namespace Net.NowhereAtAll.Stipulate.Integration.Test;
 
 /// <summary>
-/// A real build of a consumer project, in each ParameterValidationMode, and what the program it
+/// A real build of a consumer project, in each StipulateMode, and what the program it
 /// produces then does with an invalid argument.
 /// </summary>
 /// <remarks>
@@ -40,7 +40,7 @@ public class BuildModeTest
     {
         // Arrange
         using ConsumerProject project = ConsumerProject.Create(Program);
-        _ = project.Build($"ParameterValidationMode={mode}").AssertSucceeded();
+        _ = project.Build($"StipulateMode={mode}").AssertSucceeded();
 
         // Act
         ProcessResult run = project.RunProgram().AssertSucceeded();
@@ -60,7 +60,7 @@ public class BuildModeTest
 
         // Assert
         Assert.Contains(
-            "ParameterValidation: wove 1 method(s) in Consumer.dll.",
+            "Stipulate: wove 1 method(s) in Consumer.dll.",
             build.Output,
             StringComparison.Ordinal
         );
@@ -73,10 +73,10 @@ public class BuildModeTest
         using ConsumerProject project = ConsumerProject.Create(Program);
 
         // Act
-        ProcessResult build = project.Build("ParameterValidationMode=Interceptors").AssertSucceeded();
+        ProcessResult build = project.Build("StipulateMode=Interceptors").AssertSucceeded();
 
         // Assert
-        Assert.DoesNotContain("ParameterValidation: wove", build.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("Stipulate: wove", build.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class BuildModeTest
         ProcessResult build = project.Build().AssertSucceeded();
 
         // Assert
-        Assert.Contains("ParameterValidation: Consumer.dll is already woven.", build.Output, StringComparison.Ordinal);
+        Assert.Contains("Stipulate: Consumer.dll is already woven.", build.Output, StringComparison.Ordinal);
         Assert.Equal(Validated, project.RunProgram().AssertSucceeded().Output.Trim());
     }
 }

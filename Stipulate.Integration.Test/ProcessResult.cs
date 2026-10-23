@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Integration.Test;
+namespace Net.NowhereAtAll.Stipulate.Integration.Test;
 
 /// <summary>What a finished <c>dotnet</c> process reported.</summary>
 /// <param name="Output">Its standard output followed by its standard error.</param>

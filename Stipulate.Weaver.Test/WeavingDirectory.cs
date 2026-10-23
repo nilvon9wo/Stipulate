@@ -4,9 +4,9 @@ using System.Runtime.Loader;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.Stipulate.Weaver.Test;
 
 /// <summary>
 /// A temporary directory holding what MSBuild hands the weaver: a freshly compiled assembly, its
@@ -14,7 +14,7 @@ namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
 /// </summary>
 internal sealed class WeavingDirectory : IDisposable
 {
-    private const string DirectoryPrefix = "ParameterValidation.Weaver.Test.";
+    private const string DirectoryPrefix = "Stipulate.Weaver.Test.";
     private const string AssemblyFileName = TestCompilation.AssemblyName + ".dll";
     private const string SymbolsExtension = ".pdb";
     private const string ReferencesFileName = "references.txt";

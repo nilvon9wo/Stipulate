@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.Stipulate.Weaver;
 
 /// <summary>
 /// Retries file operations that fail because another process (another build, a test run, an
@@ -47,7 +47,7 @@ internal sealed class FileRetry(int maxAttempts, TimeSpan delay, TextWriter log,
         catch (Exception exception) when (IsFileInUse(exception) && attempt < this._maxAttempts)
         {
             this._log.WriteLine(
-                $"ParameterValidation: Could not {description}: {exception.Message} "
+                $"Stipulate: Could not {description}: {exception.Message} "
                 + $"Retrying ({attempt}/{this._maxAttempts - 1})..."
             );
             this._pause(this._delay);

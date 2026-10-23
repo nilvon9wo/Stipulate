@@ -1,6 +1,6 @@
 # Local Development
 
-A standard .NET solution, `ParameterValidation.slnx`. Prerequisites: the .NET 10 SDK, and
+A standard .NET solution, `Stipulate.slnx`. Prerequisites: the .NET 10 SDK, and
 Python 3 for the gate scripts.
 
 ---
@@ -8,13 +8,13 @@ Python 3 for the gate scripts.
 ## The loop
 
 ```shell
-dotnet build ParameterValidation.slnx                                     # .editorconfig rules enforced
-dotnet format ParameterValidation.slnx --verify-no-changes --severity info
-python3 scripts/check-line-layout.py                                      # 120 characters, wrapped ')'
-dotnet tool restore && python3 scripts/inspect-code.py                    # ReSharper inspections
-python3 scripts/run-tests.py --solution ParameterValidation.slnx --no-build
+dotnet build Stipulate.slnx                                         # .editorconfig rules enforced
+dotnet format Stipulate.slnx --verify-no-changes --severity info
+python3 scripts/check-line-layout.py                                # 120 characters, wrapped ')'
+dotnet tool restore && python3 scripts/inspect-code.py              # ReSharper inspections
+python3 scripts/run-tests.py --solution Stipulate.slnx --no-build
 python3 scripts/verify-doc-links.py
-python3 scripts/verify-gates.py                                           # every gate still fires
+python3 scripts/verify-gates.py                                     # every gate still fires
 ```
 
 These are the gates CI runs (see [ci](ci.md)). `dotnet format`, `check-line-layout.py` and
@@ -22,7 +22,7 @@ These are the gates CI runs (see [ci](ci.md)). `dotnet format`, `check-line-layo
 `inspect-code.py` needs a prior build.
 
 Every test run enforces 100% coverage, which a filtered run can't reach; pass
-`-p:ParameterValidationCoverage=false` for those (see
+`-p:StipulateCoverage=false` for those (see
 [coverage-standards](coverage-standards.md)). The report, a `coverage.cobertura.*.xml` under the
 test project's `bin/.../TestResults/`, shows which line or branch is missing.
 
@@ -40,7 +40,7 @@ always uses the fresh ones.
 
 Windows' Smart App Control blocks freshly built, unsigned DLLs by reputation, intermittently and
 persistently per binary: a test host fails with `0x800711C7` ("An Application Control policy has
-blocked this file"), and a build that weaves fails with PV0004, because the weaver was blocked.
+blocked this file"), and a build that weaves fails with ST0004, because the weaver was blocked.
 Retrying doesn't reliably help.
 
 A test module blocked before it starts is the worst case: `dotnet test` still prints "Test run
@@ -53,8 +53,8 @@ rewrite the `obj/` folders Visual Studio uses:
 
 ```shell
 rsync -a --delete --exclude bin --exclude obj --exclude .vs --exclude .git --exclude TestResults \
-    /mnt/e/path/to/ParameterValidation/ ~/parametervalidation/
-cd ~/parametervalidation && python3 scripts/run-tests.py --solution ParameterValidation.slnx
+    /mnt/e/path/to/Stipulate/ ~/stipulate/
+cd ~/stipulate && python3 scripts/run-tests.py --solution Stipulate.slnx
 ```
 
 `rsync -a` keeps the Windows files' modification times. If you edit a file in the copy and then

@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis.Text;
 
-namespace Net.NowhereAtAll.ParameterValidation.Testing;
+namespace Net.NowhereAtAll.Stipulate.Testing;
 
 /// <summary>A diagnostic a test expects: its ID, and the span of source it is reported on.</summary>
 public sealed record ExpectedDiagnostic(string Id, TextSpan Span);

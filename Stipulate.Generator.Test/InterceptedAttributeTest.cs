@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator.Test;
+namespace Net.NowhereAtAll.Stipulate.Generator.Test;
 
 /// <summary>
 /// The interceptor constructs each attribute again, in C#: every kind of constant an attribute

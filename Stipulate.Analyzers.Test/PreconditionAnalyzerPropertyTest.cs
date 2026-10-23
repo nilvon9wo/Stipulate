@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>
 /// Properties and indexers: a property's attributes are preconditions of its setter and guarantees
@@ -42,10 +42,10 @@ public class PreconditionAnalyzerPropertyTest
     }
 
     [Theory]
-    [InlineData("get; set;", "{|PV1001:Range(1, 5)|}", "get; set;")]
-    [InlineData("get; init;", "{|PV1001:Range(2, 10)|}", "get; init;")]
-    [InlineData("set;", "{|PV1001:Range(1, 5)|}", "set { }")]
-    public async Task Analyze_WhenASetterIsStronger_ReportsPV1001(
+    [InlineData("get; set;", "{|ST1001:Range(1, 5)|}", "get; set;")]
+    [InlineData("get; init;", "{|ST1001:Range(2, 10)|}", "get; init;")]
+    [InlineData("set;", "{|ST1001:Range(1, 5)|}", "set { }")]
+    public async Task Analyze_WhenASetterIsStronger_ReportsST1001(
         string contractAccessors,
         string implementation,
         string implementationAccessors
@@ -64,10 +64,10 @@ public class PreconditionAnalyzerPropertyTest
     }
 
     [Fact]
-    public async Task Analyze_WhenASetOnlyPropertyDropsItsAttribute_ReportsPV1002()
+    public async Task Analyze_WhenASetOnlyPropertyDropsItsAttribute_ReportsST1002()
     {
         // Arrange
-        string source = ContractSource.ForProperty("Range(1, 10)", "set;", "", "set { }", "int", "{|PV1002:Value|}");
+        string source = ContractSource.ForProperty("Range(1, 10)", "set;", "", "set { }", "int", "{|ST1002:Value|}");
         DiagnosticMarkup markup = new(source);
 
         // Act
@@ -91,10 +91,10 @@ public class PreconditionAnalyzerPropertyTest
     }
 
     [Fact]
-    public async Task Analyze_WhenASettablePropertyAddsRequired_ReportsPV1001()
+    public async Task Analyze_WhenASettablePropertyAddsRequired_ReportsST1001()
     {
         // Arrange
-        string source = ContractSource.ForProperty("", "get; set;", "{|PV1001:Required|}", "get; set;", "string?");
+        string source = ContractSource.ForProperty("", "get; set;", "{|ST1001:Required|}", "get; set;", "string?");
         DiagnosticMarkup markup = new(source);
 
         // Act
@@ -112,7 +112,7 @@ public class PreconditionAnalyzerPropertyTest
             public interface IWidget { [Range(1, 10)] int Size { get; set; } }
             public class Widget : IWidget
             {
-                [{|PV1001:Range(1, 5)|}] int IWidget.Size { get; set; }
+                [{|ST1001:Range(1, 5)|}] int IWidget.Size { get; set; }
             }
             """);
 
@@ -131,7 +131,7 @@ public class PreconditionAnalyzerPropertyTest
             public abstract class Base { [Range(1, 10)] public abstract int Size { get; set; } }
             public class Derived : Base
             {
-                [{|PV1001:Range(1, 5)|}] public override int Size { get; set; }
+                [{|ST1001:Range(1, 5)|}] public override int Size { get; set; }
             }
             """);
 
@@ -154,7 +154,7 @@ public class PreconditionAnalyzerPropertyTest
             }
             public class Derived : Widget
             {
-                [{|PV1001:Range(1, 5)|}] public override int Size { get; set; }
+                [{|ST1001:Range(1, 5)|}] public override int Size { get; set; }
             }
             """);
 
@@ -175,7 +175,7 @@ public class PreconditionAnalyzerPropertyTest
             {
                 [Range(1, 5)] public int Size { get; set; }
             }
-            public class {|PV1001:Derived|} : Base, IWidget { }
+            public class {|ST1001:Derived|} : Base, IWidget { }
             """);
 
         // Act
@@ -206,8 +206,8 @@ public class PreconditionAnalyzerPropertyTest
 
     [Theory]
     [InlineData("Range(0, 9)", "index")]
-    [InlineData("{|PV1001:Range(0, 5)|}", "index")]
-    [InlineData("", "{|PV1002:index|}")]
+    [InlineData("{|ST1001:Range(0, 5)|}", "index")]
+    [InlineData("", "{|ST1002:index|}")]
     public async Task Analyze_WhenAnIndexerImplementsAnInterface_ComparesItsParameters(
         string implementation,
         string parameter
@@ -239,7 +239,7 @@ public class PreconditionAnalyzerPropertyTest
             public interface IGrid { int this[[Range(0, 9)] int index] { get; set; } }
             public class Grid : IGrid
             {
-                public int this[[{|PV1001:Range(0, 5)|}] int index] { get => index; set { } }
+                public int this[[{|ST1001:Range(0, 5)|}] int index] { get => index; set { } }
             }
             """);
 
@@ -257,7 +257,7 @@ public class PreconditionAnalyzerPropertyTest
         DiagnosticMarkup markup = new(Grid + """
             public class Grid : IGrid
             {
-                int IGrid.this[[{|PV1001:Range(1, 9)|}] int index] => index;
+                int IGrid.this[[{|ST1001:Range(1, 9)|}] int index] => index;
             }
             """);
 
@@ -276,7 +276,7 @@ public class PreconditionAnalyzerPropertyTest
             public abstract class Base { public abstract int this[[MinLength(1)] string key] { get; } }
             public class Derived : Base
             {
-                public override int this[[{|PV1001:MinLength(2)|}] string key] => 0;
+                public override int this[[{|ST1001:MinLength(2)|}] string key] => 0;
             }
             """);
 
@@ -288,14 +288,14 @@ public class PreconditionAnalyzerPropertyTest
     }
 
     [Fact]
-    public async Task Analyze_WhenASettableIndexerValueIsStronger_ReportsPV1001()
+    public async Task Analyze_WhenASettableIndexerValueIsStronger_ReportsST1001()
     {
         // Arrange
         DiagnosticMarkup markup = new("""
             public interface IGrid { [Range(0, 100)] int this[int index] { get; set; } }
             public class Grid : IGrid
             {
-                [{|PV1001:Range(0, 50)|}] public int this[int index] { get => 0; set { } }
+                [{|ST1001:Range(0, 50)|}] public int this[int index] { get => 0; set { } }
             }
             """);
 
@@ -315,7 +315,7 @@ public class PreconditionAnalyzerPropertyTest
             {
                 public int this[[Range(0, 5)] int index] => index;
             }
-            public class {|PV1001:Derived|} : Base, IGrid { }
+            public class {|ST1001:Derived|} : Base, IGrid { }
             """;
         DiagnosticMarkup markup = new(source);
 

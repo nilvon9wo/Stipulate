@@ -1,7 +1,7 @@
 # Style canary
 
 Deliberately non-compliant code. **Do not fix it.** It is not part of
-`ParameterValidation.slnx`, and `scripts/check-line-layout.py` skips it, so no ordinary gate
+`Stipulate.slnx`, and `scripts/check-line-layout.py` skips it, so no ordinary gate
 ever reports it.
 
 Every violation in `Violations.cs` carries an `// expect: <gate>:<rule>` marker
@@ -20,8 +20,8 @@ running looks exactly like one that passes; this is what tells them apart.
 The gates that cannot be canaried with a static file are proven by a temporary
 change to the real repository, always undone afterwards:
 
-- **coverage**: an uncovered class is added to `ParameterValidation.Contracts/`;
-  `ParameterValidation.Contracts.Test` must then fail its 100% threshold, with
+- **coverage**: an uncovered class is added to `Stipulate.Contracts/`;
+  `Stipulate.Contracts.Test` must then fail its 100% threshold, with
   every test passing and the class measured (a coverlet that measures nothing
   fails the threshold too, for the wrong reason);
 - **INCONCLUSIVE test runs**: one test module's apphost is hidden so it cannot

@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>
 /// What an implementation hands back (a getter's value, an <c>out</c> or <c>ref</c> parameter)
@@ -42,7 +42,7 @@ public class PreconditionAnalyzerGuaranteeTest
     [InlineData("Range(1, 10)", "", "get;")]
     [InlineData("Range(1, 10)", "MinLength(1)", "get;")]
     [InlineData("Range(1, 10)", "Range(0, 10)", "get; set;")]
-    public async Task Analyze_WhenAGetterIsWeaker_ReportsPV1003OnTheProperty(
+    public async Task Analyze_WhenAGetterIsWeaker_ReportsST1003OnTheProperty(
         string contract,
         string implementation,
         string implementationAccessors
@@ -56,7 +56,7 @@ public class PreconditionAnalyzerGuaranteeTest
                 implementation,
                 implementationAccessors,
                 "int",
-                "{|PV1003:Value|}"
+                "{|ST1003:Value|}"
             )
         );
 
@@ -68,7 +68,7 @@ public class PreconditionAnalyzerGuaranteeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAGetterDropsAnExclusiveMinimumLengthOfZero_ReportsPV1003()
+    public async Task Analyze_WhenAGetterDropsAnExclusiveMinimumLengthOfZero_ReportsST1003()
     {
         // Arrange - unlike MinLength(0), a length above 0 rejects something: an empty array
         const string nonEmpty = """
@@ -81,7 +81,7 @@ public class PreconditionAnalyzerGuaranteeTest
 
             """;
         DiagnosticMarkup markup = new(
-            nonEmpty + ContractSource.ForProperty("NonEmpty", "get;", "", "get;", "int[]", "{|PV1003:Value|}")
+            nonEmpty + ContractSource.ForProperty("NonEmpty", "get;", "", "get;", "int[]", "{|ST1003:Value|}")
         );
 
         // Act
@@ -92,11 +92,11 @@ public class PreconditionAnalyzerGuaranteeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAGetterIsNullableAndTheContractRequiresAValue_ReportsPV1003()
+    public async Task Analyze_WhenAGetterIsNullableAndTheContractRequiresAValue_ReportsST1003()
     {
         // Arrange
         DiagnosticMarkup markup = new(
-            ContractSource.ForProperty("Required", "get;", "", "get;", "string?", "{|PV1003:Value|}")
+            ContractSource.ForProperty("Required", "get;", "", "get;", "string?", "{|ST1003:Value|}")
         );
 
         // Act
@@ -107,12 +107,12 @@ public class PreconditionAnalyzerGuaranteeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAGetterDropsAnAttributeThatIsNotDescribed_ReportsPV1003Once()
+    public async Task Analyze_WhenAGetterDropsAnAttributeThatIsNotDescribed_ReportsST1003Once()
     {
         // Arrange
         DiagnosticMarkup markup = new(
             "public sealed class EvenAttribute : ValidationAttribute { }\n"
-            + ContractSource.ForProperty("Even", "get; set;", "", "get; set;", "int", "{|PV1003:Value|}")
+            + ContractSource.ForProperty("Even", "get; set;", "", "get; set;", "int", "{|ST1003:Value|}")
         );
 
         // Act
@@ -123,12 +123,12 @@ public class PreconditionAnalyzerGuaranteeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAGetterChangesTheArgumentsOfAnAttributeThatIsNotDescribed_ReportsPV2001Once()
+    public async Task Analyze_WhenAGetterChangesTheArgumentsOfAnAttributeThatIsNotDescribed_ReportsST2001Once()
     {
         // Arrange
         DiagnosticMarkup markup = new(
             Divisible
-            + ContractSource.ForProperty("Divisible(2)", "get; set;", "{|PV2001:Divisible(4)|}", "get; set;")
+            + ContractSource.ForProperty("Divisible(2)", "get; set;", "{|ST2001:Divisible(4)|}", "get; set;")
         );
 
         // Act
@@ -139,12 +139,12 @@ public class PreconditionAnalyzerGuaranteeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAGetterOnlyChangesTheArgumentsOfAnAttributeThatIsNotDescribed_ReportsPV2001()
+    public async Task Analyze_WhenAGetterOnlyChangesTheArgumentsOfAnAttributeThatIsNotDescribed_ReportsST2001()
     {
         // Arrange
         DiagnosticMarkup markup = new(
             Divisible
-            + ContractSource.ForProperty("Divisible(2)", "get;", "Divisible(4)", "get;", "int", "{|PV2001:Value|}")
+            + ContractSource.ForProperty("Divisible(2)", "get;", "Divisible(4)", "get;", "int", "{|ST2001:Value|}")
         );
 
         // Act
@@ -172,10 +172,10 @@ public class PreconditionAnalyzerGuaranteeTest
     [Theory]
     [InlineData("MinLength(0)")]
     [InlineData("")]
-    public async Task Analyze_WhenAnOutParameterIsWeaker_ReportsPV1003OnTheParameter(string implementation)
+    public async Task Analyze_WhenAnOutParameterIsWeaker_ReportsST1003OnTheParameter(string implementation)
     {
         // Arrange
-        DiagnosticMarkup markup = new(OutParameterSource(implementation, "{|PV1003:text|}"));
+        DiagnosticMarkup markup = new(OutParameterSource(implementation, "{|ST1003:text|}"));
 
         // Act
         ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
@@ -186,8 +186,8 @@ public class PreconditionAnalyzerGuaranteeTest
 
     [Theory]
     [InlineData("MinLength(1)", "text")]
-    [InlineData("MinLength(0)", "{|PV1003:text|}")]
-    [InlineData("{|PV1001:MinLength(2)|}", "text")]
+    [InlineData("MinLength(0)", "{|ST1003:text|}")]
+    [InlineData("{|ST1001:MinLength(2)|}", "text")]
     public async Task Analyze_WhenARefParameterDiffersFromItsContract_ReportsTheDifference(
         string implementation,
         string parameter
@@ -210,7 +210,7 @@ public class PreconditionAnalyzerGuaranteeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAWeakerGetterIsInherited_ReportsPV1003OnTheClass()
+    public async Task Analyze_WhenAWeakerGetterIsInherited_ReportsST1003OnTheClass()
     {
         // Arrange
         DiagnosticMarkup markup = new("""
@@ -219,7 +219,7 @@ public class PreconditionAnalyzerGuaranteeTest
             {
                 [Range(1, 20)] public int Size => 3;
             }
-            public class {|PV1003:Derived|} : Base, ISized { }
+            public class {|ST1003:Derived|} : Base, ISized { }
             """);
 
         // Act
@@ -230,14 +230,14 @@ public class PreconditionAnalyzerGuaranteeTest
     }
 
     [Fact]
-    public async Task Analyze_WhenAGetterOverrideIsWeaker_ReportsPV1003()
+    public async Task Analyze_WhenAGetterOverrideIsWeaker_ReportsST1003()
     {
         // Arrange
         DiagnosticMarkup markup = new("""
             public abstract class Base { [Range(1, 10)] public abstract int Size { get; } }
             public class Derived : Base
             {
-                [Range(1, 20)] public override int {|PV1003:Size|} => 3;
+                [Range(1, 20)] public override int {|ST1003:Size|} => 3;
             }
             """);
 

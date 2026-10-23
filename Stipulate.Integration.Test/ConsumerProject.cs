@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
-namespace Net.NowhereAtAll.ParameterValidation.Integration.Test;
+namespace Net.NowhereAtAll.Stipulate.Integration.Test;
 
 /// <summary>
 /// A console project in a temporary directory that picks up this repository's Directory.Build.props
@@ -11,7 +11,7 @@ namespace Net.NowhereAtAll.ParameterValidation.Integration.Test;
 internal sealed class ConsumerProject : IDisposable
 {
     private const string Name = "Consumer";
-    private const string DirectoryPrefix = "ParameterValidation.Integration.Test.";
+    private const string DirectoryPrefix = "Stipulate.Integration.Test.";
     private const string DotnetHostPath = "DOTNET_HOST_PATH";
     private const string Dotnet = "dotnet";
 

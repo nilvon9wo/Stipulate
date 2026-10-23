@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.Stipulate.Analyzers;
 
 /// <param name="Attribute">
 /// The implementation's attribute; or the contract's, for <see cref="ProblemKind.Dropped"/> and for

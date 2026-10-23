@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ParameterValidation.Contracts\ParameterValidation.Contracts.csproj" />
+    <ProjectReference Include="..\Stipulate.Contracts\Stipulate.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

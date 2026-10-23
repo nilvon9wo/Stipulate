@@ -1,6 +1,6 @@
 using Mono.Cecil;
 
-namespace Net.NowhereAtAll.ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.Stipulate.Weaver;
 
 /// <summary>
 /// References to the framework types and members the injected IL uses, scoped to the module

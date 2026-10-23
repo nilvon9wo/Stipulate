@@ -1,17 +1,17 @@
 <Solution>
   <Project Path="ArrayFoo/ArrayFoo.csproj" />
   <Project Path="ArrayFooTest/ArrayFooTest.csproj" />
-  <Project Path="docs/ParameterValidation.Docs.csproj" />
-  <Project Path="ParameterValidation.Analyzers.Test/ParameterValidation.Analyzers.Test.csproj" />
-  <Project Path="ParameterValidation.Analyzers/ParameterValidation.Analyzers.csproj" />
-  <Project Path="ParameterValidation.CodeFixes.Test/ParameterValidation.CodeFixes.Test.csproj" />
-  <Project Path="ParameterValidation.CodeFixes/ParameterValidation.CodeFixes.csproj" />
-  <Project Path="ParameterValidation.Contracts.Test/ParameterValidation.Contracts.Test.csproj" />
-  <Project Path="ParameterValidation.Contracts/ParameterValidation.Contracts.csproj" />
-  <Project Path="ParameterValidation.Generator.Test/ParameterValidation.Generator.Test.csproj" />
-  <Project Path="ParameterValidation.Generator/ParameterValidation.Generator.csproj" />
-  <Project Path="ParameterValidation.Integration.Test/ParameterValidation.Integration.Test.csproj" />
-  <Project Path="ParameterValidation.Testing/ParameterValidation.Testing.csproj" />
-  <Project Path="ParameterValidation.Weaver.Test/ParameterValidation.Weaver.Test.csproj" />
-  <Project Path="ParameterValidation.Weaver/ParameterValidation.Weaver.csproj" />
+  <Project Path="docs/Stipulate.Docs.csproj" />
+  <Project Path="Stipulate.Analyzers.Test/Stipulate.Analyzers.Test.csproj" />
+  <Project Path="Stipulate.Analyzers/Stipulate.Analyzers.csproj" />
+  <Project Path="Stipulate.CodeFixes.Test/Stipulate.CodeFixes.Test.csproj" />
+  <Project Path="Stipulate.CodeFixes/Stipulate.CodeFixes.csproj" />
+  <Project Path="Stipulate.Contracts.Test/Stipulate.Contracts.Test.csproj" />
+  <Project Path="Stipulate.Contracts/Stipulate.Contracts.csproj" />
+  <Project Path="Stipulate.Generator.Test/Stipulate.Generator.Test.csproj" />
+  <Project Path="Stipulate.Generator/Stipulate.Generator.csproj" />
+  <Project Path="Stipulate.Integration.Test/Stipulate.Integration.Test.csproj" />
+  <Project Path="Stipulate.Testing/Stipulate.Testing.csproj" />
+  <Project Path="Stipulate.Weaver.Test/Stipulate.Weaver.Test.csproj" />
+  <Project Path="Stipulate.Weaver/Stipulate.Weaver.csproj" />
 </Solution>

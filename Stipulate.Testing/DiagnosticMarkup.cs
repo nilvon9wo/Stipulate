@@ -3,10 +3,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Net.NowhereAtAll.ParameterValidation.Testing;
+namespace Net.NowhereAtAll.Stipulate.Testing;
 
 /// <summary>
-/// C# source with the diagnostics expected in it marked up as <c>{|PV1001:text|}</c>, as in Roslyn's
+/// C# source with the diagnostics expected in it marked up as <c>{|ST1001:text|}</c>, as in Roslyn's
 /// own analyzer tests, preceded by <see cref="TestCompilation.Usings"/>.
 /// </summary>
 public sealed partial class DiagnosticMarkup

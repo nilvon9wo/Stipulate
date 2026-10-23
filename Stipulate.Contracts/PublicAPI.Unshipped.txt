@@ -1,26 +1,26 @@
 #nullable enable
-const Net.NowhereAtAll.ParameterValidation.Contracts.ValidationDimensions.Length = "Length" -> string!
-const Net.NowhereAtAll.ParameterValidation.Contracts.ValidationDimensions.NotBlank = "NotBlank" -> string!
-const Net.NowhereAtAll.ParameterValidation.Contracts.ValidationDimensions.NotNull = "NotNull" -> string!
-const Net.NowhereAtAll.ParameterValidation.Contracts.ValidationDimensions.Value = "Value" -> string!
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.Argument.get -> string?
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.Argument.set -> void
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.AttributeType.get -> System.Type?
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.ComparableValidationAttribute(string! dimension, Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison comparison) -> void
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.ComparableValidationAttribute(System.Type! attributeType, string! dimension, Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison comparison) -> void
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.Comparison.get -> Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.Dimension.get -> string!
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.ExclusiveArgument.get -> string?
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.ExclusiveArgument.set -> void
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.IsExclusive.get -> bool
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.IsExclusive.set -> void
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.Value.get -> object?
-Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute.Value.set -> void
-Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison
-Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison.AllowedValues = 3 -> Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison
-Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison.DeniedValues = 4 -> Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison
-Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison.Flag = 0 -> Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison
-Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison.LowerBound = 1 -> Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison
-Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison.UpperBound = 2 -> Net.NowhereAtAll.ParameterValidation.Contracts.ValidationComparison
-Net.NowhereAtAll.ParameterValidation.Contracts.ValidationDimensions
+const Net.NowhereAtAll.Stipulate.Contracts.ValidationDimensions.Length = "Length" -> string!
+const Net.NowhereAtAll.Stipulate.Contracts.ValidationDimensions.NotBlank = "NotBlank" -> string!
+const Net.NowhereAtAll.Stipulate.Contracts.ValidationDimensions.NotNull = "NotNull" -> string!
+const Net.NowhereAtAll.Stipulate.Contracts.ValidationDimensions.Value = "Value" -> string!
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.Argument.get -> string?
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.Argument.set -> void
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.AttributeType.get -> System.Type?
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.ComparableValidationAttribute(string! dimension, Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison comparison) -> void
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.ComparableValidationAttribute(System.Type! attributeType, string! dimension, Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison comparison) -> void
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.Comparison.get -> Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.Dimension.get -> string!
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.ExclusiveArgument.get -> string?
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.ExclusiveArgument.set -> void
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.IsExclusive.get -> bool
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.IsExclusive.set -> void
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.Value.get -> object?
+Net.NowhereAtAll.Stipulate.Contracts.ComparableValidationAttribute.Value.set -> void
+Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison
+Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison.AllowedValues = 3 -> Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison
+Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison.DeniedValues = 4 -> Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison
+Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison.Flag = 0 -> Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison
+Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison.LowerBound = 1 -> Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison
+Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison.UpperBound = 2 -> Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison
+Net.NowhereAtAll.Stipulate.Contracts.ValidationDimensions

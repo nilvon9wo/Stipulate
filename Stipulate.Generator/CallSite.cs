@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Generator;
+namespace Net.NowhereAtAll.Stipulate.Generator;
 
 /// <summary>One call to a method with validated parameters, and what intercepting it takes.</summary>
 /// <param name="MethodId">The same for every call to the same method, which share one interceptor.</param>

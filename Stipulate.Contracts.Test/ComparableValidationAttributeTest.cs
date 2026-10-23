@@ -1,4 +1,4 @@
-namespace Net.NowhereAtAll.ParameterValidation.Contracts.Test;
+namespace Net.NowhereAtAll.Stipulate.Contracts.Test;
 
 /// <summary>
 /// The description of a validation attribute, as the analyzer reads it back. The attribute itself

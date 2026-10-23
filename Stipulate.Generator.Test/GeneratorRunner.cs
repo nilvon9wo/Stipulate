@@ -4,18 +4,18 @@ using System.Reflection;
 using System.Runtime.Loader;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Net.NowhereAtAll.ParameterValidation.Testing;
+using Net.NowhereAtAll.Stipulate.Testing;
 
-namespace Net.NowhereAtAll.ParameterValidation.Generator.Test;
+namespace Net.NowhereAtAll.Stipulate.Generator.Test;
 
 /// <summary>
-/// Runs <see cref="ParameterValidationGenerator"/> over C# source the way the build does in
+/// Runs <see cref="StipulateGenerator"/> over C# source the way the build does in
 /// Interceptors mode: with interceptors enabled for the namespace the generator writes into.
 /// </summary>
 internal static class GeneratorRunner
 {
     private const string InterceptorsFeature = "InterceptorsNamespaces";
-    private const string GeneratedNamespace = "Net.NowhereAtAll.ParameterValidation.Generated";
+    private const string GeneratedNamespace = "Net.NowhereAtAll.Stipulate.Generated";
 
     private static readonly CSharpParseOptions ParseOptions = TestCompilation.ParseOptions
         .WithFeatures([new KeyValuePair<string, string>(InterceptorsFeature, GeneratedNamespace)]);
@@ -39,7 +39,7 @@ internal static class GeneratorRunner
 
     public static GeneratorDriver CreateDriver()
         => CSharpGeneratorDriver.Create(
-            [new ParameterValidationGenerator().AsSourceGenerator()],
+            [new StipulateGenerator().AsSourceGenerator()],
             parseOptions: ParseOptions,
             driverOptions: new GeneratorDriverOptions(
                 IncrementalGeneratorOutputKind.None,
