@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build + test + gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore ParameterValidation.slnx
+
+      - name: Build (strict .editorconfig analyzers enforced)
+        run: dotnet build ParameterValidation.slnx --no-restore
+
+      # Every whitespace/formatting rule, and a second pass over the style and
+      # naming analyzers the build already runs.
+      - name: Verify code style, naming, and formatting (dotnet format)
+        run: dotnet format ParameterValidation.slnx --verify-no-changes --severity info
+
+      # IDE0005 (unnecessary using) never fails `dotnet build`, even with
+      # EnforceCodeStyleInBuild. ReSharper's inspectcode catches it and more;
+      # every finding fails.
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: ReSharper inspections (inspectcode)
+        run: python3 scripts/inspect-code.py
+
+      # Roslyn reads max_line_length but never reports on it, and only
+      # Rider/ReSharper honour the wrapped-')' rules - so neither the build nor
+      # dotnet format above enforces them. This scripted check does.
+      - name: Verify line length and wrapped ')' placement
+        run: python3 scripts/check-line-layout.py
+
+      # Every ParameterValidation.*.Test project also enforces 100% line and
+      # branch coverage of its package (coverlet.MTP, wired in
+      # Directory.Build.props); ParameterValidation.Integration.Test builds a
+      # consumer project in each mode. run-tests.py is dotnet test plus one
+      # guarantee: a module that never started is reported INCONCLUSIVE, never
+      # hidden behind "Passed!".
+      - name: Test
+        run: python3 scripts/run-tests.py --solution ParameterValidation.slnx --no-build
+
+      # Optimized IL branches differently from Debug, so 100% coverage in one
+      # configuration does not imply it in the other. Testing Release here
+      # means CI validates what ships.
+      - name: Build (Release)
+        run: dotnet build ParameterValidation.slnx -c Release --no-restore
+
+      - name: Test (Release)
+        run: python3 scripts/run-tests.py --solution ParameterValidation.slnx -c Release --no-build
+
+      # A gate that silently stops running looks exactly like one that passes.
+      # Runs every gate above against StyleCanary/ (deliberately non-compliant
+      # code, each violation tagged with the gate that must report it), plus a
+      # temporary uncovered class and an unstartable test module, and fails if
+      # any gate no longer catches them. See StyleCanary/README.md.
+      - name: Prove every gate still catches its canary violations
+        run: python3 scripts/verify-gates.py
+
+  windows:
+    name: Build + test (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      # The weaver runs through MSBuild's Exec with Windows paths and quoting,
+      # which the Linux job never exercises; the integration tests build a
+      # consumer project through exactly that.
+      - name: Build
+        run: dotnet build ParameterValidation.slnx
+
+      - name: Test
+        run: python scripts/run-tests.py --solution ParameterValidation.slnx --no-build

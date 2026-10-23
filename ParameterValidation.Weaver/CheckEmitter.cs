@@ -83,11 +83,14 @@ internal sealed class CheckEmitter(
         this._buffer.Emit(OpCodes.Throw);
     }
 
+    /// <remarks>
+    /// Every primitive is a value type; a generic parameter may be one, and boxing a reference is a no-op.
+    /// </remarks>
     private void EmitLoadArgumentAsObject(ParameterDefinition parameter)
     {
         this._buffer.Emit(OpCodes.Ldarg, parameter);
         TypeReference type = parameter.ParameterType;
-        if (type.IsValueType || type.IsPrimitive || type.IsGenericParameter)
+        if (type.IsValueType || type.IsGenericParameter)
         {
             this._buffer.Emit(OpCodes.Box, type);
         }

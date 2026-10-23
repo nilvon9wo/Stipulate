@@ -19,6 +19,7 @@ public class PreconditionAnalyzerGuaranteeTest
     [InlineData("Range(1, 10)", "Range(1, 10)")]
     [InlineData("Range(1, 10)", "Range(2, 5)")]
     [InlineData("MaxLength", "")]
+    [InlineData("MinLength(-1)", "")]
     [InlineData("MinLength(0)", "")]
     public async Task Analyze_WhenAGetterIsNoWeaker_ReportsNothing(string contract, string implementation)
     {
@@ -57,6 +58,30 @@ public class PreconditionAnalyzerGuaranteeTest
                 "int",
                 "{|PV1003:Value|}"
             )
+        );
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
+
+    [Fact]
+    public async Task Analyze_WhenAGetterDropsAnExclusiveMinimumLengthOfZero_ReportsPV1003()
+    {
+        // Arrange - unlike MinLength(0), a length above 0 rejects something: an empty array
+        const string nonEmpty = """
+            [ComparableValidation(
+                ValidationDimensions.Length,
+                ValidationComparison.LowerBound,
+                Value = 0,
+                IsExclusive = true)]
+            public sealed class NonEmptyAttribute : ValidationAttribute { }
+
+            """;
+        DiagnosticMarkup markup = new(
+            nonEmpty + ContractSource.ForProperty("NonEmpty", "get;", "", "get;", "int[]", "{|PV1003:Value|}")
         );
 
         // Act

@@ -38,10 +38,12 @@
       assembly loaded alongside the tests, cut to its first two name segments: one
       Net.NowhereAtAll.ParameterValidation.* assembly becomes [Net.NowhereAtAll.*]*, which excludes
       the measured assembly too, and the threshold then fails on "No coverable data".
+    - ParameterValidation.Integration.Test builds a consumer project with `dotnet build`; it
+      measures no one assembly, so it is not measured.
     - Running a filtered subset (one class, say) cannot reach 100%: pass
       `-p:ParameterValidationCoverage=false` to `dotnet test` for those runs.
   -->
-  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('ParameterValidation.')) And $(MSBuildProjectName.EndsWith('.Test'))">
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('ParameterValidation.')) And $(MSBuildProjectName.EndsWith('.Test')) And '$(MSBuildProjectName)' != 'ParameterValidation.Integration.Test'">
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <ParameterValidationCoverage Condition="'$(ParameterValidationCoverage)' == ''">true</ParameterValidationCoverage>
     <ParameterValidationCoveredAssembly>Net.NowhereAtAll.$(MSBuildProjectName.Substring(0, $(MSBuildProjectName.LastIndexOf('.Test'))))</ParameterValidationCoveredAssembly>

@@ -9,6 +9,7 @@
   <Project Path="ParameterValidation.Contracts/ParameterValidation.Contracts.csproj" />
   <Project Path="ParameterValidation.Generator.Test/ParameterValidation.Generator.Test.csproj" />
   <Project Path="ParameterValidation.Generator/ParameterValidation.Generator.csproj" />
+  <Project Path="ParameterValidation.Integration.Test/ParameterValidation.Integration.Test.csproj" />
   <Project Path="ParameterValidation.Testing/ParameterValidation.Testing.csproj" />
   <Project Path="ParameterValidation.Weaver.Test/ParameterValidation.Weaver.Test.csproj" />
   <Project Path="ParameterValidation.Weaver/ParameterValidation.Weaver.csproj" />

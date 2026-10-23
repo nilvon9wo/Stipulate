@@ -17,6 +17,7 @@ internal sealed class LowerBoundComparison : BoundComparison
 
     protected override bool IsTighter(double value, double other) => value > other;
 
-    private static bool IsAtMostZero(Constraint constraint)
-        => constraint is { Bound: < 0.0 } or { Bound: 0.0, IsExclusive: false };
+    private static bool IsAtMostZero(Constraint constraint) => IsAtMostZero(constraint.Bound, constraint.IsExclusive);
+
+    private static bool IsAtMostZero(double bound, bool isExclusive) => bound < 0.0 || (bound is 0.0 && !isExclusive);
 }
