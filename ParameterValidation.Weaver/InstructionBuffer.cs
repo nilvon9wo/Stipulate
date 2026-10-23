@@ -17,12 +17,6 @@ internal sealed class InstructionBuffer
 
     public void Emit(OpCode opCode, int value) => this.Add(Instruction.Create(opCode, value));
 
-    public void Emit(OpCode opCode, long value) => this.Add(Instruction.Create(opCode, value));
-
-    public void Emit(OpCode opCode, float value) => this.Add(Instruction.Create(opCode, value));
-
-    public void Emit(OpCode opCode, double value) => this.Add(Instruction.Create(opCode, value));
-
     public void Emit(OpCode opCode, string value) => this.Add(Instruction.Create(opCode, value));
 
     public void Emit(OpCode opCode, Instruction target) => this.Add(Instruction.Create(opCode, target));

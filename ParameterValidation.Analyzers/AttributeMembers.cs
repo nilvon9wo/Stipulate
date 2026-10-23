@@ -45,8 +45,8 @@ file sealed class ArgumentType(bool isBooleanRequired)
         _ => false,
     };
 
-    private static bool IsSettable(IPropertySymbol property) => !property.IsStatic && property.SetMethod is not null;
+    private static bool IsSettable(IPropertySymbol property) => property is { IsStatic: false, SetMethod: not null };
 
     /// <remarks>A constant is static, so it isn't settable either.</remarks>
-    private static bool IsSettable(IFieldSymbol field) => !field.IsStatic && !field.IsReadOnly;
+    private static bool IsSettable(IFieldSymbol field) => field is { IsStatic: false, IsReadOnly: false };
 }

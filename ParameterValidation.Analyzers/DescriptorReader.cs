@@ -115,7 +115,7 @@ internal static class DescriptorReader
     }
 
     private static string? RejectExclusiveValues(MarkerArguments arguments, INamedTypeSymbol target)
-        => !arguments.IsBound && arguments.HasExclusivity
+        => arguments.HasMisplacedExclusivity
             ? "only a LowerBound or an UpperBound can be exclusive"
             : null;
 

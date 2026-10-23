@@ -13,10 +13,24 @@ internal static class CecilTypeHierarchy
         }
     }
 
-    /// <exception cref="WeavingException">The type can't be resolved from the references.</exception>
+    /// <exception cref="WeavingException">
+    /// The type can't be resolved from the references: its assembly isn't among them, or doesn't declare it.
+    /// </exception>
     public static TypeDefinition Resolve(TypeReference type)
-        => type.Resolve()
-            ?? throw new WeavingException($"Could not resolve type '{type.FullName}' from '{type.Scope.Name}'.");
+    {
+        try
+        {
+            return type.Resolve()
+                ?? throw new WeavingException($"Could not resolve type '{type.FullName}' from '{type.Scope.Name}'.");
+        }
+        catch (AssemblyResolutionException exception)
+        {
+            throw new WeavingException(
+                $"Could not resolve type '{type.FullName}': its assembly '{exception.AssemblyReference.FullName}' "
+                + "is not among the references."
+            );
+        }
+    }
 
     private static TypeDefinition? ResolveBase(TypeDefinition type)
         => type.BaseType is { } baseType

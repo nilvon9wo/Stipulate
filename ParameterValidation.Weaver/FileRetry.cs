@@ -65,7 +65,10 @@ internal sealed class FileRetry(int maxAttempts, TimeSpan delay, TextWriter log,
 
     /// <remarks>
     /// Windows reports replacing a file that another process has open as an
-    /// <see cref="UnauthorizedAccessException"/> rather than an <see cref="IOException"/>.
+    /// <see cref="UnauthorizedAccessException"/> rather than an <see cref="IOException"/>. A missing
+    /// file is an <see cref="IOException"/> too, but waiting won't bring it back.
     /// </remarks>
-    private static bool IsFileInUse(Exception exception) => exception is IOException or UnauthorizedAccessException;
+    private static bool IsFileInUse(Exception exception)
+        => exception is (IOException or UnauthorizedAccessException)
+            and not (FileNotFoundException or DirectoryNotFoundException);
 }

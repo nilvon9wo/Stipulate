@@ -40,6 +40,9 @@ internal sealed record MarkerArguments(
     /// <summary>Whether <c>IsExclusive</c> or an <c>ExclusiveArgument</c> is given.</summary>
     public bool HasExclusivity => this.IsExclusive || this.ExclusiveArgument is not null;
 
+    /// <summary>Whether exclusivity is given for a comparison that isn't a bound, where it means nothing.</summary>
+    public bool HasMisplacedExclusivity => !this.IsBound && this.HasExclusivity;
+
     /// <returns>The arguments, or <c>null</c> if the marker lacks a dimension or a comparison.</returns>
     public static MarkerArguments? Read(AttributeData marker)
     {
