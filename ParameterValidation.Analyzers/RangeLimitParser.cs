@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace ParameterValidation.Analyzers;
@@ -11,7 +12,6 @@ namespace ParameterValidation.Analyzers;
 /// </summary>
 internal static class RangeLimitParser
 {
-    private const int TypeFormArgumentCount = 3;
     private const string InvariantCultureArgument = "ParseLimitsInInvariantCulture";
 
     private static readonly ImmutableDictionary<SpecialType, Func<RangeLimitText, double?>> BySpecialType =
@@ -46,18 +46,19 @@ internal static class RangeLimitParser
     /// compared.
     /// </returns>
     public static ParsedBound? Parse(TypedConstant constant, AttributeData attribute)
-        => constant.Value is string text && FindOperandType(attribute) is { } operandType
+        => AttributeArguments.ScalarValue(constant) is string text && FindOperandType(attribute) is { } operandType
             ? ParseLimit(new RangeLimitText(text.Trim(), IsInvariant(attribute)), operandType)
             : null;
 
+    /// <returns>The <c>T</c> of a <c>Range(typeof(T), ...)</c>, or <c>null</c> if the usage isn't one.</returns>
     private static ITypeSymbol? FindOperandType(AttributeData attribute)
-        => IsTypeForm(attribute)
-            ? attribute.ConstructorArguments[0].Value as ITypeSymbol
+        => IsRange(attribute)
+            ? attribute.ConstructorArguments.FirstOrDefault().Value as ITypeSymbol
             : null;
 
-    private static bool IsTypeForm(AttributeData attribute)
-        => attribute.AttributeClass?.ToDisplayString() == ValidationAttributeTypes.RangeAttributeName
-            && attribute.ConstructorArguments.Length == TypeFormArgumentCount;
+    /// <remarks>Only a validation attribute, whose class resolved, is described.</remarks>
+    private static bool IsRange(AttributeData attribute)
+        => attribute.AttributeClass!.ToDisplayString() == ValidationAttributeTypes.RangeAttributeName;
 
     private static bool IsInvariant(AttributeData attribute)
         => AttributeArguments.Find(attribute, InvariantCultureArgument) is { Value: true };

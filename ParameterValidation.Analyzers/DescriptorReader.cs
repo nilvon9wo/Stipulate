@@ -20,12 +20,12 @@ internal static class DescriptorReader
         RejectNonValidationTarget,
     ];
 
-    private static readonly ImmutableArray<Func<MarkerArguments, ITypeSymbol, string?>> FlagRules =
+    private static readonly ImmutableArray<Func<MarkerArguments, INamedTypeSymbol, string?>> FlagRules =
     [
         RejectFlagArguments,
     ];
 
-    private static readonly ImmutableArray<Func<MarkerArguments, ITypeSymbol, string?>> LimitRules =
+    private static readonly ImmutableArray<Func<MarkerArguments, INamedTypeSymbol, string?>> LimitRules =
     [
         RequireArgumentOrValue,
         RequireArgumentMember,
@@ -52,19 +52,22 @@ internal static class DescriptorReader
             : DescriptorReading.Invalid(error);
     }
 
-    /// <remarks>Only called once the comparison is known to be defined.</remarks>
+    /// <remarks>
+    /// Only called once the common rules hold: the comparison is defined, and the target is a
+    /// validation attribute, and so a class.
+    /// </remarks>
     private static string? FindKindError(MarkerArguments arguments, ITypeSymbol target)
     {
-        ImmutableArray<Func<MarkerArguments, ITypeSymbol, string?>> rules = arguments.Kind == ConstraintKind.Flag
+        ImmutableArray<Func<MarkerArguments, INamedTypeSymbol, string?>> rules = arguments.Kind == ConstraintKind.Flag
             ? FlagRules
             : LimitRules;
-        return FindError(rules, arguments, target);
+        return FindError(rules, arguments, (INamedTypeSymbol)target);
     }
 
-    private static string? FindError(
-        ImmutableArray<Func<MarkerArguments, ITypeSymbol, string?>> rules,
+    private static string? FindError<TTarget>(
+        ImmutableArray<Func<MarkerArguments, TTarget, string?>> rules,
         MarkerArguments arguments,
-        ITypeSymbol target
+        TTarget target
     )
         => rules
             .Select(rule => rule(arguments, target))
@@ -85,23 +88,23 @@ internal static class DescriptorReader
             ? null
             : $"'{target.ToDisplayString()}' isn't a ValidationAttribute";
 
-    private static string? RejectFlagArguments(MarkerArguments arguments, ITypeSymbol target)
-        => arguments is { Argument: null, ValueConstant: null, IsExclusive: false, ExclusiveArgument: null }
-            ? null
-            : "a Flag takes no Argument, Value, IsExclusive or ExclusiveArgument";
-
-    private static string? RequireArgumentOrValue(MarkerArguments arguments, ITypeSymbol target)
-        => arguments is { Argument: null, ValueConstant: null }
-            ? $"a {arguments.Kind} needs an Argument or a Value"
+    private static string? RejectFlagArguments(MarkerArguments arguments, INamedTypeSymbol target)
+        => arguments.HasSource || arguments.HasExclusivity
+            ? "a Flag takes no Argument, Value, IsExclusive or ExclusiveArgument"
             : null;
 
-    private static string? RequireArgumentMember(MarkerArguments arguments, ITypeSymbol target)
+    private static string? RequireArgumentOrValue(MarkerArguments arguments, INamedTypeSymbol target)
+        => arguments.HasSource
+            ? null
+            : $"a {arguments.Kind} needs an Argument or a Value";
+
+    private static string? RequireArgumentMember(MarkerArguments arguments, INamedTypeSymbol target)
         => arguments.Argument is { } argument
             && !AttributeMembers.HasArgument(target, argument, isBooleanRequired: false)
             ? $"'{target.Name}' has no constructor parameter or settable property named '{argument}'"
             : null;
 
-    private static string? RequireValueOfKind(MarkerArguments arguments, ITypeSymbol target)
+    private static string? RequireValueOfKind(MarkerArguments arguments, INamedTypeSymbol target)
     {
         string expected = arguments.IsBound
             ? "a number"
@@ -111,12 +114,12 @@ internal static class DescriptorReader
             : null;
     }
 
-    private static string? RejectExclusiveValues(MarkerArguments arguments, ITypeSymbol target)
-        => !arguments.IsBound && (arguments.IsExclusive || arguments.ExclusiveArgument is not null)
+    private static string? RejectExclusiveValues(MarkerArguments arguments, INamedTypeSymbol target)
+        => !arguments.IsBound && arguments.HasExclusivity
             ? "only a LowerBound or an UpperBound can be exclusive"
             : null;
 
-    private static string? RequireExclusiveArgumentMember(MarkerArguments arguments, ITypeSymbol target)
+    private static string? RequireExclusiveArgumentMember(MarkerArguments arguments, INamedTypeSymbol target)
         => arguments.ExclusiveArgument is { } argument
             && !AttributeMembers.HasArgument(target, argument, isBooleanRequired: true)
             ? $"'{target.Name}' has no bool constructor parameter or settable property named '{argument}'"

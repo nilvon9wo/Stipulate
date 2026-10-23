@@ -13,7 +13,7 @@ internal static class AttributeMembers
     /// <param name="attributeClass">The attribute class.</param>
     /// <param name="name">The argument's name.</param>
     /// <param name="isBooleanRequired">Whether the argument must be a <see cref="bool"/>.</param>
-    public static bool HasArgument(ITypeSymbol attributeClass, string name, bool isBooleanRequired)
+    public static bool HasArgument(INamedTypeSymbol attributeClass, string name, bool isBooleanRequired)
     {
         ArgumentType argumentType = new(isBooleanRequired);
         return argumentType.HasSettableMember(attributeClass, name)
@@ -31,9 +31,8 @@ file sealed class ArgumentType(bool isBooleanRequired)
             .SelectMany(type => type.GetMembers(name))
             .Any(this.IsSettable);
 
-    public bool HasConstructorParameter(ITypeSymbol attributeClass, string name)
-        => attributeClass is INamedTypeSymbol named
-            && named.InstanceConstructors
+    public bool HasConstructorParameter(INamedTypeSymbol attributeClass, string name)
+        => attributeClass.InstanceConstructors
                 .SelectMany(static constructor => constructor.Parameters)
                 .Any(parameter => parameter.Name == name && this.Fits(parameter.Type));
 
@@ -41,8 +40,13 @@ file sealed class ArgumentType(bool isBooleanRequired)
 
     private bool IsSettable(ISymbol member) => member switch
     {
-        IPropertySymbol { IsStatic: false, SetMethod: not null } property => this.Fits(property.Type),
-        IFieldSymbol { IsStatic: false, IsReadOnly: false, IsConst: false } field => this.Fits(field.Type),
+        IPropertySymbol property => IsSettable(property) && this.Fits(property.Type),
+        IFieldSymbol field => IsSettable(field) && this.Fits(field.Type),
         _ => false,
     };
+
+    private static bool IsSettable(IPropertySymbol property) => !property.IsStatic && property.SetMethod is not null;
+
+    /// <remarks>A constant is static, so it isn't settable either.</remarks>
+    private static bool IsSettable(IFieldSymbol field) => !field.IsStatic && !field.IsReadOnly;
 }

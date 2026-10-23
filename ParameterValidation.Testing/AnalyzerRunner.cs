@@ -38,13 +38,26 @@ public static class AnalyzerRunner
         return await RunAsync(compilation, solutionRoot).ConfigureAwait(false);
     }
 
+    /// <remarks>
+    /// Roslyn turns an exception the analyzer throws into a diagnostic that analyzer diagnostics
+    /// leave out, so a crash would read as "reports nothing". It fails the test instead.
+    /// </remarks>
     public static async Task<ImmutableArray<Diagnostic>> RunAsync(Compilation compilation, string? solutionRoot = null)
     {
-        AnalyzerOptions options = new([], new GlobalOptionsProvider(solutionRoot));
-        return await compilation
+        List<Exception> exceptions = [];
+        AnalyzerOptions analyzerOptions = new([], new GlobalOptionsProvider(solutionRoot));
+        CompilationWithAnalyzersOptions options = new(
+            analyzerOptions,
+            (exception, _, _) => exceptions.Add(exception),
+            concurrentAnalysis: true,
+            logAnalyzerExecutionTime: false
+        );
+        ImmutableArray<Diagnostic> diagnostics = await compilation
             .WithAnalyzers([new PreconditionAnalyzer()], options)
             .GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken)
             .ConfigureAwait(false);
+        Assert.Empty(exceptions);
+        return diagnostics;
     }
 }
 

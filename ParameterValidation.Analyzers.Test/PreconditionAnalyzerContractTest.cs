@@ -243,4 +243,56 @@ public class PreconditionAnalyzerContractTest
         // Assert
         DiagnosticAssert.MatchesMarkup(markup, diagnostics);
     }
+
+    [Fact]
+    public async Task Analyze_WhenAnInterfaceHasAnEvent_IgnoresIt()
+    {
+        // Arrange
+        DiagnosticMarkup markup = new("""
+            public interface INotifier { event System.EventHandler Changed; }
+            public class Notifier : INotifier { public event System.EventHandler? Changed; }
+            """);
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
+
+    [Fact]
+    public async Task Analyze_WhenTheImplementationIsInheritedFromAPackage_ReportsOnTheClass()
+    {
+        // Arrange
+        MetadataReference library = TestCompilation.CompileToImage(
+            "namespace Library;\npublic class Base { public int[] Multiply([MinLength(2)] int[] array) => array; }",
+            "Library"
+        );
+        DiagnosticMarkup markup = new(Multiplier + "public class {|PV1001:Derived|} : Library.Base, IMultiplier { }");
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup, library);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
+
+    [Fact]
+    public async Task Analyze_WhenAnInheritedImplementationDropsAnAttribute_ReportsPV1002OnTheClass()
+    {
+        // Arrange
+        DiagnosticMarkup markup = new(Multiplier + """
+            public class Base
+            {
+                public int[] Multiply(int[] array) => array;
+            }
+            public class {|PV1002:Derived|} : Base, IMultiplier { }
+            """);
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
 }

@@ -118,6 +118,7 @@ public class PreconditionAnalyzerCustomAttributeTest
     [InlineData("", "{|PV1001:Odd|}", "int")]
     [InlineData("AtMost(5)", "{|PV1001:AtMost(5, IsExclusive = true)|}", "int")]
     [InlineData("AllowedValues(1, 2, 3)", "{|PV1001:OneOrTwo|}", "int")]
+    [InlineData("AllowedValues(1, 2, 3), OneOrTwo", "{|PV1001:AllowedValues(1)|}", "int")]
     public async Task Analyze_WhenADescribedImplementationIsStronger_ReportsPV1001(
         string contract,
         string implementation,
@@ -166,8 +167,12 @@ public class PreconditionAnalyzerCustomAttributeTest
         DiagnosticAssert.MatchesMarkup(markup, diagnostics);
     }
 
-    [Fact]
-    public async Task Analyze_WhenAnUsageArgumentIsNotAConstantOfTheRightKind_ReportsPV2001()
+    [Theory]
+    [InlineData("\"one\"")]
+    [InlineData("true")]
+    [InlineData("new[] { 1 }")]
+    [InlineData("'a'")]
+    public async Task Analyze_WhenAUsagesArgumentIsNotANumber_ReportsPV2001(string argument)
     {
         // Arrange
         const string declaration = """
@@ -179,7 +184,7 @@ public class PreconditionAnalyzerCustomAttributeTest
 
             """;
         DiagnosticMarkup markup = new(
-            declaration + ContractSource.ForParameter("AtLeast(1)", "{|PV2001:AtLeast(\"one\")|}", "int")
+            declaration + ContractSource.ForParameter("AtLeast(1)", $"{{|PV2001:AtLeast({argument})|}}", "int")
         );
 
         // Act

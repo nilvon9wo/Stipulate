@@ -82,7 +82,8 @@ public sealed class PreconditionAnalyzer : DiagnosticAnalyzer
         IEnumerable<ComparedTarget> targets
     )
     {
-        foreach (Diagnostic diagnostic in targets.SelectMany(target => Compare(target, describer, context)))
+        ImmutableArray<Diagnostic> diagnostics = [.. targets.SelectMany(target => Compare(target, describer, context))];
+        foreach (Diagnostic diagnostic in diagnostics)
         {
             context.ReportDiagnostic(diagnostic);
         }

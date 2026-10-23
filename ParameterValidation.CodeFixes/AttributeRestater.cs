@@ -61,7 +61,7 @@ internal static class AttributeRestater
     }
 
     private static SyntaxNode? FindDeclaration(SyntaxNode root, Diagnostic diagnostic)
-        => root.FindToken(diagnostic.Location.SourceSpan.Start).Parent?
+        => root.FindToken(diagnostic.Location.SourceSpan.Start).Parent!
             .AncestorsAndSelf()
             .FirstOrDefault(static node => node is ParameterSyntax or BasePropertyDeclarationSyntax);
 

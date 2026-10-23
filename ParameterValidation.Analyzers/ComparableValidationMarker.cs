@@ -26,6 +26,6 @@ internal static class ComparableValidationMarker
     /// <returns>The type an assembly-form marker describes, or <c>null</c> if it isn't one.</returns>
     public static ITypeSymbol? FindDescribedType(AttributeData marker)
         => IsAssemblyForm(marker)
-            ? marker.ConstructorArguments[0].Value as ITypeSymbol
+            ? AttributeArguments.ScalarValue(marker.ConstructorArguments[0]) as ITypeSymbol
             : null;
 }

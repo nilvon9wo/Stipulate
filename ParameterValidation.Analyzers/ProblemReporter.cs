@@ -34,15 +34,21 @@ internal sealed class ProblemReporter(
     /// problem's, and a dropped precondition's) on the parameter or property.
     /// </summary>
     private Location Locate(Problem problem)
+        => this._target.InheritingType is { } inheritingType
+            ? inheritingType.Locations[0]
+            : this.LocateOnImplementation(problem);
+
+    /// <remarks>
+    /// The implementation is being analyzed, so it is declared in source, and so are its attributes:
+    /// both have a location. (An inherited implementation may come from a package; that is why a
+    /// class that inherits one is reported on itself.)
+    /// </remarks>
+    private Location LocateOnImplementation(Problem problem)
     {
         bool isOnImplementationAttribute = !problem.IsGuarantee && problem.Kind != ProblemKind.Dropped;
-        Location? attributeLocation = isOnImplementationAttribute
-            ? problem.Attribute.Data.ApplicationSyntaxReference?.GetSyntax(this._cancellationToken).GetLocation()
-            : null;
-        return this._target.InheritingType?.Locations.FirstOrDefault()
-            ?? attributeLocation
-            ?? this._target.Target.Locations.FirstOrDefault()
-            ?? Location.None;
+        return isOnImplementationAttribute
+            ? problem.Attribute.Data.ApplicationSyntaxReference!.GetSyntax(this._cancellationToken).GetLocation()
+            : this._target.Target.Locations[0];
     }
 
     /// <summary>The code fix can restate the attribute, unless the implementation is inherited.</summary>

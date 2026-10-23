@@ -23,6 +23,7 @@ internal static class ContractFinder
     };
 
     /// <summary>The members whose preconditions and guarantees <paramref name="member"/> must honour.</summary>
+    /// <param name="member">A member <see cref="IsChecked"/> accepts: a method or a property.</param>
     public static HashSet<ISymbol> FindContracts(ISymbol member)
     {
         ImmutableArray<ISymbol> explicitImplementations = FindExplicitImplementations(member);
@@ -59,23 +60,18 @@ internal static class ContractFinder
 
     private static IEnumerable<ISymbol> FindOverridden(ISymbol member)
     {
-        ISymbol? overridden = member switch
-        {
-            IMethodSymbol method => method.OverriddenMethod,
-            IPropertySymbol property => property.OverriddenProperty,
-            _ => null,
-        };
+        ISymbol? overridden = member is IMethodSymbol method
+            ? method.OverriddenMethod
+            : ((IPropertySymbol)member).OverriddenProperty;
         return overridden is null
             ? []
             : [overridden];
     }
 
-    private static ImmutableArray<ISymbol> FindExplicitImplementations(ISymbol member) => member switch
-    {
-        IMethodSymbol method => ImmutableArray<ISymbol>.CastUp(method.ExplicitInterfaceImplementations),
-        IPropertySymbol property => ImmutableArray<ISymbol>.CastUp(property.ExplicitInterfaceImplementations),
-        _ => [],
-    };
+    private static ImmutableArray<ISymbol> FindExplicitImplementations(ISymbol member)
+        => member is IMethodSymbol method
+            ? ImmutableArray<ISymbol>.CastUp(method.ExplicitInterfaceImplementations)
+            : ImmutableArray<ISymbol>.CastUp(((IPropertySymbol)member).ExplicitInterfaceImplementations);
 
     private static IEnumerable<ISymbol> FindImplicitlyImplemented(ISymbol member)
     {
@@ -89,12 +85,12 @@ internal static class ContractFinder
 
     /// <remarks>
     /// An override is checked against the member it overrides, which in turn was checked against the
-    /// interface; checking both would report everything twice.
+    /// interface; checking both would report everything twice. A class or struct always has a base type.
     /// </remarks>
     private static bool IsImplementedBy(ISymbol contract, ISymbol member)
     {
         INamedTypeSymbol type = member.ContainingType;
-        ISymbol? baseImplementation = type.BaseType?.FindImplementationForInterfaceMember(contract);
+        ISymbol? baseImplementation = type.BaseType!.FindImplementationForInterfaceMember(contract);
         bool isImplementedByBase = member.IsOverride && baseImplementation is not null;
         ISymbol? implementation = type.FindImplementationForInterfaceMember(contract);
         bool isImplementation = SymbolEqualityComparer.Default.Equals(implementation, member);
@@ -105,5 +101,5 @@ internal static class ContractFinder
         => pair.Implementation is { } implementation
             && !SymbolEqualityComparer.Default.Equals(implementation.ContainingType, type)
             && implementation.ContainingType.TypeKind != TypeKind.Interface
-            && type.BaseType?.FindImplementationForInterfaceMember(pair.Contract) is null;
+            && type.BaseType!.FindImplementationForInterfaceMember(pair.Contract) is null;
 }

@@ -9,13 +9,11 @@ internal static class RestatePropertiesFactory
 {
     /// <param name="target">The compared target the attribute is missing from.</param>
     /// <param name="attribute">One of the contract target's own attributes.</param>
-    /// <returns>The properties, or <c>null</c> if the contract member has no documentation comment ID.</returns>
-    public static ImmutableDictionary<string, string?>? Create(ComparedTarget target, DescribedAttribute attribute)
+    /// <remarks>Every method and property has a documentation comment ID.</remarks>
+    public static ImmutableDictionary<string, string?> Create(ComparedTarget target, DescribedAttribute attribute)
     {
-        string? id = DocumentationCommentId.CreateDeclarationId(target.Contract.OriginalDefinition);
-        return id is null
-            ? null
-            : Create(id, target.ContractTarget, attribute);
+        string id = DocumentationCommentId.CreateDeclarationId(target.Contract.OriginalDefinition)!;
+        return Create(id, target.ContractTarget, attribute);
     }
 
     private static ImmutableDictionary<string, string?> Create(

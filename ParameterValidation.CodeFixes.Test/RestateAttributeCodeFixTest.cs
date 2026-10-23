@@ -233,6 +233,78 @@ public class RestateAttributeCodeFixTest
     }
 
     [Fact]
+    public async Task RegisterCodeFixes_WhenAnIndexerParameterDropsAnAttribute_RestatesIt()
+    {
+        // Arrange
+        const string source = Usings + """
+            public interface IGrid { int this[[Range(0, 9)] int index] { get; } }
+            public class Grid : IGrid
+            {
+                public int this[int index] => index;
+            }
+            """;
+        string expected = source.Replace(
+            "public int this[int index]",
+            "public int this[[Range(0, 9)] int index]",
+            StringComparison.Ordinal
+        );
+
+        // Act
+        FixResult result = await CodeFixRunner.FixEachAsync(source);
+
+        // Assert
+        result.AssertFixedTo(expected);
+    }
+
+    [Fact]
+    public async Task RegisterCodeFixes_WhenTheValidationListHasATarget_AddsAListOfItsOwn()
+    {
+        // Arrange
+        const string source = Usings + """
+            public interface INamer { void Name([Required, MinLength(1)] string name); }
+            public class Namer : INamer
+            {
+                public void Name([param: Required] string name) { }
+            }
+            """;
+        string expected = source.Replace(
+            "Name([param: Required] string name) {",
+            "Name([param: Required][MinLength(1)] string name) {",
+            StringComparison.Ordinal
+        );
+
+        // Act
+        FixResult result = await CodeFixRunner.FixEachAsync(source);
+
+        // Assert
+        result.AssertFixedTo(expected);
+    }
+
+    [Fact]
+    public async Task RegisterCodeFixes_WhenAListHoldsAnAttributeThatDoesNotBind_AddsAListOfItsOwn()
+    {
+        // Arrange
+        const string source = Usings + """
+            public interface INamer { void Name([Required] string name); }
+            public class Namer : INamer
+            {
+                public void Name([Unknown] string name) { }
+            }
+            """;
+        string expected = source.Replace(
+            "Name([Unknown] string name)",
+            "Name([Unknown][Required] string name)",
+            StringComparison.Ordinal
+        );
+
+        // Act
+        FixResult result = await CodeFixRunner.FixEachAsync(source);
+
+        // Assert
+        Assert.Equal(expected.ReplaceLineEndings(), result.Text);
+    }
+
+    [Fact]
     public async Task RegisterCodeFixes_WhenTheImplementationIsInherited_OffersNoFix()
     {
         // Arrange

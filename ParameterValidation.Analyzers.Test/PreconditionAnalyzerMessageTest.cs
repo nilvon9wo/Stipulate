@@ -76,6 +76,12 @@ public class PreconditionAnalyzerMessageTest
             + "[Range(1, 10)]"
         },
         {
+            ContractSource.ForParameter("MaxLength", "MaxLength(5)", "string"),
+            "Parameter 'value' of 'Implementation.Accept(string)' strengthens the precondition of "
+            + "'IContract.Accept(string)': [MaxLength(5)] requires Length <= 5, but the contract accepts "
+            + "Length <= infinity"
+        },
+        {
             ContractSource.ForParameter("Range(1, 10)", "Range(1, 5)", "int"),
             "Parameter 'value' of 'Implementation.Accept(int)' strengthens the precondition of "
             + "'IContract.Accept(int)': [Range(1, 5)] requires Value <= 5, but the contract accepts Value <= 10"
@@ -190,6 +196,30 @@ public class PreconditionAnalyzerMessageTest
             Assert.Single(diagnostics).GetMessage(),
             StringComparison.Ordinal
         );
+    }
+
+    [Fact]
+    public async Task Analyze_WhenAnAttributeClassFromMetadataLacksTheSuffix_ShowsItsWholeName()
+    {
+        // Arrange
+        MetadataReference library = TestCompilation.CompileToImage(
+            """
+            namespace Library;
+            public sealed class Even : ValidationAttribute { }
+            public interface IContract { void Accept([Even] int value); }
+            """,
+            "Library"
+        );
+        DiagnosticMarkup markup = new(
+            "public class Implementation : Library.IContract { public void Accept(int value) { } }"
+        );
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup, library);
+
+        // Assert
+        string message = Assert.Single(diagnostics).GetMessage();
+        Assert.Contains("doesn't restate [Even]", message, StringComparison.Ordinal);
     }
 
     [Fact]

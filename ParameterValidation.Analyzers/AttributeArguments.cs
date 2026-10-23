@@ -15,6 +15,15 @@ internal static class AttributeArguments
     public static TypedConstant? Find(AttributeData attribute, string name)
         => FindNamed(attribute, name) ?? FindConstructorArgument(attribute, name);
 
+    /// <summary>
+    /// The constant's value, or <c>null</c> if it is an array: <see cref="TypedConstant.Value"/>
+    /// throws for an array, and an argument can be one wherever an attribute class says so.
+    /// </summary>
+    public static object? ScalarValue(TypedConstant constant)
+        => constant.Kind == TypedConstantKind.Array
+            ? null
+            : constant.Value;
+
     /// <summary>The value given for the named argument <paramref name="name"/>, or <c>null</c> if none is.</summary>
     public static TypedConstant? FindNamed(AttributeData attribute, string name)
         => attribute.NamedArguments

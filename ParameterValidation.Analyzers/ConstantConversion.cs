@@ -12,12 +12,9 @@ internal static class ConstantConversion
 {
     /// <returns>The constant as a <see cref="double"/>, or <c>null</c> if it isn't a number.</returns>
     public static double? ToBound(TypedConstant constant)
-        => IsNumber(constant)
-            ? Convert.ToDouble(constant.Value, CultureInfo.InvariantCulture)
+        => AttributeArguments.ScalarValue(constant) is IConvertible number and not (bool or char or string)
+            ? Convert.ToDouble(number, CultureInfo.InvariantCulture)
             : null;
-
-    private static bool IsNumber(TypedConstant constant)
-        => constant is { Kind: TypedConstantKind.Primitive, Value: IConvertible and not (bool or char or string) };
 
     /// <returns>The array's distinct elements as C# literals, or <c>null</c> if it isn't an array.</returns>
     public static ImmutableArray<string>? ToValues(TypedConstant constant)

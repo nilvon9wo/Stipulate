@@ -11,12 +11,11 @@ internal static class AttributeLists
     /// <summary>The index <see cref="FindValidationList"/> returns when there is no such list.</summary>
     public const int None = -1;
 
-    public static SyntaxList<AttributeListSyntax> Of(SyntaxNode declaration) => declaration switch
-    {
-        ParameterSyntax parameter => parameter.AttributeLists,
-        BasePropertyDeclarationSyntax property => property.AttributeLists,
-        _ => default,
-    };
+    /// <param name="declaration">A parameter, or a property or indexer.</param>
+    public static SyntaxList<AttributeListSyntax> Of(SyntaxNode declaration)
+        => declaration is ParameterSyntax parameter
+            ? parameter.AttributeLists
+            : ((BasePropertyDeclarationSyntax)declaration).AttributeLists;
 
     /// <summary>
     /// The index of the last of <paramref name="declaration"/>'s attribute lists that holds only

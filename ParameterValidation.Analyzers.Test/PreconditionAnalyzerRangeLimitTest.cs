@@ -73,6 +73,20 @@ public class PreconditionAnalyzerRangeLimitTest
         { Range("char", "a", "z"), Range("char", "b", "z"), "char" },
         { Invariant("double", "0", "10"), Invariant("double", "0", "NaN"), "double" },
         { Range("int", "0", "10"), Range("int", "", "10"), "int" },
+        { Invariant("int", "0", "10"), Invariant("int", "x", "10"), "int" },
+        { Invariant("byte", "0", "10"), Invariant("byte", "-1", "10"), "byte" },
+        { Range("float", "1", "10"), Range("float", "0.5", "10"), "float" },
+        { Invariant("float", "1", "10"), Invariant("float", "x", "10"), "float" },
+        { Invariant("double", "1", "10"), Invariant("double", "x", "10"), "double" },
+        { Invariant(DateTime, "2020-01-01", "2030-12-31"), Invariant(DateTime, "2020-01-01", "never"), DateTime },
+        {
+            Invariant(DateTime, "2020-01-01", "2030-12-31"),
+            Invariant(DateTime, "2020-01-01", "9999-12-31T23:59:59"),
+            DateTime
+        },
+        { Invariant(DateOnly, "2020-01-01", "2030-12-31"), Invariant(DateOnly, "2020-13-01", "2030-12-31"), DateOnly },
+        { Invariant(TimeOnly, "09:00", "17:00"), Invariant(TimeOnly, "09:00", "25:00"), TimeOnly },
+        { Range(TimeSpan, "00:00:01", "1.00:00"), Range(TimeSpan, "00:00:01", "99:99"), TimeSpan },
     };
 
     [Theory]

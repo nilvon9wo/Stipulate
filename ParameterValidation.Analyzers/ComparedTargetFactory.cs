@@ -10,8 +10,8 @@ internal static class ComparedTargetFactory
 {
     private static readonly SymbolDisplayFormat DisplayFormat = SymbolDisplayFormat.CSharpShortErrorMessageFormat;
 
-    /// <param name="contract">The contract member.</param>
-    /// <param name="implementation">The member that implements or overrides it.</param>
+    /// <param name="contract">The contract member: a method or a property.</param>
+    /// <param name="implementation">The member that implements or overrides it, of the same kind.</param>
     /// <param name="inheritingType">See <see cref="ComparedTarget.InheritingType"/>.</param>
     public static IEnumerable<ComparedTarget> Create(
         ISymbol contract,
@@ -23,8 +23,7 @@ internal static class ComparedTargetFactory
         IEnumerable<ComparedTarget> parameters = GetParameters(contract)
             .Zip(GetParameters(implementation), pair.CompareParameter);
         IEnumerable<ComparedTarget> properties = contract is IPropertySymbol contractProperty
-            && implementation is IPropertySymbol property
-            ? [pair.CompareProperty(contractProperty, property)]
+            ? [pair.CompareProperty(contractProperty, (IPropertySymbol)implementation)]
             : [];
         return parameters.Concat(properties);
     }
@@ -35,12 +34,10 @@ internal static class ComparedTargetFactory
         => annotation == NullableAnnotation.Annotated
             || type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
 
-    private static ImmutableArray<IParameterSymbol> GetParameters(ISymbol member) => member switch
-    {
-        IMethodSymbol method => method.Parameters,
-        IPropertySymbol property => property.Parameters,
-        _ => [],
-    };
+    private static ImmutableArray<IParameterSymbol> GetParameters(ISymbol member)
+        => member is IMethodSymbol method
+            ? method.Parameters
+            : ((IPropertySymbol)member).Parameters;
 }
 
 /// <summary>A contract member and its implementation, as the messages name them.</summary>

@@ -49,10 +49,15 @@ internal static class DescriptionAnalyzer
             ? context.SemanticModel.GetDeclaredSymbol(declaration, context.CancellationToken)
             : null;
 
+    /// <remarks>
+    /// The owner is declared in source, so its attributes have syntax. (Only an assembly attribute
+    /// from a linked .netmodule wouldn't, which SDK-style projects don't support.)
+    /// </remarks>
     private static bool IsAppliedAt(AttributeData attribute, AttributeSyntax syntax)
-        => attribute.ApplicationSyntaxReference is { } reference
-            && reference.SyntaxTree == syntax.SyntaxTree
-            && reference.Span == syntax.Span;
+    {
+        SyntaxReference reference = attribute.ApplicationSyntaxReference!;
+        return reference.SyntaxTree == syntax.SyntaxTree && reference.Span == syntax.Span;
+    }
 }
 
 /// <summary>A <c>[ComparableValidation]</c> where it is applied.</summary>

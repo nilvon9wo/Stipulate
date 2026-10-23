@@ -48,7 +48,6 @@ namespace ParameterValidation.Contracts;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
 public sealed class ComparableValidationAttribute(string dimension, ValidationComparison comparison) : Attribute
 {
-
     /// <summary>Describes <paramref name="attributeType"/>; apply this form to an assembly.</summary>
     /// <param name="attributeType">The validation attribute class being described.</param>
     /// <param name="dimension">
@@ -62,8 +61,10 @@ public sealed class ComparableValidationAttribute(string dimension, ValidationCo
     /// <summary>The described attribute class, when applied to an assembly.</summary>
     public Type? AttributeType { get; }
 
+    /// <summary>What is constrained; constraints are only compared on the same dimension.</summary>
     public string Dimension { get; } = dimension;
 
+    /// <summary>How the dimension is constrained.</summary>
     public ValidationComparison Comparison { get; } = comparison;
 
     /// <summary>

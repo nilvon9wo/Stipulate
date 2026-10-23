@@ -22,6 +22,7 @@ public class PreconditionAnalyzerPreconditionTest
     [InlineData("StringLength(10)", "StringLength(20)", "string")]
     [InlineData("Required", "Required(AllowEmptyStrings = true)", "string")]
     [InlineData("", "MaxLength", "string")]
+    [InlineData("Range(0, 10)", "Range(double.NegativeInfinity, 10)", "double")]
     public async Task Analyze_WhenTheImplementationIsNoStronger_ReportsNothing(
         string contract,
         string implementation,
@@ -53,6 +54,8 @@ public class PreconditionAnalyzerPreconditionTest
     [InlineData("", "{|PV1001:AllowedValues(1)|}", "int")]
     [InlineData("", "{|PV1001:DeniedValues(1)|}", "int")]
     [InlineData("DeniedValues(1)", "{|PV1001:AllowedValues(2)|}", "int")]
+    [InlineData("MinLength(1), Length(2, 10)", "{|PV1001:MinLength(3)|}, MaxLength(10)", "string")]
+    [InlineData("Length(2, 10), MinLength(1)", "{|PV1001:MinLength(3)|}, MaxLength(10)", "string")]
     public async Task Analyze_WhenTheImplementationIsStronger_ReportsPV1001OnItsAttribute(
         string contract,
         string implementation,
@@ -106,6 +109,20 @@ public class PreconditionAnalyzerPreconditionTest
     {
         // Arrange
         DiagnosticMarkup markup = new(ContractSource.ForParameter(contract, implementation, type));
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
+
+    [Fact]
+    public async Task Analyze_WhenABuiltInAttributesArgumentIsNotOfTheRightKind_ReportsPV2002()
+    {
+        // Arrange
+        string source = ContractSource.ForParameter("AllowedValues(1)", "{|PV2002:AllowedValues(null)|}", "int");
+        DiagnosticMarkup markup = new(source);
 
         // Act
         ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);

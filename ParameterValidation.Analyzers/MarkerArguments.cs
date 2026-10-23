@@ -26,15 +26,19 @@ internal sealed record MarkerArguments(
 
     public bool IsDefinedKind => this.Comparison is >= (int)ConstraintKind.Flag and <= (int)ConstraintKind.DeniedValues;
 
-    public bool IsBound => this.IsDefinedKind && ConstraintComparisons.Of(this.Kind).IsBound;
+    /// <remarks>Only for a defined kind, as is everything below that depends on it.</remarks>
+    public bool IsBound => ConstraintComparisons.Of(this.Kind).IsBound;
 
-    /// <summary>
-    /// The <c>Value</c>, converted for the kind; <c>null</c> if it is missing or of the wrong type,
-    /// or the kind isn't defined.
-    /// </summary>
-    public object? Value => this.ValueConstant is { } constant && this.IsDefinedKind
+    /// <summary>The <c>Value</c>, converted for the kind; <c>null</c> if it is missing or of the wrong type.</summary>
+    public object? Value => this.ValueConstant is { } constant
         ? ConstantConversion.ToValue(constant, this.Kind)
         : null;
+
+    /// <summary>Whether an <c>Argument</c> or a <c>Value</c> says where the bound or the values come from.</summary>
+    public bool HasSource => this.Argument is not null || this.ValueConstant.HasValue;
+
+    /// <summary>Whether <c>IsExclusive</c> or an <c>ExclusiveArgument</c> is given.</summary>
+    public bool HasExclusivity => this.IsExclusive || this.ExclusiveArgument is not null;
 
     /// <returns>The arguments, or <c>null</c> if the marker lacks a dimension or a comparison.</returns>
     public static MarkerArguments? Read(AttributeData marker)
@@ -50,12 +54,17 @@ internal sealed record MarkerArguments(
 
     private static MarkerArguments? ReadFrom(AttributeData marker, int offset)
     {
-        object? dimension = marker.ConstructorArguments[offset].Value;
-        object? comparison = marker.ConstructorArguments[offset + 1].Value;
+        object? dimension = AttributeArguments.ScalarValue(marker.ConstructorArguments[offset]);
+        object? comparison = AttributeArguments.ScalarValue(marker.ConstructorArguments[offset + 1]);
         return dimension is string text && comparison is int number
             ? ReadNamed(marker, text, number)
             : null;
     }
+
+    private static object? ReadNamedScalar(AttributeData marker, string name)
+        => AttributeArguments.FindNamed(marker, name) is { } constant
+            ? AttributeArguments.ScalarValue(constant)
+            : null;
 
     private static MarkerArguments ReadNamed(AttributeData marker, string dimension, int comparison)
     {
@@ -66,10 +75,10 @@ internal sealed record MarkerArguments(
         return new MarkerArguments(
             dimension,
             comparison,
-            AttributeArguments.FindNamed(marker, ArgumentName)?.Value as string,
+            ReadNamedScalar(marker, ArgumentName) as string,
             nonNullValue,
-            AttributeArguments.FindNamed(marker, IsExclusiveName) is { Value: true },
-            AttributeArguments.FindNamed(marker, ExclusiveArgumentName)?.Value as string
+            ReadNamedScalar(marker, IsExclusiveName) is true,
+            ReadNamedScalar(marker, ExclusiveArgumentName) as string
         );
     }
 }

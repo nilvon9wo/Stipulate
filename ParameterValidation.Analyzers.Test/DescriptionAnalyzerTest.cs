@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using ParameterValidation.Testing;
 
 namespace ParameterValidation.Analyzers.Test;
@@ -14,6 +15,10 @@ public class DescriptionAnalyzerTest
             public int Count { get; set; }
             public bool Exclusive { get; set; }
             public int Limit;
+            public static int Shared { get; set; }
+            public static int SharedLimit;
+            public readonly int Fixed;
+            public const int Constant = 1;
         }
         """;
 
@@ -34,6 +39,7 @@ public class DescriptionAnalyzerTest
         { "null, ValidationComparison.Flag", "it needs a dimension and a comparison" },
         { "\" \", ValidationComparison.Flag", "the dimension is empty" },
         { "\"Shape\", (ValidationComparison)9", "9 isn't a ValidationComparison" },
+        { "\"Shape\", (ValidationComparison)(-1)", "-1 isn't a ValidationComparison" },
         { "\"Shape\", ValidationComparison.Flag, Value = 1", Flag },
         { "\"Shape\", ValidationComparison.Flag, Argument = \"minimum\"", Flag },
         { "\"Shape\", ValidationComparison.Flag, IsExclusive = true", Flag },
@@ -42,6 +48,11 @@ public class DescriptionAnalyzerTest
         { Length + "Value = null", "a LowerBound needs an Argument or a Value" },
         { Length + "Argument = \"nope\"", NoArgument + "'nope'" },
         { Length + "Argument = \"Minimum\"", NoArgument + "'Minimum'" },
+        { Length + "Argument = \"Shared\"", NoArgument + "'Shared'" },
+        { Length + "Argument = \"SharedLimit\"", NoArgument + "'SharedLimit'" },
+        { Length + "Argument = \"Fixed\"", NoArgument + "'Fixed'" },
+        { Length + "Argument = \"Constant\"", NoArgument + "'Constant'" },
+        { Length + "Argument = \"IsValid\"", NoArgument + "'IsValid'" },
         { Length + "Value = \"one\"", "the Value of a LowerBound must be a number" },
         { Length + "Value = true", "the Value of a LowerBound must be a number" },
         { Allowed + "Value = 1", "the Value of a AllowedValues must be an array" },
@@ -49,6 +60,7 @@ public class DescriptionAnalyzerTest
         { Denied + "Value = new[] { 1 }, ExclusiveArgument = \"Exclusive\"", Exclusive },
         { Length + "Value = 1, ExclusiveArgument = \"Nope\"", NoBoolean + "'Nope'" },
         { Length + "Value = 1, ExclusiveArgument = \"Count\"", NoBoolean + "'Count'" },
+        { Length + "Value = 1, ExclusiveArgument = \"Limit\"", NoBoolean + "'Limit'" },
         { "typeof(SubjectAttribute), \"Shape\", ValidationComparison.Flag", ClassFormTakesNoType },
     };
 
@@ -171,6 +183,68 @@ public class DescriptionAnalyzerTest
             + "it describes",
             Assert.Single(diagnostics).GetMessage()
         );
+    }
+
+    [Fact]
+    public async Task Analyze_WhenAClassHasSeveralMarkers_ReportsOnlyTheInvalidOne()
+    {
+        // Arrange
+        const string markers = "[ComparableValidation(\"Shape\", ValidationComparison.Flag)]\n"
+            + "[{|PV2003:ComparableValidation(\"Shape\", ValidationComparison.Flag, Value = 1)|}]\n";
+        DiagnosticMarkup markup = new(markers + Subject);
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
+
+    /// <remarks>A class of the contracts' name in source shadows theirs (warning CS0436).</remarks>
+    [Fact]
+    public async Task Analyze_WhenAMarkerHasTooFewArguments_ReportsPV2003()
+    {
+        // Arrange
+        const string shadow = """
+            namespace ParameterValidation.Contracts
+            {
+                [System.AttributeUsage(System.AttributeTargets.Class)]
+                public sealed class ComparableValidationAttribute(string dimension) : System.Attribute
+                {
+                    public string Dimension => dimension;
+                }
+            }
+
+            """;
+        DiagnosticMarkup markup = new(shadow + "[{|PV2003:ComparableValidation(\"Shape\")|}]\n" + Subject);
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
+
+    [Fact]
+    public async Task Analyze_WhenAPartialClassHasMarkersInTwoFiles_ReportsOnlyTheInvalidOne()
+    {
+        // Arrange
+        const string valid = "[ComparableValidation(\"Shape\", ValidationComparison.Flag)]\n"
+            + "public sealed partial class ShapeAttribute : ValidationAttribute { }";
+        const string invalid = "[ComparableValidation(\"Size\", ValidationComparison.Flag, Value = 1)]\n"
+            + "public sealed partial class ShapeAttribute { }";
+        CSharpCompilation compilation = TestCompilation.Compile(TestCompilation.Usings + valid)
+            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(
+                TestCompilation.Usings + invalid,
+                TestCompilation.ParseOptions,
+                cancellationToken: TestContext.Current.CancellationToken
+            ));
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(compilation);
+
+        // Assert
+        Assert.Equal(DiagnosticIds.InvalidDescription, Assert.Single(diagnostics).Id);
     }
 
     [Fact]
