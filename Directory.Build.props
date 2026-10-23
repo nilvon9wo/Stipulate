@@ -1,6 +1,20 @@
 <Project>
 
   <!--
+    Without EnforceCodeStyleInBuild, the error-severity IDE0xxx rules in .editorconfig are
+    enforced only by an IDE's live analysis (or `dotnet format`), never by `dotnet build` or CI.
+    Everything is an error (docs/contribute/coding-standards.md), the compiler's and NuGet's own
+    warnings included. LangVersion is pinned once so the netstandard2.0 projects compile with
+    the same modern syntax as the net10.0 ones.
+  -->
+  <PropertyGroup>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!--
     Enforce DataAnnotations validation attributes on method parameters. Two interchangeable approaches:
 
       Weaving       (default) After each project compiles, ParameterValidation.Weaver rewrites the
@@ -19,14 +33,14 @@
 
   <!--
     Whatever the mode, ParameterValidation.Analyzers checks that implementations and overrides
-    don't strengthen their contract's preconditions or weaken its guarantees (PV1001-PV1007), live
+    don't strengthen their contract's preconditions or weaken its guarantees (PV1001-PV1003), live
     in the IDE and in the build; ParameterValidation.CodeFixes offers to restate a missing attribute.
     ParameterValidation.Contracts provides [ComparableValidation], which describes a custom
     validation attribute so the analyzer can compare it.
 
     Assemblies whose files are under ParameterValidationSolutionRoot count as part of the
-    solution: an attribute declared in one that can't be compared is reported as PV1002 ("add a
-    [ComparableValidation]") rather than PV1005 ("it's someone else's; describe it from your
+    solution: an attribute declared in one that can't be compared is reported as PV2001 ("add a
+    [ComparableValidation]") rather than PV2002 ("it's someone else's; describe it from your
     assembly").
   -->
   <PropertyGroup>

@@ -6,7 +6,6 @@
   -->
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <IsRoslynComponent>true</IsRoslynComponent>
   </PropertyGroup>
@@ -16,7 +15,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\ParameterValidation.Analyzers\RestateProperties.cs" Link="RestateProperties.cs" />
+    <Compile Include="..\ParameterValidation.Analyzers\RestateProperties.cs" Link="Linked\RestateProperties.cs" />
+    <Compile Include="..\ParameterValidation.Analyzers\DiagnosticIds.cs" Link="Linked\DiagnosticIds.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The tests exercise the internal collaborators directly. Internal, so no consumer sees them. -->
+    <InternalsVisibleTo Include="ParameterValidation.CodeFixes.Test" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Deliberately non-compliant code - see README.md. Not part of ArrayFoo.slnx, so no ordinary
+    gate ever sees it; only scripts/verify-gates.py builds, formats, lays out and inspects it, to
+    prove each gate still reports what it is supposed to. It is not woven or analyzed by
+    ParameterValidation itself: that would only add noise to what the gates report.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>ParameterValidation.StyleCanary</RootNamespace>
+    <IsParameterValidationTool>true</IsParameterValidationTool>
+  </PropertyGroup>
+
+</Project>

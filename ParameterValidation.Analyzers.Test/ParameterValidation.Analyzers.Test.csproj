@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
       <PrivateAssets>all</PrivateAssets>
@@ -19,8 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ParameterValidation.Analyzers\ParameterValidation.Analyzers.csproj" />
-    <ProjectReference Include="..\ParameterValidation.CodeFixes\ParameterValidation.CodeFixes.csproj" />
-    <ProjectReference Include="..\ParameterValidation.Contracts\ParameterValidation.Contracts.csproj" />
+    <ProjectReference Include="..\ParameterValidation.Testing\ParameterValidation.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

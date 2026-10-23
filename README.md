@@ -42,11 +42,11 @@ contract promises (the Liskov substitution principle).
 | ID | Severity | Meaning |
 |---|---|---|
 | PV1001 | Error | The implementation's attribute rejects something the contract accepts. |
-| PV1002 | Error | An attribute declared in this solution can't be compared; describe it with `[ComparableValidation]`. |
-| PV1003 | Warning | The implementation doesn't restate one of the contract's attributes. Restate it, or state a weaker constraint for each of its bounds (e.g. `[MinLength(0)]`, `[MaxLength]`). |
-| PV1005 | Error | An attribute from outside the solution can't be compared; repeat it exactly, or describe it from your assembly. |
-| PV1006 | Error | A `[ComparableValidation]` description is invalid. |
-| PV1007 | Error | The implementation weakens a guarantee: what a getter, `out` or `ref` parameter hands back. |
+| PV1002 | Warning | The implementation doesn't restate one of the contract's attributes. Restate it, or state a weaker constraint for each of its bounds (e.g. `[MinLength(0)]`, `[MaxLength]`). |
+| PV1003 | Error | The implementation weakens a guarantee: what a getter, `out` or `ref` parameter hands back. |
+| PV2001 | Error | An attribute declared in this solution can't be compared; describe it with `[ComparableValidation]`. |
+| PV2002 | Error | An attribute from outside the solution can't be compared; repeat it exactly, or describe it from your assembly. |
+| PV2003 | Error | A `[ComparableValidation]` description is invalid. |
 
 Parameters, properties and indexers are checked, for interface implementations (implicit, explicit,
 inherited and `static abstract`) and overrides. A property's attributes are preconditions of its

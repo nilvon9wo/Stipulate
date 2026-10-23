@@ -1,19 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ArrayFoo;
 
-public class ArrayMultiplier
+/// <summary>The sample that inspired ParameterValidation: its attributes are enforced by the weaver.</summary>
+public static class ArrayMultiplier
 {
-	public static int[] Multiply([Required, MinLength(1)] int[] array)
-	{
-		int previousValue = 1;
-		List<int> result = [];
-		foreach (int currentValue in array)
-		{
-			result.Add(previousValue * currentValue);
-			previousValue = currentValue;
-		}
+    /// <summary>What the first element is multiplied by, having no element before it.</summary>
+    private const int FirstMultiplier = 1;
 
-		return [.. result];
-	}
+    /// <summary>Multiplies each element by the one before it.</summary>
+    public static int[] Multiply([Required, MinLength(1)] int[] array)
+        => [.. array.Prepend(FirstMultiplier).Zip(array, static (previous, current) => previous * current)];
 }
