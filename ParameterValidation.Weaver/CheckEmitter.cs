@@ -1,7 +1,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>
 /// Emits the IL equivalent of the following for one validation attribute on one parameter:

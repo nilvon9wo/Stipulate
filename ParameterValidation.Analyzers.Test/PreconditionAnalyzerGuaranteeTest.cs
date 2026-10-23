@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using ParameterValidation.Testing;
+using Net.NowhereAtAll.ParameterValidation.Testing;
 
-namespace ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
 
 /// <summary>
 /// What an implementation hands back (a getter's value, an <c>out</c> or <c>ref</c> parameter)

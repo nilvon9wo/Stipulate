@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using ParameterValidation.Testing;
+using Net.NowhereAtAll.ParameterValidation.Testing;
 
-namespace ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
 
 /// <summary>
 /// Which members are compared with a contract: implementations of interface members, however they

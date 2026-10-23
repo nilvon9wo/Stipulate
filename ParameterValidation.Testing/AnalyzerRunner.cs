@@ -3,9 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using ParameterValidation.Analyzers;
+using Net.NowhereAtAll.ParameterValidation.Analyzers;
 
-namespace ParameterValidation.Testing;
+namespace Net.NowhereAtAll.ParameterValidation.Testing;
 
 /// <summary>Runs <see cref="PreconditionAnalyzer"/> over C# source in memory.</summary>
 public static class AnalyzerRunner

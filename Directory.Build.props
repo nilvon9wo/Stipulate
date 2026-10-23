@@ -15,6 +15,16 @@
   </PropertyGroup>
 
   <!--
+    Like XFTY, every ParameterValidation assembly and namespace lives under Net.NowhereAtAll, so
+    ParameterValidation.Weaver builds Net.NowhereAtAll.ParameterValidation.Weaver.dll; the folders,
+    projects and (later) package IDs keep the short name.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('ParameterValidation.'))">
+    <AssemblyName>Net.NowhereAtAll.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>Net.NowhereAtAll.$(MSBuildProjectName)</RootNamespace>
+  </PropertyGroup>
+
+  <!--
     Coverage is not an optional extra: every `dotnet test` of a ParameterValidation.*.Test
     project, local or CI, measures the one package that project tests and fails below 100% line
     AND branch coverage (docs/contribute/coverage-standards.md).
@@ -22,18 +32,22 @@
     - coverlet.MTP, not coverlet.collector: global.json selects the Microsoft Testing Platform
       runner, under which coverlet.collector silently measures nothing.
     - The include filter is derived from the project name (ParameterValidation.Weaver.Test
-      measures ParameterValidation.Weaver), so neither the test assembly, the shared
-      ParameterValidation.Testing helpers nor xunit's own DLLs drag the numbers down.
+      measures Net.NowhereAtAll.ParameterValidation.Weaver), so neither the test assembly, the
+      shared ParameterValidation.Testing helpers nor xunit's own DLLs drag the numbers down.
+    - The exclude filter must be given explicitly. Left to its default, coverlet.MTP excludes every
+      assembly loaded alongside the tests, cut to its first two name segments: one
+      Net.NowhereAtAll.ParameterValidation.* assembly becomes [Net.NowhereAtAll.*]*, which excludes
+      the measured assembly too, and the threshold then fails on "No coverable data".
     - Running a filtered subset (one class, say) cannot reach 100%: pass
       `-p:ParameterValidationCoverage=false` to `dotnet test` for those runs.
   -->
   <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('ParameterValidation.')) And $(MSBuildProjectName.EndsWith('.Test'))">
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <ParameterValidationCoverage Condition="'$(ParameterValidationCoverage)' == ''">true</ParameterValidationCoverage>
-    <ParameterValidationCoveredAssembly>$(MSBuildProjectName.Substring(0, $(MSBuildProjectName.LastIndexOf('.Test'))))</ParameterValidationCoveredAssembly>
+    <ParameterValidationCoveredAssembly>Net.NowhereAtAll.$(MSBuildProjectName.Substring(0, $(MSBuildProjectName.LastIndexOf('.Test'))))</ParameterValidationCoveredAssembly>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ParameterValidationCoverage)' == 'true' And '$(ParameterValidationCoveredAssembly)' != ''">
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet --coverlet-include "[$(ParameterValidationCoveredAssembly)]*" --coverlet-output-format cobertura --coverlet-threshold 100 --coverlet-threshold-type line --coverlet-threshold-type branch</TestingPlatformCommandLineArguments>
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet --coverlet-include "[$(ParameterValidationCoveredAssembly)]*" --coverlet-exclude "[Net.NowhereAtAll.ParameterValidation.Testing]*" --coverlet-output-format cobertura --coverlet-threshold 100 --coverlet-threshold-type line --coverlet-threshold-type branch</TestingPlatformCommandLineArguments>
   </PropertyGroup>
   <ItemGroup Condition="'$(ParameterValidationCoveredAssembly)' != ''">
     <PackageReference Include="coverlet.MTP" Version="10.1.0" />
@@ -85,7 +99,7 @@
   </ItemGroup>
 
   <PropertyGroup Condition="'$(ParameterValidationMode)' == 'Interceptors' And '$(IsParameterValidationTool)' != 'true'">
-    <InterceptorsNamespaces>$(InterceptorsNamespaces);ParameterValidation.Generated</InterceptorsNamespaces>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Net.NowhereAtAll.ParameterValidation.Generated</InterceptorsNamespaces>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(ParameterValidationMode)' == 'Interceptors' And '$(IsParameterValidationTool)' != 'true'">

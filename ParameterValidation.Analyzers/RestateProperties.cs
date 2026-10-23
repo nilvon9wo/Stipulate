@@ -1,4 +1,4 @@
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>
 /// Set on a missing attribute's diagnostic (PV1002, or PV1003 when the attribute is missing

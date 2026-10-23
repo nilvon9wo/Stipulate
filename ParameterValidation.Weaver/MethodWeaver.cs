@@ -2,7 +2,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>
 /// Inserts, at the start of a method, a check of every <c>ValidationAttribute</c> on every

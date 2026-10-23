@@ -1,7 +1,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>Emits <c>new TAttribute(args) { Named = value, ... }</c>, leaving the attribute on the stack.</summary>
 internal sealed class AttributeConstructionEmitter(

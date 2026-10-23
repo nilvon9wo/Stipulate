@@ -1,6 +1,6 @@
 using Mono.Cecil;
 
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>Walks a type definition and its base types, resolving each.</summary>
 internal static class CecilTypeHierarchy

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>
 /// Compares the validation attributes on something an implementation hands back (a property's

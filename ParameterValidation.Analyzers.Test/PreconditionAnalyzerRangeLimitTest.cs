@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using ParameterValidation.Testing;
+using Net.NowhereAtAll.ParameterValidation.Testing;
 
-namespace ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
 
 /// <summary>
 /// <c>Range(typeof(T), "minimum", "maximum")</c>, whose limits are compared when they can't depend

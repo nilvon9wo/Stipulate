@@ -3,9 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
-using ParameterValidation.Contracts;
+using Net.NowhereAtAll.ParameterValidation.Contracts;
 
-namespace ParameterValidation.Testing;
+namespace Net.NowhereAtAll.ParameterValidation.Testing;
 
 /// <summary>Compiles C# source in memory, against the running .NET and ParameterValidation.Contracts.</summary>
 public static class TestCompilation
@@ -15,12 +15,12 @@ public static class TestCompilation
     /// <summary>The usings every analyzer test source starts with.</summary>
     public const string Usings = """
         using System.ComponentModel.DataAnnotations;
-        using ParameterValidation.Contracts;
+        using Net.NowhereAtAll.ParameterValidation.Contracts;
 
         """;
 
     private const string TrustedPlatformAssemblies = "TRUSTED_PLATFORM_ASSEMBLIES";
-    private const string ToolAssemblyPrefix = "ParameterValidation.";
+    private const string ToolAssemblyPrefix = "Net.NowhereAtAll.ParameterValidation.";
 
     /// <summary>
     /// The running .NET's framework assemblies plus ParameterValidation.Contracts. The trusted

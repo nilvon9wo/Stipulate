@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>What each of the built-in DataAnnotations validation attributes constrains.</summary>
 /// <remarks>Only these exact classes: a derived class can change what it accepts.</remarks>

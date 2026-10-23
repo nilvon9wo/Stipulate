@@ -3,7 +3,7 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace ParameterValidation.CodeFixes;
+namespace Net.NowhereAtAll.ParameterValidation.CodeFixes;
 
 /// <summary>The attribute lists of a parameter or a property.</summary>
 internal static class AttributeLists

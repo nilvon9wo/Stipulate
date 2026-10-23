@@ -1,6 +1,6 @@
 using System;
 
-namespace ParameterValidation.Contracts;
+namespace Net.NowhereAtAll.ParameterValidation.Contracts;
 
 /// <summary>
 /// Describes one way in which a <c>System.ComponentModel.DataAnnotations.ValidationAttribute</c>

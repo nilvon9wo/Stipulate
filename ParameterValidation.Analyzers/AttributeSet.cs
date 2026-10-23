@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>The validation attributes on one side of a comparison: a contract's, or an implementation's.</summary>
 internal sealed class AttributeSet(ImmutableArray<DescribedAttribute> attributes)

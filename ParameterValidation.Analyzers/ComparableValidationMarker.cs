@@ -1,16 +1,16 @@
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>
-/// Recognises usages of <c>ParameterValidation.Contracts.ComparableValidationAttribute</c>, in its
+/// Recognises usages of <c>Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute</c>, in its
 /// two forms: on a validation attribute class, taking a dimension and a comparison; or on an
 /// assembly, taking the type it describes first.
 /// </summary>
 internal static class ComparableValidationMarker
 {
-    public const string Name = "ParameterValidation.Contracts.ComparableValidationAttribute";
-    public const string ContractsAssemblyName = "ParameterValidation.Contracts";
+    public const string Name = "Net.NowhereAtAll.ParameterValidation.Contracts.ComparableValidationAttribute";
+    public const string ContractsAssemblyName = "Net.NowhereAtAll.ParameterValidation.Contracts";
 
     private const int ClassFormArgumentCount = 2;
     private const int AssemblyFormArgumentCount = 3;

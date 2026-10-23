@@ -1,4 +1,4 @@
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>
 /// The weaver's MSBuild error codes. PV0004 (the weaver crashed or never started) and PV0005 (it

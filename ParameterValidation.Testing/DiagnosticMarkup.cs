@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.Text;
 
-namespace ParameterValidation.Testing;
+namespace Net.NowhereAtAll.ParameterValidation.Testing;
 
 /// <summary>
 /// C# source with the diagnostics expected in it marked up as <c>{|PV1001:text|}</c>, as in Roslyn's

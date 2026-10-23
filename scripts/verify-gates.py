@@ -43,7 +43,7 @@ COLON_DIAGNOSTIC = re.compile(r"^(?P<path>[^\s:]+\.cs):(?P<line>\d+): (?P<rule>[
 UNSTARTABLE_PROJECT = os.path.join("ParameterValidation.CodeFixes.Test", "ParameterValidation.CodeFixes.Test.csproj")
 UNSTARTABLE_APPHOST = os.path.join(
     "ParameterValidation.CodeFixes.Test", "bin", "Debug", "net10.0",
-    "ParameterValidation.CodeFixes.Test" + (".exe" if os.name == "nt" else ""),
+    "Net.NowhereAtAll.ParameterValidation.CodeFixes.Test" + (".exe" if os.name == "nt" else ""),
 )
 
 

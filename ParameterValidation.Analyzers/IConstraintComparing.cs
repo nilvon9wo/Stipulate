@@ -1,4 +1,4 @@
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>How the constraints of one <see cref="ConstraintKind"/> compare with each other.</summary>
 internal interface IConstraintComparing

@@ -11,7 +11,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <RootNamespace>ParameterValidation.StyleCanary</RootNamespace>
+    <RootNamespace>Net.NowhereAtAll.ParameterValidation.StyleCanary</RootNamespace>
     <IsParameterValidationTool>true</IsParameterValidationTool>
   </PropertyGroup>
 

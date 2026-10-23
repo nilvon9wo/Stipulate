@@ -1,6 +1,6 @@
 using Mono.Cecil;
 
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>
 /// A type added to every woven assembly so that an incremental build, which skips compilation and

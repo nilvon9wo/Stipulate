@@ -1,9 +1,9 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using ParameterValidation.Testing;
+using Net.NowhereAtAll.ParameterValidation.Testing;
 
-namespace ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
 
 /// <summary>
 /// The analyzer runs live in the IDE, on code that doesn't compile yet: it must neither fail nor

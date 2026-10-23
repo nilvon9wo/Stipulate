@@ -1,7 +1,7 @@
 using System.Reflection;
-using ParameterValidation.Contracts;
+using Net.NowhereAtAll.ParameterValidation.Contracts;
 
-namespace ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
 
 /// <summary>
 /// The analyzer can't reference ParameterValidation.Contracts (it would have to load it into the

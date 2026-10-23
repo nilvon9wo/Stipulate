@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 
-namespace ParameterValidation.CodeFixes;
+namespace Net.NowhereAtAll.ParameterValidation.CodeFixes;
 
 /// <summary>Restates every missing attribute in a document in one edit, so none are lost to conflicts.</summary>
 internal sealed class RestateAllFixer : DocumentBasedFixAllProvider

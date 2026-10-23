@@ -2,9 +2,9 @@ using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Mono.Cecil;
-using ParameterValidation.Testing;
+using Net.NowhereAtAll.ParameterValidation.Testing;
 
-namespace ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
 
 /// <summary>Weaving one assembly on disk: which methods, how often, and what happens to its symbols.</summary>
 public class AssemblyWeaverTest

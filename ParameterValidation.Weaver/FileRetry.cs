@@ -1,4 +1,4 @@
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>
 /// Retries file operations that fail because another process (another build, a test run, an

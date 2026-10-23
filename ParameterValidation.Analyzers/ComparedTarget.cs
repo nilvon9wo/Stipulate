@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>One parameter, or a property's value, of an implementation, and its counterpart in the contract.</summary>
 /// <param name="Contract">The contract member.</param>

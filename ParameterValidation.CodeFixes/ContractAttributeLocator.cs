@@ -1,9 +1,9 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
-using ParameterValidation.Analyzers;
+using Net.NowhereAtAll.ParameterValidation.Analyzers;
 
-namespace ParameterValidation.CodeFixes;
+namespace Net.NowhereAtAll.ParameterValidation.CodeFixes;
 
 /// <summary>Finds the contract's attribute that a diagnostic's <see cref="RestateProperties"/> point to.</summary>
 internal static class ContractAttributeLocator

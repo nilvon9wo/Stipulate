@@ -1,4 +1,4 @@
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>A flag, such as <c>[Required]</c>'s NotNull, is satisfied only by the same flag.</summary>
 internal sealed class FlagComparison : IConstraintComparing

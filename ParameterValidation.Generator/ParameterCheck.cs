@@ -1,4 +1,4 @@
-namespace ParameterValidation.Generator;
+namespace Net.NowhereAtAll.ParameterValidation.Generator;
 
 /// <summary>The validation attributes to check one parameter against.</summary>
 /// <param name="AttributeConstructions">C# expressions that construct each attribute as declared.</param>

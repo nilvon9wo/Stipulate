@@ -1,7 +1,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>Weaves every method of one assembly, in place, along with its symbols.</summary>
 /// <param name="output">Where warnings, in MSBuild's canonical format, are written.</param>

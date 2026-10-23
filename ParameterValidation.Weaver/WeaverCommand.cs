@@ -1,4 +1,4 @@
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>
 /// Rewrites a compiled assembly so that every method validates its parameters' DataAnnotations
@@ -17,7 +17,7 @@ internal static class WeaverCommand
     public const int ReportedFailureExitCode = 2;
 
     private const int ArgumentCount = 2;
-    private const string Usage = "Usage: ParameterValidation.Weaver <assembly> <references-file>";
+    private const string Usage = "Usage: Net.NowhereAtAll.ParameterValidation.Weaver <assembly> <references-file>";
 
     public static int Run(string[] arguments, TextWriter output, TextWriter error)
         => arguments.Length == ArgumentCount

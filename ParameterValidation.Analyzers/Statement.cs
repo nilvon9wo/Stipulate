@@ -1,4 +1,4 @@
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>
 /// What a constraint makes a statement about: a lower bound, an upper bound, a flag, or which

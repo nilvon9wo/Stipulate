@@ -1,4 +1,4 @@
-namespace ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
 
 /// <summary>
 /// Retrying a file operation while another process has the file open, and only then: a pause is

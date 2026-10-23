@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace ParameterValidation.Generator;
+namespace Net.NowhereAtAll.ParameterValidation.Generator;
 
 /// <summary>
 /// Intercepts every call to a method whose parameters are decorated with

@@ -1,7 +1,7 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation;
+namespace Net.NowhereAtAll.ParameterValidation;
 
 /// <summary>
 /// Recognises <c>System.ComponentModel.DataAnnotations</c> validation attributes. Linked into each

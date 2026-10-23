@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>Pushes the value of an attribute argument, as stored in metadata, onto the stack.</summary>
 /// <param name="method">The method being woven, which the errors name.</param>

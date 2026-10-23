@@ -1,4 +1,4 @@
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>
 /// The analyzer's diagnostic IDs, numbered by category: PV1xxx for the contract rules themselves,

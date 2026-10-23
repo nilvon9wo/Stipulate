@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>Turns the problems with one compared target into diagnostics.</summary>
 internal sealed class ProblemReporter(

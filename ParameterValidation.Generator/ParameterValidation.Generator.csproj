@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <!-- The tests exercise the internal collaborators directly. Internal, so no consumer sees them. -->
-    <InternalsVisibleTo Include="ParameterValidation.Generator.Test" />
+    <InternalsVisibleTo Include="Net.NowhereAtAll.ParameterValidation.Generator.Test" />
   </ItemGroup>
 
 </Project>

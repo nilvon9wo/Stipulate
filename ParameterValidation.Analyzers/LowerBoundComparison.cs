@@ -1,4 +1,4 @@
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>A lower bound: a higher one is stronger.</summary>
 internal sealed class LowerBoundComparison : BoundComparison

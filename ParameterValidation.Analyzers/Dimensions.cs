@@ -1,6 +1,6 @@
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
-/// <summary>Mirrors <c>ParameterValidation.Contracts.ValidationDimensions</c>.</summary>
+/// <summary>Mirrors <c>Net.NowhereAtAll.ParameterValidation.Contracts.ValidationDimensions</c>.</summary>
 internal static class Dimensions
 {
     public const string NotNull = "NotNull";

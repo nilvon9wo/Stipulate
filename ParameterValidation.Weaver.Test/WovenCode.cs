@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
 
 /// <summary>Calls into a woven assembly, letting the exceptions its checks throw escape unwrapped.</summary>
 internal static class WovenCode

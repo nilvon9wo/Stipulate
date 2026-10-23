@@ -1,4 +1,4 @@
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>The result of reading one <c>[ComparableValidation]</c>: a descriptor, or why there is none.</summary>
 /// <param name="Error">Why the description is invalid, phrased to follow "it is invalid because".</param>

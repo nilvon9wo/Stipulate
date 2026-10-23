@@ -1,6 +1,6 @@
 using Mono.Cecil;
 
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>Recognises the validation attributes among a parameter's custom attributes.</summary>
 internal sealed class ValidationAttributeResolver(WellKnownReferences references)

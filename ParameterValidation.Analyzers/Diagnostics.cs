@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <remarks>
 /// In the messages, {0} is the implementation's parameter or property (e.g. "Parameter 'array' of

@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>What the code fix needs to restate a missing attribute; see <see cref="RestateProperties"/>.</summary>
 internal static class RestatePropertiesFactory

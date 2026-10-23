@@ -4,9 +4,9 @@ using System.Runtime.Loader;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
-using ParameterValidation.Testing;
+using Net.NowhereAtAll.ParameterValidation.Testing;
 
-namespace ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
 
 /// <summary>
 /// A temporary directory holding what MSBuild hands the weaver: a freshly compiled assembly, its

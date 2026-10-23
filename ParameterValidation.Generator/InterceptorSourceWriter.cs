@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace ParameterValidation.Generator;
+namespace Net.NowhereAtAll.ParameterValidation.Generator;
 
 /// <summary>Writes the interceptors for every call site: one per method, validating, then forwarding.</summary>
 internal static class InterceptorSourceWriter
@@ -29,7 +29,7 @@ internal static class InterceptorSourceWriter
             }
         }
 
-        namespace ParameterValidation.Generated
+        namespace Net.NowhereAtAll.ParameterValidation.Generated
         {
             file static class ParameterValidationInterceptors
             {

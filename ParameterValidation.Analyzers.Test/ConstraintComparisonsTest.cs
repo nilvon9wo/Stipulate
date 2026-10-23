@@ -1,4 +1,4 @@
-namespace ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
 
 /// <summary>What each kind of constraint is: a bound, or not, and what it makes a statement about.</summary>
 public class ConstraintComparisonsTest

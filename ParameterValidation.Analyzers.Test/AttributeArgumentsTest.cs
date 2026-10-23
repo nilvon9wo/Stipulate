@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
 
 /// <summary>Reading an attribute usage's arguments by name.</summary>
 public class AttributeArgumentsTest

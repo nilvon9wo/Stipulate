@@ -1,9 +1,9 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using ParameterValidation.Testing;
+using Net.NowhereAtAll.ParameterValidation.Testing;
 
-namespace ParameterValidation.Analyzers.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers.Test;
 
 /// <summary>Every rule a <c>[ComparableValidation]</c> must follow, and the reason it gives when broken.</summary>
 public class DescriptionAnalyzerTest
@@ -206,7 +206,7 @@ public class DescriptionAnalyzerTest
     {
         // Arrange
         const string shadow = """
-            namespace ParameterValidation.Contracts
+            namespace Net.NowhereAtAll.ParameterValidation.Contracts
             {
                 [System.AttributeUsage(System.AttributeTargets.Class)]
                 public sealed class ComparableValidationAttribute(string dimension) : System.Attribute

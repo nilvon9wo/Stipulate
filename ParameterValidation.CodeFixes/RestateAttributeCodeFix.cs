@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using ParameterValidation.Analyzers;
+using Net.NowhereAtAll.ParameterValidation.Analyzers;
 
-namespace ParameterValidation.CodeFixes;
+namespace Net.NowhereAtAll.ParameterValidation.CodeFixes;
 
 /// <summary>
 /// Restates a contract's validation attribute that an implementation leaves out (PV1002, or PV1003

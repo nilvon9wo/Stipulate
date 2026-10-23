@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>A validation attribute on a parameter, with what it constrains.</summary>
 /// <param name="Key">Equal for two usages of the same attribute class with the same arguments.</param>

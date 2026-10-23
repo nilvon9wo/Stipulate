@@ -1,7 +1,7 @@
 using System.Collections.Generic; // expect: format:IMPORTS
 using System.Collections; // expect: inspect:RedundantUsingDirective
 
-namespace ParameterValidation.Elsewhere; // expect: build:IDE0130
+namespace Net.NowhereAtAll.ParameterValidation.Elsewhere; // expect: build:IDE0130
 
 public sealed class Violations
 {

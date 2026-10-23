@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation;
+namespace Net.NowhereAtAll.ParameterValidation;
 
 /// <summary>
 /// Walks a type and its base types. Linked into each Roslyn component (the analyzer, the code fix

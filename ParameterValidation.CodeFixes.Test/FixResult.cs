@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation.CodeFixes.Test;
+namespace Net.NowhereAtAll.ParameterValidation.CodeFixes.Test;
 
 /// <summary>A document after the code fix ran on it.</summary>
 /// <param name="Text">The fixed source, with its line endings normalised.</param>

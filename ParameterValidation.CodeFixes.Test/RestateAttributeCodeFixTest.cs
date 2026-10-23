@@ -3,10 +3,10 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Text;
-using ParameterValidation.Analyzers;
-using ParameterValidation.Testing;
+using Net.NowhereAtAll.ParameterValidation.Analyzers;
+using Net.NowhereAtAll.ParameterValidation.Testing;
 
-namespace ParameterValidation.CodeFixes.Test;
+namespace Net.NowhereAtAll.ParameterValidation.CodeFixes.Test;
 
 /// <summary>The code fix that restates a contract's missing attribute, one at a time or all at once.</summary>
 public class RestateAttributeCodeFixTest

@@ -1,7 +1,7 @@
 using System.Reflection;
-using ParameterValidation.Testing;
+using Net.NowhereAtAll.ParameterValidation.Testing;
 
-namespace ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
 
 /// <summary>
 /// The weaver as the build runs it: its arguments, what it prints, and its exit codes, which
@@ -26,7 +26,10 @@ public class WeaverCommandTest
 
         // Assert
         Assert.Equal(WeaverCommand.ReportedFailureExitCode, exitCode);
-        Assert.Equal("Usage: ParameterValidation.Weaver <assembly> <references-file>", error.ToString().TrimEnd());
+        Assert.Equal(
+            "Usage: Net.NowhereAtAll.ParameterValidation.Weaver <assembly> <references-file>",
+            error.ToString().TrimEnd()
+        );
     }
 
     [Fact]

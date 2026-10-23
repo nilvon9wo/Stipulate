@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <!-- The tests exercise the internal collaborators directly. Internal, so no consumer sees them. -->
-    <InternalsVisibleTo Include="ParameterValidation.CodeFixes.Test" />
+    <InternalsVisibleTo Include="Net.NowhereAtAll.ParameterValidation.CodeFixes.Test" />
   </ItemGroup>
 
 </Project>

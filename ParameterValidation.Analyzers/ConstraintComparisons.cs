@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>The one <see cref="IConstraintComparing"/> for each <see cref="ConstraintKind"/>.</summary>
 internal static class ConstraintComparisons

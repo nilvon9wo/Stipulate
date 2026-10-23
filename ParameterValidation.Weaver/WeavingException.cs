@@ -1,4 +1,4 @@
-namespace ParameterValidation.Weaver;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver;
 
 /// <summary>A failure the weaver anticipates, reported as an MSBuild error.</summary>
 /// <param name="code">

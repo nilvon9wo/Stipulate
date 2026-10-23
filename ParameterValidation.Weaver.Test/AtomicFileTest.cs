@@ -1,4 +1,4 @@
-namespace ParameterValidation.Weaver.Test;
+namespace Net.NowhereAtAll.ParameterValidation.Weaver.Test;
 
 /// <summary>Replacing a file through a temporary one beside it, which never outlives the replacement.</summary>
 public sealed class AtomicFileTest : IDisposable

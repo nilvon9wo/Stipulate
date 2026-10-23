@@ -1,4 +1,4 @@
-namespace ParameterValidation.Contracts;
+namespace Net.NowhereAtAll.ParameterValidation.Contracts;
 
 /// <summary>How a <see cref="ComparableValidationAttribute"/> constrains its dimension.</summary>
 public enum ValidationComparison

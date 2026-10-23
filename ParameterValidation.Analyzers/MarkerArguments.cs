@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>The arguments of one <c>[ComparableValidation]</c>, before they are validated.</summary>
 /// <param name="Comparison">The <c>ValidationComparison</c>, which might not be a defined one.</param>

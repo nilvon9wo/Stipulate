@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace ParameterValidation.Analyzers;
+namespace Net.NowhereAtAll.ParameterValidation.Analyzers;
 
 /// <summary>
 /// How an attribute class constrains one dimension, before any particular usage's arguments are
