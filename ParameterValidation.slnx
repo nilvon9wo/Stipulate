@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="ArrayFoo/ArrayFoo.csproj" />
   <Project Path="ArrayFooTest/ArrayFooTest.csproj" />
+  <Project Path="docs/ParameterValidation.Docs.csproj" />
   <Project Path="ParameterValidation.Analyzers.Test/ParameterValidation.Analyzers.Test.csproj" />
   <Project Path="ParameterValidation.Analyzers/ParameterValidation.Analyzers.csproj" />
   <Project Path="ParameterValidation.CodeFixes.Test/ParameterValidation.CodeFixes.Test.csproj" />

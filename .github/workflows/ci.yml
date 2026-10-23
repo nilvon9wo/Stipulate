@@ -62,10 +62,16 @@ jobs:
       - name: Test (Release)
         run: python3 scripts/run-tests.py --solution ParameterValidation.slnx -c Release --no-build
 
+      # The documentation examples are checked by the tests above
+      # (DocumentationExampleTest); this checks every relative link and anchor.
+      - name: Verify every relative doc link and anchor resolves
+        run: python3 scripts/verify-doc-links.py
+
       # A gate that silently stops running looks exactly like one that passes.
       # Runs every gate above against StyleCanary/ (deliberately non-compliant
       # code, each violation tagged with the gate that must report it), plus a
-      # temporary uncovered class and an unstartable test module, and fails if
+      # temporary uncovered class, an unstartable test module and a temporary
+      # doc page with a false example and a broken link, and fails if
       # any gate no longer catches them. See StyleCanary/README.md.
       - name: Prove every gate still catches its canary violations
         run: python3 scripts/verify-gates.py

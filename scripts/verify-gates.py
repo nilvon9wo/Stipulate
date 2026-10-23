@@ -12,6 +12,10 @@ A gate that silently stops running looks exactly like a gate that passes. So:
   ParameterValidation.Contracts/ - its tests must then fail with none of them
   failing, and the coverage report must show the class was measured: a
   coverlet that measures nothing fails the threshold too, for the wrong reason.
+* The doc gates are proven by a temporary page, docs/gate-canary.md, with a
+  broken link and an example claiming a diagnostic the analyzer doesn't
+  report: the analyzer's documentation example test and verify-doc-links.py
+  must both fail on it.
 * run-tests.py's INCONCLUSIVE verdict is proven by hiding one test module's
   apphost, so it cannot start - the way Smart App Control blocks one on
   Windows - and requiring that verdict instead of dotnet test's "Passed!".
@@ -56,6 +60,20 @@ internal static class GateCanaryUncovered
     public static int Answer() => 42;
 }
 """
+STALE_DOC_PATH = os.path.join("docs", "gate-canary.md")
+STALE_DOC_SOURCE = """# Gate canary
+
+Written and removed by scripts/verify-gates.py: a [link to nowhere](gate-canary-missing.md),
+and an example that claims a diagnostic the analyzer doesn't report.
+
+```csharp
+// error PV1001: nothing here strengthens anything
+public interface IGateCanary { void Accept(int value); }
+```
+"""
+ANALYZERS_TEST_PROJECT = os.path.join(
+    "ParameterValidation.Analyzers.Test", "ParameterValidation.Analyzers.Test.csproj"
+)
 COVERAGE_PROJECT = os.path.join("ParameterValidation.Contracts.Test", "ParameterValidation.Contracts.Test.csproj")
 COVERAGE_REPORTS = os.path.join(
     "ParameterValidation.Contracts.Test", "bin", "Debug", "net10.0", "TestResults", "coverage.cobertura.*.xml"
@@ -161,6 +179,29 @@ def coverage_gate_fails() -> bool:
     return caught
 
 
+def doc_examples_gate_fails() -> bool:
+    """The analyzer's tests must fail on the canary page's false claim, and name the page."""
+    def check() -> bool:
+        code, output = run(
+            ["dotnet", "test", "--project", ANALYZERS_TEST_PROJECT, "-p:ParameterValidationCoverage=false"]
+        )
+        return code != 0 and "gate-canary.md" in output
+
+    caught = with_temporary_file(STALE_DOC_PATH, STALE_DOC_SOURCE, check)
+    print(f"the documentation example test caught the canary page: {caught}")
+    return caught
+
+
+def doc_links_gate_fails() -> bool:
+    def check() -> bool:
+        code, output = run(python_script("verify-doc-links.py"))
+        return code != 0 and "gate-canary" in output
+
+    caught = with_temporary_file(STALE_DOC_PATH, STALE_DOC_SOURCE, check)
+    print(f"verify-doc-links.py caught the canary page: {caught}")
+    return caught
+
+
 def runner_reports_an_unstarted_module() -> bool:
     """With one module unable to start, run-tests.py must say INCONCLUSIVE, not pass."""
     build_code, _ = run(["dotnet", "build", UNSTARTABLE_PROJECT, "-nologo"])
@@ -183,6 +224,8 @@ def main() -> int:
     results = {
         "static gates": verify_static_gates(),
         "coverage": coverage_gate_fails(),
+        "doc examples": doc_examples_gate_fails(),
+        "doc links": doc_links_gate_fails(),
         "inconclusive runs": runner_reports_an_unstarted_module(),
     }
     failed = [name for name, proven in results.items() if not proven]
