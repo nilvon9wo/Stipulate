@@ -31,11 +31,11 @@ internal static class Diagnostics
 	public static readonly DiagnosticDescriptor Dropped = new(
 		RestateProperties.DroppedId,
 		"Implementation doesn't restate its contract's validation attribute",
-		"{0} doesn't restate [{2}] from '{1}'. Restate it, or state a weaker constraint on the same dimension to accept more on purpose.",
+		"{0} doesn't restate [{2}] from '{1}'. Restate it, or state a weaker constraint for each of its bounds to accept more on purpose.",
 		Category,
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
-		description: "Dropping a validation attribute is a legal weakening, but it should be explicit so that the implementation's signature shows what it accepts. State a weaker constraint (e.g. [MinLength(0)]), or for [Required] make the parameter or property nullable.");
+		description: "Dropping a validation attribute is a legal weakening, but it should be explicit so that the implementation's signature shows what it accepts. State a weaker constraint for each of its bounds (e.g. [MinLength(0)] for a lower bound on length, [MaxLength] for an upper one), or for [Required] make the parameter or property nullable.");
 
 	public static readonly DiagnosticDescriptor NotComparableExternal = new(
 		"PV1005",

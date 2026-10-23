@@ -136,7 +136,69 @@ public class CodeFixTests
 		public interface INamer { void Name([Required, MinLength(1)] string first, [MaxLength(10)] string last); }
 		public class Namer : INamer
 		{
-			public void Name([Required][MinLength(1)] string first, [MaxLength(10)] string last) { }
+			public void Name([Required, MinLength(1)] string first, [MaxLength(10)] string last) { }
+		}
+		""",
+		fixAll: true);
+
+	[Fact]
+	public Task RestatedAttribute_JoinsAnExistingValidationList() => VerifyAsync("""
+		using System.ComponentModel.DataAnnotations;
+
+		public interface INamer { void Name([Required, MinLength(1), MaxLength(10)] string name); }
+		public class Namer : INamer
+		{
+			public void Name([Required] string name) { }
+		}
+		""", """
+		using System.ComponentModel.DataAnnotations;
+
+		public interface INamer { void Name([Required, MinLength(1), MaxLength(10)] string name); }
+		public class Namer : INamer
+		{
+			public void Name([Required, MinLength(1), MaxLength(10)] string name) { }
+		}
+		""");
+
+	[Fact]
+	public Task RestatedAttribute_KeepsOutOfOtherLists() => VerifyAsync("""
+		using System.ComponentModel;
+		using System.ComponentModel.DataAnnotations;
+
+		public interface INamer { void Name([Required] string name); }
+		public class Namer : INamer
+		{
+			public void Name([Description("The name")] string name) { }
+		}
+		""", """
+		using System.ComponentModel;
+		using System.ComponentModel.DataAnnotations;
+
+		public interface INamer { void Name([Required] string name); }
+		public class Namer : INamer
+		{
+			public void Name([Description("The name")][Required] string name) { }
+		}
+		""");
+
+	[Fact]
+	public Task RestatedPropertyAttribute_JoinsAnExistingValidationList() => VerifyAsync("""
+		using System.ComponentModel.DataAnnotations;
+
+		public interface INamed { [Required, MinLength(1)] string Name { get; } }
+		public class Named : INamed
+		{
+			[Required]
+			public string Name => "x";
+		}
+		""", """
+		using System.ComponentModel.DataAnnotations;
+
+		public interface INamed { [Required, MinLength(1)] string Name { get; } }
+		public class Named : INamed
+		{
+			[Required, MinLength(1)]
+			public string Name => "x";
 		}
 		""",
 		fixAll: true);

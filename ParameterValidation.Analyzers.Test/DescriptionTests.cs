@@ -89,7 +89,7 @@ public class DescriptionTests
 		}
 		public class Bag : IBag
 		{
-			public void Fill([NotEmpty] int[] a, [{|PV1001:MinLength(2)|}] int[] b, [AtLeast(5)] int c, [AtLeast(3)] int d, [{|PV1001:AtLeast(6)|}] int e) { }
+			public void Fill([NotEmpty] int[] a, [{|PV1001:MinLength(2)|}] int[] b, [AtLeast(5)] int {|PV1003:c|}, [AtLeast(3)] int d, [{|PV1001:AtLeast(6)|}] int e) { }
 		}
 		""");
 

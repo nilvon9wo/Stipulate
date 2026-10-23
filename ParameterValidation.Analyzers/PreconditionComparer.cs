@@ -77,26 +77,36 @@ internal static class PreconditionComparer
 		}
 
 		HashSet<string> implementationKeys = [.. implementation.Select(static attribute => attribute.Key)];
-		HashSet<string> implementationDimensions = [.. implementation.SelectMany(static attribute => attribute.Constraints ?? []).Select(static constraint => constraint.Dimension)];
+		HashSet<string> statements = [.. implementation.SelectMany(static attribute => attribute.Constraints ?? []).Select(Statement)];
 		if (implementationAcceptsNull)
 		{
-			implementationDimensions.Add(Dimensions.NotNull);
-			implementationDimensions.Add(Dimensions.NotBlank);
+			statements.Add(Statement(new Constraint(Dimensions.NotNull, ConstraintKind.Flag, 0, false, [])));
+			statements.Add(Statement(new Constraint(Dimensions.NotBlank, ConstraintKind.Flag, 0, false, [])));
 		}
 
 		foreach (DescribedAttribute attribute in contract)
 		{
 			// Restated exactly; or the same class with other arguments, already reported if it can't
-			// be compared; or a deliberate statement about the same dimension, such as MinLength(0).
+			// be compared; or a deliberate statement about each thing it constrains, such as
+			// MinLength(0) for a lower bound on length and [MaxLength] for an upper one.
 			bool addressed = implementationKeys.Contains(attribute.Key)
 				|| implementation.Any(other => SymbolEqualityComparer.Default.Equals(other.Data.AttributeClass?.OriginalDefinition, attribute.Data.AttributeClass?.OriginalDefinition))
-				|| attribute.Constraints is { IsEmpty: false } constraints && constraints.Any(constraint => implementationDimensions.Contains(constraint.Dimension));
+				|| attribute.Constraints is { } constraints
+					&& constraints.Where(static constraint => !IsVacuous(constraint)).ToList() is { Count: > 0 } meaningful
+					&& meaningful.All(constraint => statements.Contains(Statement(constraint)));
 			if (!addressed)
 			{
 				yield return new Problem(ProblemKind.Dropped, attribute);
 			}
 		}
 	}
+
+	/// <summary>
+	/// What a constraint makes a statement about: a lower bound, an upper bound, a flag, or which
+	/// values are allowed, of one dimension.
+	/// </summary>
+	private static string Statement(Constraint constraint)
+		=> $"{constraint.Dimension}/{(constraint.Kind == ConstraintKind.DeniedValues ? ConstraintKind.AllowedValues : constraint.Kind)}";
 
 	/// <summary>
 	/// Compares attributes on something the implementation hands back, such as a property's value

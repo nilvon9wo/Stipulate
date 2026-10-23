@@ -115,6 +115,15 @@ public class ContractTests
 		""");
 
 	[Fact]
+	public Task EachDroppedBound_MustBeExplicit() => VerifyAsync("""
+		public interface INamer { void Name([Length(1, 10)] string a, [Length(1, 10)] string b, [Length(1, 10)] string c); }
+		public class Namer : INamer
+		{
+			public void Name([MinLength(1)] string {|PV1003:a|}, [MinLength(1), MaxLength] string b, [MinLength(0), MaxLength(10)] string c) { }
+		}
+		""");
+
+	[Fact]
 	public Task UnboundedLength_IsNoConstraint() => VerifyAsync("""
 		public interface INamer { void Name(string first, string last); }
 		public class Namer : INamer

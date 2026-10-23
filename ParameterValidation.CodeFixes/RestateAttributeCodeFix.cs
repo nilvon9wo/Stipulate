@@ -62,8 +62,20 @@ public sealed class RestateAttributeCodeFix : CodeFixProvider
 				continue;
 			}
 
-			editor.AddAttribute(declaration, editor.Generator.Attribute(attribute)
-				.WithAdditionalAnnotations(Simplifier.Annotation, Simplifier.AddImportsAnnotation, Formatter.Annotation));
+			AttributeListSyntax generated = (AttributeListSyntax)editor.Generator.Attribute(attribute);
+			AttributeSyntax restated = generated.Attributes[0]
+				.WithAdditionalAnnotations(Simplifier.Annotation, Simplifier.AddImportsAnnotation, Formatter.Annotation);
+			int validationList = FindValidationList(declaration, editor.SemanticModel, cancellationToken);
+			editor.ReplaceNode(declaration, (current, generator) =>
+			{
+				// Several fixes to one declaration share a list: the one they joined, or the first one's.
+				SyntaxList<AttributeListSyntax> lists = GetAttributeLists(current);
+				AttributeListSyntax? target = lists.FirstOrDefault(static list => list.HasAnnotation(RestatedList))
+					?? (validationList >= 0 ? lists[validationList] : null);
+				return target is not null
+					? current.ReplaceNode(target, target.AddAttributes(restated).WithAdditionalAnnotations(RestatedList, Formatter.Annotation))
+					: generator.AddAttributes(current, generated.WithAttributes([restated]).WithAdditionalAnnotations(RestatedList, Formatter.Annotation));
+			});
 			changed = true;
 		}
 
@@ -76,6 +88,49 @@ public sealed class RestateAttributeCodeFix : CodeFixProvider
 		result = await Simplifier.ReduceAsync(result, Simplifier.Annotation, cancellationToken: cancellationToken).ConfigureAwait(false);
 		return await Formatter.FormatAsync(result, Formatter.Annotation, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
+
+	/// <summary>Marks the attribute list that this edit restates attributes into.</summary>
+	private static readonly SyntaxAnnotation RestatedList = new(nameof(RestatedList));
+
+	/// <summary>
+	/// The index of the last of <paramref name="declaration"/>'s attribute lists that holds only
+	/// validation attributes, which a restated attribute joins; or -1 if there's none, so that it
+	/// gets a list of its own rather than joining, say, a <c>[JsonIgnore]</c>.
+	/// </summary>
+	private static int FindValidationList(SyntaxNode declaration, SemanticModel model, CancellationToken cancellationToken)
+	{
+		SyntaxList<AttributeListSyntax> lists = GetAttributeLists(declaration);
+		for (int i = lists.Count - 1; i >= 0; i--)
+		{
+			if (lists[i].Target is null
+				&& lists[i].Attributes.All(attribute => model.GetSymbolInfo(attribute, cancellationToken).Symbol is IMethodSymbol { ContainingType: var type } && IsValidationAttribute(type)))
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	private static bool IsValidationAttribute(ITypeSymbol? type)
+	{
+		for (ITypeSymbol? current = type; current is not null; current = current.BaseType)
+		{
+			if (current.ToDisplayString() == "System.ComponentModel.DataAnnotations.ValidationAttribute")
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static SyntaxList<AttributeListSyntax> GetAttributeLists(SyntaxNode declaration) => declaration switch
+	{
+		ParameterSyntax parameter => parameter.AttributeLists,
+		BasePropertyDeclarationSyntax property => property.AttributeLists,
+		_ => default,
+	};
 
 	private static int GetAttributeIndex(Diagnostic diagnostic)
 		=> diagnostic.Properties.TryGetValue(RestateProperties.AttributeIndex, out string? text) && int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int index)
