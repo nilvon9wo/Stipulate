@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="ArrayFoo/ArrayFoo.csproj" />
+  <Project Path="ArrayFooTest/ArrayFooTest.csproj" />
+  <Project Path="ParameterValidation.Analyzers.Test/ParameterValidation.Analyzers.Test.csproj" />
+  <Project Path="ParameterValidation.Analyzers/ParameterValidation.Analyzers.csproj" />
+  <Project Path="ParameterValidation.Contracts/ParameterValidation.Contracts.csproj" />
+  <Project Path="ParameterValidation.Generator/ParameterValidation.Generator.csproj" />
+  <Project Path="ParameterValidation.Weaver/ParameterValidation.Weaver.csproj" />
+</Solution>

@@ -1,0 +1,44 @@
+<Project>
+
+  <PropertyGroup Condition="'$(ParameterValidationMode)' == 'Weaving' And '$(IsParameterValidationTool)' != 'true'">
+    <ParameterValidationWeave>true</ParameterValidationWeave>
+    <ParameterValidationWeaverPath Condition="'$(ParameterValidationWeaverPath)' == ''">$(MSBuildThisFileDirectory)ParameterValidation.Weaver\bin\$(Configuration)\net10.0\ParameterValidation.Weaver.dll</ParameterValidationWeaverPath>
+    <ParameterValidationReferencesFile>$(IntermediateOutputPath)ParameterValidation.references</ParameterValidationReferencesFile>
+    <ParameterValidationDotnet>$(DOTNET_HOST_PATH)</ParameterValidationDotnet>
+    <ParameterValidationDotnet Condition="'$(ParameterValidationDotnet)' == ''">dotnet</ParameterValidationDotnet>
+  </PropertyGroup>
+
+  <!-- Recompile (and so re-weave) when the weaver itself changes. -->
+  <ItemGroup Condition="'$(ParameterValidationWeave)' == 'true'">
+    <CustomAdditionalCompileInputs Include="$(ParameterValidationWeaverPath)" />
+  </ItemGroup>
+
+  <!--
+    Rewrite the freshly compiled assembly in obj\ before it is copied to bin\. Runs even when
+    CoreCompile was skipped; the weaver recognises an already-woven assembly and leaves it alone.
+  -->
+  <Target Name="WeaveParameterValidation"
+          AfterTargets="CoreCompile"
+          Condition="'$(ParameterValidationWeave)' == 'true'">
+    <Error Condition="!Exists('$(ParameterValidationWeaverPath)')"
+           Code="PV0005"
+           Text="ParameterValidation.Weaver has not been built: '$(ParameterValidationWeaverPath)' does not exist." />
+    <WriteLinesToFile File="$(ParameterValidationReferencesFile)"
+                      Lines="@(ReferencePath->'%(FullPath)')"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+    <!--
+      The weaver reports its own failures as canonical "error PVxxxx:" lines (which Exec turns into
+      build errors) and then exits with 2. Any other non-zero exit means it crashed or never
+      started, without reporting anything, so that gets a specific error instead of MSB3073.
+    -->
+    <Exec Command="&quot;$(ParameterValidationDotnet)&quot; &quot;$(ParameterValidationWeaverPath)&quot; &quot;@(IntermediateAssembly->'%(FullPath)')&quot; &quot;$(ParameterValidationReferencesFile)&quot;"
+          IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="_ParameterValidationExitCode" />
+    </Exec>
+    <Error Condition="'$(_ParameterValidationExitCode)' != '0' And '$(_ParameterValidationExitCode)' != '2'"
+           Code="PV0004"
+           Text="ParameterValidation.Weaver crashed before it could weave '@(IntermediateAssembly)' (exit code $(_ParameterValidationExitCode)); see the build output above for the exception. On Windows, 'An Application Control policy has blocked this file' means Windows refused to load the freshly built weaver; build under WSL or ask for an exception for this folder." />
+  </Target>
+
+</Project>

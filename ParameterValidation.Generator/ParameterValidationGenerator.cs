@@ -1,0 +1,220 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
+
+namespace ParameterValidation.Generator;
+
+/// <summary>
+/// Intercepts every call to a method whose parameters are decorated with
+/// <c>System.ComponentModel.DataAnnotations.ValidationAttribute</c>s and validates the
+/// arguments before forwarding to the original method.
+/// </summary>
+/// <remarks>
+/// A null argument rejected by <c>RequiredAttribute</c> throws <c>ArgumentNullException</c>;
+/// any other validation failure throws <c>ArgumentException</c>.
+/// </remarks>
+[Generator(LanguageNames.CSharp)]
+public sealed class ParameterValidationGenerator : IIncrementalGenerator
+{
+	private const string ValidationAttributeName = "System.ComponentModel.DataAnnotations.ValidationAttribute";
+
+	private static readonly SymbolDisplayFormat TypeFormat = SymbolDisplayFormat.FullyQualifiedFormat
+		.AddMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+
+	public void Initialize(IncrementalGeneratorInitializationContext context)
+	{
+		IncrementalValuesProvider<CallSite> callSites = context.SyntaxProvider
+			.CreateSyntaxProvider(
+				static (node, _) => node is InvocationExpressionSyntax,
+				static (ctx, ct) => GetCallSite(ctx, ct))
+			.Where(static site => site is not null)
+			.Select(static (site, _) => site!);
+
+		context.RegisterSourceOutput(callSites.Collect(), Emit);
+	}
+
+	private static CallSite? GetCallSite(GeneratorSyntaxContext ctx, System.Threading.CancellationToken ct)
+	{
+		InvocationExpressionSyntax invocation = (InvocationExpressionSyntax)ctx.Node;
+		if (ctx.SemanticModel.GetSymbolInfo(invocation, ct).Symbol is not IMethodSymbol method)
+		{
+			return null;
+		}
+
+		if (method.MethodKind != MethodKind.Ordinary
+			|| method.IsGenericMethod
+			|| method.IsExtensionMethod
+			|| method.ContainingType.IsGenericType
+			|| method.ReturnsByRef
+			|| method.ReturnsByRefReadonly
+			|| method.Parameters.Any(static p => p.RefKind != RefKind.None)
+			|| !ctx.SemanticModel.Compilation.IsSymbolAccessibleWithin(method, ctx.SemanticModel.Compilation.Assembly))
+		{
+			return null;
+		}
+
+		List<ParameterCheck> checks = [];
+		foreach (IParameterSymbol parameter in method.Parameters)
+		{
+			string[] attributes = [.. parameter.GetAttributes()
+				.Where(static a => IsValidationAttribute(a.AttributeClass))
+				.Select(BuildConstruction)];
+			if (attributes.Length > 0)
+			{
+				checks.Add(new ParameterCheck(parameter.Name, attributes));
+			}
+		}
+
+		if (checks.Count == 0)
+		{
+			return null;
+		}
+
+		InterceptableLocation? location = ctx.SemanticModel.GetInterceptableLocation(invocation, ct);
+		return location is null
+			? null
+			: new CallSite(
+			method.GetDocumentationCommentId() ?? method.ToDisplayString(),
+			BuildSignature(method),
+			BuildForwardingCall(method),
+			method.ReturnsVoid,
+			[.. checks],
+			location.GetInterceptsLocationAttributeSyntax());
+	}
+
+	private static bool IsValidationAttribute(INamedTypeSymbol? type)
+	{
+		for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType)
+		{
+			if (current.ToDisplayString() == ValidationAttributeName)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static string BuildConstruction(AttributeData attribute)
+	{
+		string arguments = string.Join(", ", attribute.ConstructorArguments.Select(static a => a.ToCSharpString()));
+		string construction = $"new {attribute.AttributeClass!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({arguments})";
+		if (attribute.NamedArguments.Length > 0)
+		{
+			construction += " { " + string.Join(", ", attribute.NamedArguments.Select(static n => $"{n.Key} = {n.Value.ToCSharpString()}")) + " }";
+		}
+
+		return construction;
+	}
+
+	private static string BuildSignature(IMethodSymbol method)
+	{
+		List<string> parameters = [];
+		if (!method.IsStatic)
+		{
+			parameters.Add($"this {method.ContainingType.ToDisplayString(TypeFormat)} @this");
+		}
+
+		parameters.AddRange(method.Parameters.Select(static p => $"{p.Type.ToDisplayString(TypeFormat)} @{p.Name}"));
+
+		string returnType = method.ReturnsVoid ? "void" : method.ReturnType.ToDisplayString(TypeFormat);
+		return $"{returnType} {{0}}({string.Join(", ", parameters)})";
+	}
+
+	private static string BuildForwardingCall(IMethodSymbol method)
+	{
+		string target = method.IsStatic ? method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) : "@this";
+		return $"{target}.@{method.Name}({string.Join(", ", method.Parameters.Select(static p => "@" + p.Name))})";
+	}
+
+	private static void Emit(SourceProductionContext context, ImmutableArray<CallSite> callSites)
+	{
+		if (callSites.IsDefaultOrEmpty)
+		{
+			return;
+		}
+
+		StringBuilder source = new();
+		_ = source.AppendLine("// <auto-generated/>");
+		_ = source.AppendLine("#nullable enable");
+		_ = source.AppendLine();
+		_ = source.AppendLine("namespace System.Runtime.CompilerServices");
+		_ = source.AppendLine("{");
+		_ = source.AppendLine("\t[global::System.AttributeUsage(global::System.AttributeTargets.Method, AllowMultiple = true)]");
+		_ = source.AppendLine("\tfile sealed class InterceptsLocationAttribute : global::System.Attribute");
+		_ = source.AppendLine("\t{");
+		_ = source.AppendLine("\t\tpublic InterceptsLocationAttribute(int version, string data) { }");
+		_ = source.AppendLine("\t}");
+		_ = source.AppendLine("}");
+		_ = source.AppendLine();
+		_ = source.AppendLine("namespace ParameterValidation.Generated");
+		_ = source.AppendLine("{");
+		_ = source.AppendLine("\tfile static class ParameterValidationInterceptors");
+		_ = source.AppendLine("\t{");
+
+		int index = 0;
+		foreach (IGrouping<string, CallSite> group in callSites.GroupBy(static c => c.MethodId))
+		{
+			CallSite first = group.First();
+			string name = $"Intercept{index}";
+
+			foreach (ParameterCheck check in first.Checks)
+			{
+				_ = source.AppendLine($"\t\tprivate static readonly global::System.ComponentModel.DataAnnotations.ValidationAttribute[] s_{name}_{check.ParameterName} = [{string.Join(", ", check.AttributeConstructions)}];");
+			}
+
+			foreach (CallSite site in group)
+			{
+				_ = source.AppendLine($"\t\t{site.InterceptsLocationAttribute}");
+			}
+
+			_ = source.AppendLine($"\t\tpublic static {string.Format(first.Signature, name)}");
+			_ = source.AppendLine("\t\t{");
+			foreach (ParameterCheck check in first.Checks)
+			{
+				_ = source.AppendLine($"\t\t\tValidate(@{check.ParameterName}, \"{check.ParameterName}\", s_{name}_{check.ParameterName});");
+			}
+
+			_ = source.AppendLine(first.ReturnsVoid ? $"\t\t\t{first.ForwardingCall};" : $"\t\t\treturn {first.ForwardingCall};");
+			_ = source.AppendLine("\t\t}");
+			_ = source.AppendLine();
+			index++;
+		}
+
+		_ = source.AppendLine("\t\tprivate static void Validate(object? value, string parameterName, global::System.ComponentModel.DataAnnotations.ValidationAttribute[] attributes)");
+		_ = source.AppendLine("\t\t{");
+		_ = source.AppendLine("\t\t\tforeach (var attribute in attributes)");
+		_ = source.AppendLine("\t\t\t{");
+		_ = source.AppendLine("\t\t\t\tif (attribute.IsValid(value))");
+		_ = source.AppendLine("\t\t\t\t{");
+		_ = source.AppendLine("\t\t\t\t\tcontinue;");
+		_ = source.AppendLine("\t\t\t\t}");
+		_ = source.AppendLine();
+		_ = source.AppendLine("\t\t\t\tif (value is null && attribute is global::System.ComponentModel.DataAnnotations.RequiredAttribute)");
+		_ = source.AppendLine("\t\t\t\t{");
+		_ = source.AppendLine("\t\t\t\t\tthrow new global::System.ArgumentNullException(parameterName, attribute.FormatErrorMessage(parameterName));");
+		_ = source.AppendLine("\t\t\t\t}");
+		_ = source.AppendLine();
+		_ = source.AppendLine("\t\t\t\tthrow new global::System.ArgumentException(attribute.FormatErrorMessage(parameterName), parameterName);");
+		_ = source.AppendLine("\t\t\t}");
+		_ = source.AppendLine("\t\t}");
+		_ = source.AppendLine("\t}");
+		_ = source.AppendLine("}");
+
+		context.AddSource("ParameterValidationInterceptors.g.cs", source.ToString());
+	}
+
+	private sealed record ParameterCheck(string ParameterName, string[] AttributeConstructions);
+
+	private sealed record CallSite(
+		string MethodId,
+		string Signature,
+		string ForwardingCall,
+		bool ReturnsVoid,
+		ParameterCheck[] Checks,
+		string InterceptsLocationAttribute);
+}
