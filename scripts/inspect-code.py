@@ -38,7 +38,7 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_TARGET = os.path.join(ROOT, "ArrayFoo.slnx")
+DEFAULT_TARGET = os.path.join(ROOT, "ParameterValidation.slnx")
 
 
 def run_inspectcode(target: str, workdir: str) -> str:

@@ -1,7 +1,7 @@
 # Style canary
 
 Deliberately non-compliant code. **Do not fix it.** It is not part of
-`ArrayFoo.slnx`, and `scripts/check-line-layout.py` skips it, so no ordinary gate
+`ParameterValidation.slnx`, and `scripts/check-line-layout.py` skips it, so no ordinary gate
 ever reports it.
 
 Every violation in `Violations.cs` carries an `// expect: <gate>:<rule>` marker

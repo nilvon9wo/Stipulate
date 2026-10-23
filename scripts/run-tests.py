@@ -19,7 +19,7 @@ and exits with INCONCLUSIVE_EXIT_CODE, never 0. Otherwise it exits with
 `dotnet test`'s own code.
 
 Usage: run-tests.py [any dotnet test arguments]
-    run-tests.py --solution ArrayFoo.slnx
+    run-tests.py --solution ParameterValidation.slnx
 """
 import re
 import subprocess
