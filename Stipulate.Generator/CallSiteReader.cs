@@ -14,8 +14,22 @@ internal static class CallSiteReader
     private const string ThisParameter = "@this";
     private const string ArgumentSeparator = ", ";
 
+    private const string ShowValueInMessageName = "Net.NowhereAtAll.Stipulate.Contracts.ShowValueInMessageAttribute";
+
     private static readonly SymbolDisplayFormat TypeFormat = SymbolDisplayFormat.FullyQualifiedFormat
         .AddMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+
+    /// <summary>
+    /// The method as the messages name it, as the weaver does from the metadata, which has no
+    /// nullable reference annotations: <c>Scale.Set(int)</c>, <c>Greeter.Greet(string)</c>.
+    /// </summary>
+    private static readonly SymbolDisplayFormat MethodFormat = new(
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypes,
+        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+        memberOptions: SymbolDisplayMemberOptions.IncludeContainingType | SymbolDisplayMemberOptions.IncludeParameters,
+        parameterOptions: SymbolDisplayParameterOptions.IncludeType,
+        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes
+    );
 
     /// <returns>The call site, or <c>null</c> if the call needn't or can't be intercepted.</returns>
     public static CallSite? Read(GeneratorSyntaxContext context, CancellationToken cancellationToken)
@@ -62,6 +76,7 @@ internal static class CallSiteReader
             : new CallSite(
                 // Only local functions and anonymous or erroneous methods lack an ID; none is interceptable.
                 method.GetDocumentationCommentId()!,
+                method.ToDisplayString(MethodFormat),
                 BuildSignature(method),
                 BuildForwardingCall(method),
                 method.ReturnsVoid,
@@ -77,8 +92,12 @@ internal static class CallSiteReader
             .Select(BuildConstruction)];
         return constructions.IsEmpty
             ? null
-            : new ParameterCheck(parameter.Name, new EquatableArray<string>(constructions));
+            : new ParameterCheck(parameter.Name, new EquatableArray<string>(constructions), ShowsValue(parameter));
     }
+
+    private static bool ShowsValue(IParameterSymbol parameter)
+        => parameter.GetAttributes()
+            .Any(static attribute => attribute.AttributeClass?.ToDisplayString() == ShowValueInMessageName);
 
     private static string BuildConstruction(AttributeData attribute)
     {

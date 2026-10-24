@@ -6,82 +6,39 @@ namespace Net.NowhereAtAll.Stipulate.Weaver;
 /// <summary>
 /// Emits the IL equivalent of the following for one validation attribute on one parameter:
 /// <code>
-/// ValidationAttribute attribute = new MinLengthAttribute(1);
-/// if (!attribute.IsValid(array))
-/// {
-///     if (array is null &amp;&amp; attribute is RequiredAttribute)   // only emitted for [Required]
-///         throw new ArgumentNullException("array", attribute.FormatErrorMessage("array"));
-///     throw new ArgumentException(attribute.FormatErrorMessage("array"), "array");
-/// }
+/// ArgumentChecks.Check(new MinLengthAttribute(1), array, "array", "Multiplier.Multiply(int[])", false);
 /// </code>
+/// <c>ArgumentChecks</c>, compiled into the assembly by Stipulate.targets, throws if the attribute
+/// rejects the value. The last argument is whether the parameter has <c>[ShowValueInMessage]</c>.
 /// </summary>
-/// <param name="attributeLocal">The method's local that holds each attribute while it is checked.</param>
+/// <param name="method">The method being woven, as its messages name it; see <see cref="MethodDisplay"/>.</param>
 internal sealed class CheckEmitter(
     WellKnownReferences references,
     AttributeConstructionEmitter constructions,
     InstructionBuffer buffer,
-    VariableDefinition attributeLocal
+    string method
 )
 {
     private readonly WellKnownReferences _references = references;
     private readonly AttributeConstructionEmitter _constructions = constructions;
     private readonly InstructionBuffer _buffer = buffer;
-    private readonly VariableDefinition _attributeLocal = attributeLocal;
+    private readonly string _method = method;
 
     public void Emit(WovenCheck check)
     {
-        Instruction next = Instruction.Create(OpCodes.Nop);
-        Instruction throwArgumentException = Instruction.Create(OpCodes.Ldloc, this._attributeLocal);
-        this.EmitValidity(check, next);
-        if (ValidationAttributeResolver.IsRequiredAttribute(check.AttributeType))
-        {
-            this.EmitArgumentNullThrow(check.Parameter, throwArgumentException);
-        }
-
-        this._buffer.Add(throwArgumentException);
-        this.EmitArgumentThrow(check.Parameter);
-        this._buffer.Add(next);
-    }
-
-    /// <summary><c>attribute = new TAttribute(...); if (attribute.IsValid(value)) goto next;</c></summary>
-    private void EmitValidity(WovenCheck check, Instruction next)
-    {
+        ParameterDefinition parameter = check.Parameter;
         this._constructions.Emit(check.Attribute, check.AttributeType);
-        this._buffer.Emit(OpCodes.Stloc, this._attributeLocal);
-        this._buffer.Emit(OpCodes.Ldloc, this._attributeLocal);
-        this.EmitLoadArgumentAsObject(check.Parameter);
-        this._buffer.Emit(OpCodes.Callvirt, this._references.IsValid);
-        this._buffer.Emit(OpCodes.Brtrue, next);
-    }
-
-    /// <summary>
-    /// <c>if (value is not null) goto throwArgumentException;
-    /// throw new ArgumentNullException(name, attribute.FormatErrorMessage(name));</c>
-    /// </summary>
-    private void EmitArgumentNullThrow(ParameterDefinition parameter, Instruction throwArgumentException)
-    {
         this.EmitLoadArgumentAsObject(parameter);
-        this._buffer.Emit(OpCodes.Brtrue, throwArgumentException);
         this._buffer.Emit(OpCodes.Ldstr, parameter.Name);
-        this._buffer.Emit(OpCodes.Ldloc, this._attributeLocal);
-        this._buffer.Emit(OpCodes.Ldstr, parameter.Name);
-        this._buffer.Emit(OpCodes.Callvirt, this._references.FormatErrorMessage);
-        this._buffer.Emit(OpCodes.Newobj, this._references.ArgumentNullExceptionConstructor);
-        this._buffer.Emit(OpCodes.Throw);
+        this._buffer.Emit(OpCodes.Ldstr, this._method);
+        this._buffer.Emit(OpCodes.Ldc_I4, Convert.ToInt32(ShowsValue(parameter)));
+        this._buffer.Emit(OpCodes.Call, this._references.Check);
     }
 
-    /// <summary>
-    /// <c>throw new ArgumentException(attribute.FormatErrorMessage(name), name);</c>, after the
-    /// attribute has been loaded by the branch target that precedes it.
-    /// </summary>
-    private void EmitArgumentThrow(ParameterDefinition parameter)
-    {
-        this._buffer.Emit(OpCodes.Ldstr, parameter.Name);
-        this._buffer.Emit(OpCodes.Callvirt, this._references.FormatErrorMessage);
-        this._buffer.Emit(OpCodes.Ldstr, parameter.Name);
-        this._buffer.Emit(OpCodes.Newobj, this._references.ArgumentExceptionConstructor);
-        this._buffer.Emit(OpCodes.Throw);
-    }
+    private static bool ShowsValue(ParameterDefinition parameter)
+        => parameter.CustomAttributes.Any(
+            static attribute => attribute.AttributeType.FullName == WellKnownReferences.ShowValueInMessageAttributeName
+        );
 
     /// <remarks>
     /// Every primitive is a value type; a generic parameter may be one, and boxing a reference is a no-op.

@@ -24,7 +24,11 @@ method parameters mean something.
   - `None`: no enforcement.
 
   A rejected `null` throws `ArgumentNullException` for `[Required]`; anything else rejected
-  throws `ArgumentException`, both with the attribute's own message and the parameter's name.
+  throws `ArgumentException`. In every mode, the message names the method, the attribute and the
+  parameter, and gives the attribute's own message and what the argument was: a number, an enum
+  or a `bool` as it is, a string by its length, a collection by its number of elements.
+  `[ShowValueInMessage]` shows a parameter's value itself. The check is compiled into each
+  project as source, so enforcement adds no dependency at run time.
 - **The contract analyzer**: implementations and overrides may not strengthen their contract's
   preconditions (ST1001) or weaken its guarantees (ST1003), and must restate, or explicitly
   weaken, every attribute they drop (ST1002). Parameters, properties and indexers; interface
@@ -35,7 +39,9 @@ method parameters mean something.
 - **Argument checks** at compile time (ST3001): a constant, `null`, a collection written where it
   is passed, a `static readonly` field initialized with one of these, the arguments of a `params`
   parameter, or a parameter's default value, that one of the parameter's attributes certainly
-  rejects. The message says what will throw, and how to fix it.
+  rejects. The message says what will throw, and how to fix it; for a call through an interface
+  or a virtual method on an object whose type is certain, whether that type's own check accepts
+  the value.
 - **A code fix** that restates a missing attribute from the contract, one at a time or all at once.
 - **`[ComparableValidation]`**, which describes a custom validation attribute, your own or a
   package's, so the analyzer can compare it with the built-in ones (ST2001-ST2003).

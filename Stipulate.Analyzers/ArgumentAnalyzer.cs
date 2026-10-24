@@ -67,9 +67,12 @@ public sealed class ArgumentAnalyzer : DiagnosticAnalyzer
         ArgumentValueReader reader
     )
     {
-        ImmutableArray<IArgumentOperation> arguments = context.Operation is IInvocationOperation invocation
-            ? invocation.Arguments
-            : ((IObjectCreationOperation)context.Operation).Arguments;
+        IInvocationOperation? invocation = context.Operation as IInvocationOperation;
+        ImmutableArray<IArgumentOperation> arguments = invocation?.Arguments
+            ?? ((IObjectCreationOperation)context.Operation).Arguments;
+        ConcreteReceiver? receiver = invocation is null
+            ? null
+            : ConcreteReceiver.Find(invocation, context.CancellationToken);
         foreach (IArgumentOperation argument in arguments)
         {
             ArgumentValue? value = argument.ArgumentKind switch
@@ -79,7 +82,8 @@ public sealed class ArgumentAnalyzer : DiagnosticAnalyzer
                     ArgumentValueReader.ReadParams(argument.Value),
                 _ => null,
             };
-            Check(context, describer, argument.Parameter, value, argument.Value.Syntax.GetLocation(), ThisCall);
+            Location location = argument.Value.Syntax.GetLocation();
+            Check(context, describer, argument.Parameter, value, location, new Consequence(ThisCall, receiver));
         }
     }
 
@@ -92,7 +96,7 @@ public sealed class ArgumentAnalyzer : DiagnosticAnalyzer
         IParameterInitializerOperation initializer = (IParameterInitializerOperation)context.Operation;
         ArgumentValue? value = reader.Read(initializer.Value, DefaultNoun, context.CancellationToken);
         Location location = initializer.Value.Syntax.GetLocation();
-        Check(context, describer, initializer.Parameter, value, location, CallsOmittingIt);
+        Check(context, describer, initializer.Parameter, value, location, new Consequence(CallsOmittingIt, null));
     }
 
     /// <summary>Reports each of the parameter's attributes that rejects the value.</summary>
@@ -103,14 +107,14 @@ public sealed class ArgumentAnalyzer : DiagnosticAnalyzer
     /// </param>
     /// <param name="value">What is known of the value, or <c>null</c> if nothing is.</param>
     /// <param name="location">Where the value is written; the call, for <c>params</c> arguments.</param>
-    /// <param name="throwingCalls">Which calls throw because of the value, for the message.</param>
+    /// <param name="consequence">Which calls throw because of the value, for the message.</param>
     private static void Check(
         OperationAnalysisContext context,
         ValidationAttributeDescriber describer,
         IParameterSymbol? parameter,
         ArgumentValue? value,
         Location location,
-        string throwingCalls
+        Consequence consequence
     )
     {
         if (parameter is null || value is null)
@@ -127,14 +131,76 @@ public sealed class ArgumentAnalyzer : DiagnosticAnalyzer
                 ComparedTargetFactory.Display(parameter.ContainingSymbol),
                 rejection.Attribute.Display,
                 rejection.Reason,
-                throwingCalls,
-                ExceptionFor(rejection.Attribute, value)
+                Describe(describer, parameter, value, rejection.Attribute, consequence, context.CancellationToken)
             ));
         foreach (Diagnostic diagnostic in diagnostics)
         {
             context.ReportDiagnostic(diagnostic);
         }
     }
+
+    /// <summary>
+    /// What happens at run time, and how to fix it. A call on an object whose type the analyzer
+    /// knows, and whose method accepts the value, throws only with interceptors: they check the
+    /// method called, the weaver the method that runs.
+    /// </summary>
+    private static string Describe(
+        ValidationAttributeDescriber describer,
+        IParameterSymbol parameter,
+        ArgumentValue value,
+        DescribedAttribute attribute,
+        Consequence consequence,
+        CancellationToken cancellationToken
+    )
+    {
+        string exception = ExceptionFor(attribute, value);
+        ConcreteReceiver? accepting = consequence.Receiver is { } receiver
+            && Accepts(describer, receiver.Method.Parameters[parameter.Ordinal], value, cancellationToken)
+            ? receiver
+            : null;
+        return accepting is null
+            ? $"Wherever Stipulate enforces the attribute at run time, {consequence.ThrowingCalls} throws {exception}. "
+                + $"Pass a value [{attribute.Display}] accepts, or, if the value is right, correct the attribute."
+            : DescribeAccepting(describer, parameter, accepting, attribute, exception, cancellationToken);
+    }
+
+    private static string DescribeAccepting(
+        ValidationAttributeDescriber describer,
+        IParameterSymbol parameter,
+        ConcreteReceiver receiver,
+        DescribedAttribute attribute,
+        string exception,
+        CancellationToken cancellationToken
+    )
+    {
+        string type = ComparedTargetFactory.Display(receiver.Type);
+        string method = ComparedTargetFactory.Display(receiver.Method);
+        ImmutableArray<DescribedAttribute> own = describer.GetValidationAttributes(
+            receiver.Method.Parameters[parameter.Ordinal].OriginalDefinition,
+            cancellationToken
+        );
+        string attributes = own.IsEmpty
+            ? "it has no validation attributes"
+            : string.Join(", ", own.Select(static described => $"[{described.Display}]"));
+        return $"The object here is a '{type}', whose '{method}' accepts it ({attributes}): woven, this call runs "
+            + $"that method's own check and doesn't throw; with interceptors, it checks "
+            + $"'{ComparedTargetFactory.Display(parameter.ContainingSymbol)}' and throws {exception}. Declare the "
+            + $"variable as '{type}' to rely on what '{method}' accepts, or pass a value [{attribute.Display}] "
+            + "accepts.";
+    }
+
+    /// <summary>
+    /// Whether the parameter's attributes accept the value: all of them can be described, and none
+    /// rejects it.
+    /// </summary>
+    private static bool Accepts(
+        ValidationAttributeDescriber describer,
+        IParameterSymbol parameter,
+        ArgumentValue value,
+        CancellationToken cancellationToken
+    )
+        => describer.GetValidationAttributes(parameter.OriginalDefinition, cancellationToken)
+            .All(attribute => attribute.Constraints is not null && FindRejection(attribute, value) is null);
 
     /// <summary>
     /// What the enforced check throws, as the weaver and the interceptors do: a <c>null</c> rejected
@@ -166,3 +232,4 @@ public sealed class ArgumentAnalyzer : DiagnosticAnalyzer
             .Select(constraint => constraint.FindRejection(value))
             .FirstOrDefault(static reason => reason is not null);
 }
+

@@ -13,7 +13,6 @@ internal sealed class MethodWeaver(WellKnownReferences references, MethodDefinit
 {
     private readonly WellKnownReferences _references = references;
     private readonly MethodDefinition _method = method;
-    private readonly ValidationAttributeResolver _resolver = new(references);
 
     /// <returns>Whether the method had anything to check, and so was woven.</returns>
     public bool Weave()
@@ -37,7 +36,7 @@ internal sealed class MethodWeaver(WellKnownReferences references, MethodDefinit
 
     private IEnumerable<WovenCheck> FindChecks(ParameterDefinition parameter)
         => parameter.CustomAttributes
-            .Select(attribute => (Attribute: attribute, Type: this._resolver.Resolve(attribute)))
+            .Select(static attribute => (Attribute: attribute, Type: ValidationAttributeResolver.Resolve(attribute)))
             .Where(static resolved => resolved.Type is not null)
             .Select(resolved => new WovenCheck(parameter, resolved.Attribute, resolved.Type!));
 
@@ -58,12 +57,10 @@ internal sealed class MethodWeaver(WellKnownReferences references, MethodDefinit
 
     private InstructionBuffer EmitChecks(List<WovenCheck> checks)
     {
-        VariableDefinition attributeLocal = new(this._references.ValidationAttribute);
-        this._method.Body.Variables.Add(attributeLocal);
         InstructionBuffer buffer = new();
         ArgumentValueEmitter values = new(this._references, this._method, buffer);
         AttributeConstructionEmitter constructions = new(this._references, values, buffer);
-        CheckEmitter emitter = new(this._references, constructions, buffer, attributeLocal);
+        CheckEmitter emitter = new(this._references, constructions, buffer, MethodDisplay.Display(this._method));
         checks.ForEach(emitter.Emit);
         return buffer;
     }

@@ -19,10 +19,6 @@ internal sealed class InstructionBuffer
 
     public void Emit(OpCode opCode, string value) => this.Add(Instruction.Create(opCode, value));
 
-    public void Emit(OpCode opCode, Instruction target) => this.Add(Instruction.Create(opCode, target));
-
-    public void Emit(OpCode opCode, VariableDefinition variable) => this.Add(Instruction.Create(opCode, variable));
-
     public void Emit(OpCode opCode, ParameterDefinition parameter) => this.Add(Instruction.Create(opCode, parameter));
 
     public void Emit(OpCode opCode, TypeReference type) => this.Add(Instruction.Create(opCode, type));

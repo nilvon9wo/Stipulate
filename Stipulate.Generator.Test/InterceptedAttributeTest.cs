@@ -115,7 +115,7 @@ public class InterceptedAttributeTest
         );
 
         // Assert
-        Assert.StartsWith(expected, exception.Message, StringComparison.Ordinal);
+        Assert.Contains(expected, exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class InterceptedAttributeTest
         );
 
         // Assert
-        Assert.StartsWith("NaN,Infinity,-Infinity", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("NaN,Infinity,-Infinity", exception.Message, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -159,7 +159,7 @@ public class InterceptedAttributeTest
         );
 
         // Assert
-        Assert.StartsWith("null;1+[2+3];a+b;n", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("null;1+[2+3];a+b;n", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -173,6 +173,6 @@ public class InterceptedAttributeTest
         );
 
         // Assert
-        Assert.StartsWith("4+5;;;", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("4+5;;;", exception.Message, StringComparison.Ordinal);
     }
 }

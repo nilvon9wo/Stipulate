@@ -4,8 +4,8 @@ Makes the `System.ComponentModel.DataAnnotations` validation attributes on metho
 mean something.
 
 **It enforces them on every call.** With Stipulate referenced, this method rejects an empty array
-with an `ArgumentException`, and `null` with an `ArgumentNullException`, carrying the attribute's
-own message:
+with an `ArgumentException`, and `null` with an `ArgumentNullException`, whose message names the
+method, the attribute and its own message, and what the argument was:
 
 ```csharp
 public static class Multiplier

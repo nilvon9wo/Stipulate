@@ -32,6 +32,23 @@ public class InterceptedCallTest
             public static int Pair([Range(1, 10)] int first, [Range(1, 10)] int second) => first + second;
         }
 
+        public interface IScale
+        {
+            void Set([Range(1, 10)] int level);
+        }
+
+        public class Scale : IScale
+        {
+            public void Set([Range(0, 10)] int level) { }
+        }
+
+        public static class Shower
+        {
+            public static void Hidden([MinLength(5)] string text) { }
+
+            public static void Shown([MinLength(5), ShowValueInMessage] string text) { }
+        }
+
         public static class Caller
         {
             public static int Count(int[]? array) => Target.Count(array);
@@ -53,6 +70,12 @@ public class InterceptedCallTest
             public static void AllowedGreen() => Target.Allowed(Color.Green);
 
             public static int Pair(int first, int second) => Target.Pair(first, second);
+
+            public static void SetThroughInterface(int level) => ((IScale)new Scale()).Set(level);
+
+            public static void Hidden(string text) => Shower.Hidden(text);
+
+            public static void Shown(string text) => Shower.Shown(text);
         }
         """;
 
@@ -87,7 +110,11 @@ public class InterceptedCallTest
 
         // Assert
         Assert.Equal("array", exception.ParamName);
-        Assert.StartsWith("The array field is required.", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(
+            "Target.Count(int[]) rejected argument 'array' by [Required]: The array field is required. "
+            + "The argument was null. (Parameter 'array')",
+            exception.Message
+        );
     }
 
     [Fact]
@@ -103,10 +130,11 @@ public class InterceptedCallTest
 
         // Assert
         Assert.Equal("array", exception.ParamName);
-        Assert.StartsWith(
-            "The field array must be a string or array type with a minimum length of '1'.",
-            exception.Message,
-            StringComparison.Ordinal
+        Assert.Equal(
+            "Target.Count(int[]) rejected argument 'array' by [MinLength]: The field array must be a string or "
+            + "array type with a minimum length of '1'. The argument was a collection of 0 elements. "
+            + "(Parameter 'array')",
+            exception.Message
         );
     }
 
@@ -175,7 +203,7 @@ public class InterceptedCallTest
         );
 
         // Assert
-        Assert.StartsWith("Out of range", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("Out of range", exception.Message, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -255,5 +283,39 @@ public class InterceptedCallTest
 
         // Assert
         Assert.Equal(invalid, exception.ParamName);
+    }
+
+    [Fact]
+    public void Call_ThroughAnInterface_ChecksAndNamesTheInterfacesMethod()
+    {
+        // Arrange - Scale.Set accepts 0, but the call is to IScale.Set, which doesn't
+
+        // Act
+        ArgumentException exception = Assert.Throws<ArgumentException>(
+            () => InterceptedCode.Invoke(Intercepted.Value, Caller, "SetThroughInterface", 0)
+        );
+
+        // Assert
+        Assert.StartsWith(
+            "IScale.Set(int) rejected argument 'level' by [Range]: ",
+            exception.Message,
+            StringComparison.Ordinal
+        );
+    }
+
+    [Theory]
+    [InlineData("Hidden", "a string of 3 characters")]
+    [InlineData("Shown", "\"abc\"")]
+    public void Call_WhenAStringIsRejected_ShowsItOnlyIfTheParameterSaysSo(string method, string expected)
+    {
+        // Arrange - nothing beyond the arguments
+
+        // Act
+        ArgumentException exception = Assert.Throws<ArgumentException>(
+            () => InterceptedCode.Invoke(Intercepted.Value, Caller, method, "abc")
+        );
+
+        // Assert
+        Assert.Contains($"The argument was {expected}.", exception.Message, StringComparison.Ordinal);
     }
 }

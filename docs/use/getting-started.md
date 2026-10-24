@@ -14,8 +14,10 @@ public static class Multiplier
 Stipulate then does two things.
 
 **It enforces them when the method is called.** `Multiplier.Multiply([])` throws an
-`ArgumentException` whose message is the attribute's own ("The field array must be a string or
-array type with a minimum length of '1'.") and whose `ParamName` is `array`.
+`ArgumentException` whose `ParamName` is `array`, and whose message names the method, the
+attribute and what it measured, after the attribute's own message: "Multiplier.Multiply(int[])
+rejected argument 'array' by [MinLength]: The field array must be a string or array type with a
+minimum length of '1'. The argument was a collection of 0 elements."
 `Multiplier.Multiply(null)` throws an `ArgumentNullException`, because `[Required]` rejects
 `null`. How the check gets into your code is up to you: see
 [enforcement modes](enforcement-modes.md).

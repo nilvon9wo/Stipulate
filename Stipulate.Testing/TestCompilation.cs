@@ -1,8 +1,10 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Text;
 using Net.NowhereAtAll.Stipulate.Contracts;
 
 namespace Net.NowhereAtAll.Stipulate.Testing;
@@ -31,6 +33,27 @@ public static class TestCompilation
     private static readonly Lazy<ImmutableArray<MetadataReference>> PlatformReferences = new(LoadPlatformReferences);
 
     public static ImmutableArray<MetadataReference> References => PlatformReferences.Value;
+
+    /// <summary>
+    /// The run-time check, Stipulate.ArgumentChecks.cs, that Stipulate.targets compiles into every
+    /// project that enforces the attributes: the woven methods and the interceptors call it.
+    /// </summary>
+    public static string ArgumentChecksSource { get; } = ReadArgumentChecks();
+
+    /// <summary><see cref="ArgumentChecksSource"/>, parsed as the test sources are.</summary>
+    public static SyntaxTree ArgumentChecks => ParseArgumentChecks(ParseOptions);
+
+    /// <summary>
+    /// <see cref="ArgumentChecksSource"/>, parsed with the options of the compilation it joins, which
+    /// all its trees must share; with an encoding, so that its symbols can be emitted.
+    /// </summary>
+    public static SyntaxTree ParseArgumentChecks(CSharpParseOptions options)
+        => CSharpSyntaxTree.ParseText(
+            SourceText.From(ArgumentChecksSource, Encoding.UTF8),
+            options,
+            path: "Stipulate.ArgumentChecks.cs",
+            cancellationToken: CancellationToken
+        );
 
     public static CSharpParseOptions ParseOptions { get; } = new(LanguageVersion.Latest);
 
@@ -96,6 +119,14 @@ public static class TestCompilation
 
     private static bool IsToolAssembly(string path)
         => Path.GetFileName(path).StartsWith(ToolAssemblyPrefix, StringComparison.OrdinalIgnoreCase);
+
+    private static string ReadArgumentChecks()
+    {
+        using Stream stream = typeof(TestCompilation).Assembly
+            .GetManifestResourceStream("Stipulate.ArgumentChecks.cs")!;
+        using StreamReader reader = new(stream);
+        return reader.ReadToEnd();
+    }
 
     private static ImmutableArray<MetadataReference> LoadPlatformReferences()
     {

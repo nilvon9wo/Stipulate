@@ -31,7 +31,7 @@ internal static class GeneratorRunner
         );
         return CSharpCompilation.Create(
             TestCompilation.AssemblyName,
-            [tree],
+            [tree, TestCompilation.ParseArgumentChecks(ParseOptions)],
             TestCompilation.References,
             TestCompilation.CompilationOptions
         );
