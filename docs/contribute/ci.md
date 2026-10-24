@@ -1,6 +1,6 @@
 # CI
 
-`.github/workflows/ci.yml` runs on every push to `main` and every pull request into it.
+`.github/workflows/ci.yml` runs on every push to `main` and every pull request, whatever it merges into.
 
 ## The Linux job
 
