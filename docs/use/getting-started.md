@@ -95,6 +95,10 @@ It needs the .NET SDK 9.0.300 or later, or Visual Studio 2022 17.14 or later: th
 built for that version of the compiler. Weaving works for any target framework, the .NET
 Framework and netstandard2.0 included; the weaver itself runs on .NET 8 or later.
 
+It is for C# projects. A Visual Basic or F# project builds with it, but isn't checked, and is
+warned so (ST0008); see [other .NET languages](other-languages.md) for what still works, such
+as calling C# that Stipulate wove.
+
 A project that gets Stipulate through another, by referencing a library that uses it, gets all
 of it too: a class there that implements one of the library's interfaces is held to its
 contracts, and its methods are woven. To leave such projects out, see

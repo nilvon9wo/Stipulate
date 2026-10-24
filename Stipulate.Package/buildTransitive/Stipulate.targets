@@ -20,6 +20,12 @@
                     every method with validated parameters checks them on entry.
       Interceptors  The generator intercepts each call to such a method at compile time.
       None          No enforcement; the analyzer still checks contracts.
+
+    Stipulate is for C# projects: the analyzer, the code fix and the generator are built for C#'s
+    compiler (NuGet gives them only to C# projects), and the check that weaving and interceptors
+    both call is C# source. A project in another language, such as Visual Basic or F#, gets
+    Stipulate.Contracts and nothing else, and a warning (ST0008) unless its StipulateMode is None.
+    What it calls in C# assemblies that Stipulate wove is checked as usual.
   -->
   <PropertyGroup>
     <StipulateMode Condition="'$(StipulateMode)' == ''">Weaving</StipulateMode>
@@ -58,7 +64,7 @@
     package whose dependency on Stipulate excludes them, as a PackageReference's defaults do).
 
     A project left out by StipulateTransitive=false, one that doesn't reference Stipulate itself,
-    gets none of them.
+    gets none of them, and neither does a project that isn't C# (see StipulateReportLanguage).
 
     The package ships the generator with the analyzers, so the compiler would load it in every
     mode; outside Interceptors mode, take it out again.
@@ -73,6 +79,8 @@
     </ItemGroup>
     <PropertyGroup>
       <_StipulateLeftOut Condition="'$(StipulateTransitive)' == 'false' And '@(_StipulateDirectReference)' == ''">true</_StipulateLeftOut>
+      <_StipulateReportsLanguage Condition="'$(_StipulateLeftOut)' != 'true' And '$(Language)' != 'C#' And '$(StipulateMode)' != 'None'">true</_StipulateReportsLanguage>
+      <_StipulateLeftOut Condition="'$(Language)' != 'C#'">true</_StipulateLeftOut>
     </PropertyGroup>
     <ItemGroup Condition="'$(_StipulateLeftOut)' == 'true'">
       <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'Stipulate'" />
@@ -83,6 +91,18 @@
     <ItemGroup Condition="'$(_StipulateLeftOut)' != 'true' And ('$(StipulateMode)' == 'Weaving' Or '$(StipulateMode)' == 'Interceptors')">
       <Compile Include="$(MSBuildThisFileDirectory)Stipulate.ArgumentChecks.cs" />
     </ItemGroup>
+  </Target>
+
+  <!--
+    Say that a project StipulateResolveAnalyzers left out for not being C# isn't enforced, unless
+    StipulateTransitive=false would have left it out anyway or its StipulateMode is None: once per
+    build, not in a design-time build too.
+  -->
+  <Target Name="StipulateReportLanguage"
+          AfterTargets="StipulateResolveAnalyzers"
+          Condition="'$(_StipulateReportsLanguage)' == 'true' And '$(DesignTimeBuild)' != 'true'">
+    <Warning Code="ST0008"
+             Text="Stipulate enforces validation attributes only in C# projects, and '$(MSBuildProjectName)' is $(Language): the attributes on its parameters aren't checked when its methods are called, and its implementations aren't checked against their contracts. What it calls in C# assemblies that Stipulate wove is still checked. To have its methods checked, move them into a C# project; to acknowledge that they aren't, set StipulateMode to None in this project." />
   </Target>
 
   <!-- Weaving -->

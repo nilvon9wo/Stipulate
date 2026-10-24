@@ -128,6 +128,72 @@ public class PackageTest(PackageFeed feed)
         }
         """;
 
+    /// <summary><see cref="Program"/> in Visual Basic.</summary>
+    private const string VisualBasicProgram = """
+        Imports System
+        Imports System.ComponentModel.DataAnnotations
+
+        Public Module Program
+            Public Sub Main()
+                Try
+                    Target.Check(0)
+                    Console.WriteLine("not validated")
+                Catch rejection As ArgumentException
+                    Console.WriteLine("validated: " & rejection.ParamName)
+                End Try
+            End Sub
+        End Module
+
+        Public Class Target
+            Public Shared Sub Check(<Range(1, 10)> value As Integer)
+            End Sub
+        End Class
+        """;
+
+    /// <summary><see cref="Program"/> in F#.</summary>
+    private const string FSharpProgram = """
+        open System
+        open System.ComponentModel.DataAnnotations
+
+        type Target =
+            static member Check([<Range(1, 10)>] value: int) = ()
+
+        try
+            Target.Check(0)
+            Console.WriteLine("not validated")
+        with :? ArgumentException as rejection ->
+            Console.WriteLine("validated: " + rejection.ParamName)
+        """;
+
+    /// <summary>Calls <see cref="ContractLibrary"/>'s validated method, in Visual Basic.</summary>
+    private const string VisualBasicProgramOnLibrary = """
+        Imports System
+
+        Public Module Program
+            Public Sub Main()
+                Try
+                    Levels.Check(0)
+                    Console.WriteLine("not validated")
+                Catch rejection As ArgumentException
+                    Console.WriteLine("validated: " & rejection.ParamName)
+                End Try
+            End Sub
+        End Module
+        """;
+
+    /// <summary>Calls <see cref="ContractLibrary"/>'s validated method, in F#.</summary>
+    private const string FSharpProgramOnLibrary = """
+        open System
+
+        try
+            Levels.Check(0)
+            Console.WriteLine("not validated")
+        with :? ArgumentException as rejection ->
+            Console.WriteLine("validated: " + rejection.ParamName)
+        """;
+
+    private const string LanguageWarning = "warning ST0008";
+
     private static readonly string[] ExpectedFiles =
     [
         "README.md",
@@ -386,6 +452,88 @@ public class PackageTest(PackageFeed feed)
         Assert.DoesNotContain("ST1001", build.Output, StringComparison.Ordinal);
         Assert.Equal(["validated", "not validated"], run.Output.Trim().Split('\n', StringSplitOptions.TrimEntries));
     }
+
+    [Theory]
+    [InlineData(ProjectLanguage.VisualBasic, "Weaving")]
+    [InlineData(ProjectLanguage.VisualBasic, "Interceptors")]
+    [InlineData(ProjectLanguage.FSharp, "Weaving")]
+    [InlineData(ProjectLanguage.FSharp, "Interceptors")]
+    public void Build_WhenTheProjectIsNotCSharp_BuildsWithoutEnforcingAndSaysSo(ProjectLanguage language, string mode)
+    {
+        // Arrange
+        _ = this._feed.PackResult.AssertSucceeded();
+        using ConsumerProject project = ConsumerProject.CreateFromPackage(
+            this._feed,
+            ProgramIn(language),
+            language: language
+        );
+        ProcessResult build = project.Build($"StipulateMode={mode}").AssertSucceeded();
+
+        // Act
+        ProcessResult run = project.RunProgram().AssertSucceeded();
+
+        // Assert
+        Assert.Contains(LanguageWarning, build.Output, StringComparison.Ordinal);
+        Assert.Equal("not validated", run.Output.Trim());
+    }
+
+    [Theory]
+    [InlineData(ProjectLanguage.VisualBasic)]
+    [InlineData(ProjectLanguage.FSharp)]
+    public void Build_WhenTheProjectIsNotCSharpAndTheModeIsNone_DoesNotWarn(ProjectLanguage language)
+    {
+        // Arrange
+        _ = this._feed.PackResult.AssertSucceeded();
+        using ConsumerProject project = ConsumerProject.CreateFromPackage(
+            this._feed,
+            ProgramIn(language),
+            language: language
+        );
+
+        // Act
+        ProcessResult build = project.Build("StipulateMode=None").AssertSucceeded();
+
+        // Assert
+        Assert.DoesNotContain("ST0008", build.Output, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(ProjectLanguage.VisualBasic, LibraryReference.Project)]
+    [InlineData(ProjectLanguage.VisualBasic, LibraryReference.Package)]
+    [InlineData(ProjectLanguage.FSharp, LibraryReference.Project)]
+    [InlineData(ProjectLanguage.FSharp, LibraryReference.Package)]
+    public void Build_WhenAProgramThatIsNotCSharpCallsAWovenLibrary_TheLibraryValidates(
+        ProjectLanguage language,
+        LibraryReference reference
+    )
+    {
+        // Arrange
+        _ = this._feed.PackResult.AssertSucceeded();
+        using ConsumerProject project = ConsumerProject.CreateOnLibrary(
+            this._feed,
+            reference,
+            ContractLibrary,
+            ProgramOnLibraryIn(language),
+            language: language
+        );
+        _ = project.Build().AssertSucceeded();
+
+        // Act
+        ProcessResult run = project.RunProgram().AssertSucceeded();
+
+        // Assert
+        Assert.Equal("validated: level", run.Output.Trim());
+    }
+
+    private static string ProgramIn(ProjectLanguage language)
+        => language == ProjectLanguage.VisualBasic
+            ? VisualBasicProgram
+            : FSharpProgram;
+
+    private static string ProgramOnLibraryIn(ProjectLanguage language)
+        => language == ProjectLanguage.VisualBasic
+            ? VisualBasicProgramOnLibrary
+            : FSharpProgramOnLibrary;
 
     /// <summary>Leaves out what every package has: its manifest, and the packaging format's own parts.</summary>
     private static bool IsContent(string entry)

@@ -17,5 +17,5 @@ are about attributes the analyzer can't compare (see
 [custom validation attributes](../use/custom-attributes.md)); the ST3xxx rules are about the
 arguments passed.
 
-Weaving, and the build that runs it, report their own errors, ST0001 to ST0007: see
+Weaving, and the build that runs it, report their own errors and warnings, ST0001 to ST0008: see
 [build errors](build-errors.md).

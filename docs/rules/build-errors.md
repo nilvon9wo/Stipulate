@@ -1,8 +1,9 @@
 # Build errors
 
 Errors the build reports when it can't weave an assembly (see
-[enforcement modes](../use/enforcement-modes.md#weaving)). Each one names the assembly, and
-appears in Visual Studio's Error List with its cause.
+[enforcement modes](../use/enforcement-modes.md#weaving)), and warnings about what it wove
+differently or not at all. Each one names the assembly or the project, and appears in Visual
+Studio's Error List with its cause.
 
 | ID | Severity | Meaning | What to do |
 |---|---|---|---|
@@ -13,3 +14,4 @@ appears in Visual Studio's Error List with its cause.
 | ST0005 | Error | The weaver isn't where `StipulateWeaverPath` says. | With the package, restore again; in this repository, build `Stipulate.Weaver` first. Or correct the path. |
 | ST0006 | Warning | The symbols (`.pdb`) don't match the assembly, so they were left unchanged; debugging the woven code may not work. | Rebuild, so the assembly and its symbols match. |
 | ST0007 | Error | The assembly has parameters with validation attributes, but not the check that enforces them, `Net.NowhereAtAll.Stipulate.Runtime.ArgumentChecks.Check`, which `Stipulate.targets` compiles into every project it weaves (see [what the check adds](../use/enforcement-modes.md#what-the-check-adds-to-a-project)). | Make sure the project imports `Stipulate.targets`, and that nothing removes `Stipulate.ArgumentChecks.cs` from its `Compile` items. |
+| ST0008 | Warning | The project isn't C#, so Stipulate doesn't enforce the attributes on its parameters, or check its implementations against their contracts (see [other .NET languages](../use/other-languages.md)). Its calls into C# assemblies that Stipulate wove are still checked. | Move the validated methods into a C# project; or, to acknowledge that they aren't enforced, set the project's `StipulateMode` to `None`. |
