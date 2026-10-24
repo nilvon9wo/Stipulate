@@ -173,9 +173,16 @@ def coverage_gate_fails() -> bool:
     """The Contracts tests must fail on the threshold - every test passing, the canary measured."""
     def check() -> bool:
         code, output = run(["dotnet", "test", "--project", COVERAGE_PROJECT])
-        ran_tests = re.search(r"total: [1-9]", output) is not None
-        no_test_failed = re.search(r"failed: 0\b", output) is not None
-        return code != 0 and ran_tests and no_test_failed and latest_report_measured_uncovered_class()
+        conditions = {
+            "the run failed": code != 0,
+            "tests ran": re.search(r"total: [1-9]", output) is not None,
+            "no test failed": re.search(r"failed: 0\b", output) is not None,
+            "the class was measured": latest_report_measured_uncovered_class(),
+        }
+        unmet = [name for name, is_met in conditions.items() if not is_met]
+        if unmet:
+            print(f"coverage gate: not met: {', '.join(unmet)}; the run's output ends:\n{output[-3000:]}")
+        return not unmet
 
     caught = with_temporary_file(UNCOVERED_PATH, UNCOVERED_SOURCE, check)
     print(f"coverage gate caught an uncovered class: {caught}")
