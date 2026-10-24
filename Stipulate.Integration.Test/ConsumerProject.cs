@@ -127,6 +127,26 @@ internal sealed class ConsumerProject : IDisposable
             ]
         );
 
+    /// <summary>
+    /// Runs only the compile targets, as an IDE's design-time build does for IntelliSense, with
+    /// the given properties set; the IDE sets <c>DesignTimeBuild</c> and <c>SkipCompilerExecution</c>.
+    /// </summary>
+    /// <param name="properties">MSBuild properties, as <c>Name=Value</c>.</param>
+    public ProcessResult CompileAtDesignTime(params string[] properties)
+        => Dotnet.Run(
+            this.Path,
+            [
+                "msbuild",
+                "-nologo",
+                "-restore",
+                "-t:Compile",
+                "-p:Configuration=" + Dotnet.Configuration,
+                "-p:BuildProjectReferences=false",
+                "-p:ProvideCommandLineArgs=true",
+                .. properties.Select(static property => "-p:" + property),
+            ]
+        );
+
     /// <summary>Runs the built program.</summary>
     public ProcessResult RunProgram() => Dotnet.Run(this.Path, [this.OutputPath(".dll")]);
 
