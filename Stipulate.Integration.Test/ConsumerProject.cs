@@ -13,6 +13,7 @@ internal sealed class ConsumerProject : IDisposable
     private const string DirectoryPrefix = "Stipulate.Integration.Test.";
     private const string NetTarget = "net10.0";
     private const string LibraryName = "Library";
+    private const string MiddleLibraryName = "Middle";
 
     /// <summary>The temporary directory, holding the project and any other it references.</summary>
     private readonly string _directory;
@@ -72,42 +73,33 @@ internal sealed class ConsumerProject : IDisposable
 
     /// <summary>
     /// A console program that doesn't reference the Stipulate package itself, but references a
-    /// library that does: it gets the package only through the library.
+    /// library that does, directly or through other libraries: it gets the package only through
+    /// the library.
     /// </summary>
     /// <param name="feed">Where the package comes from.</param>
     /// <param name="libraryReference">
-    /// How the program references the library; a package is packed here, with the library's
-    /// defaults, into a feed of the project's own.
+    /// How the program references the library, and each library the one before it; a package is
+    /// packed here, with the library's defaults, into a feed of the project's own.
     /// </param>
     /// <param name="library">The library's one source file.</param>
     /// <param name="program">The program's Program.cs.</param>
+    /// <param name="librariesBetween">How many libraries, with nothing of Stipulate's in them, stand between.</param>
     public static ConsumerProject CreateOnLibrary(
         PackageFeed feed,
         LibraryReference libraryReference,
         [StringSyntax("C#")] string library,
-        [StringSyntax("C#")] string program
+        [StringSyntax("C#")] string program,
+        int librariesBetween = 0
     )
     {
         string directory = CreateDirectory();
         WriteFeed(directory, feed);
-        string libraryPath = System.IO.Path.Combine(directory, LibraryName);
-        string libraryProject = System.IO.Path.Combine(libraryPath, LibraryName + ".csproj");
-        _ = Directory.CreateDirectory(libraryPath);
-        File.WriteAllText(libraryProject, ProjectFile("Library", NetTarget, string.Empty, PackageReference));
-        File.WriteAllText(System.IO.Path.Combine(libraryPath, LibraryName + ".cs"), library);
-
-        string reference = $"""<ProjectReference Include="{libraryProject}" />""";
-        if (libraryReference == LibraryReference.Package)
+        string reference = PackageReference;
+        for (int index = 0; index <= librariesBetween; index++)
         {
-            string[] pack =
-            [
-                "pack", libraryProject,
-                "--nologo",
-                "--configuration", Dotnet.Configuration,
-                "--output", LocalFeed(directory),
-            ];
-            _ = Dotnet.Run(directory, pack).AssertSucceeded();
-            reference = $"""<PackageReference Include="{LibraryName}" Version="1.0.0" />""";
+            string name = index == 0 ? LibraryName : MiddleLibraryName + index;
+            string source = index == 0 ? library : $"public static class {name} {{ }}";
+            reference = WriteLibrary(directory, name, source, reference, libraryReference);
         }
 
         string path = System.IO.Path.Combine(directory, Name);
@@ -150,6 +142,36 @@ internal sealed class ConsumerProject : IDisposable
     private static string CreateDirectory() => Directory.CreateTempSubdirectory(DirectoryPrefix).FullName;
 
     private static string LocalFeed(string directory) => System.IO.Path.Combine(directory, "feed");
+
+    /// <summary>Writes a library that has <paramref name="reference"/>, packed if it is to be a package.</summary>
+    /// <returns>The item by which the next project references this library.</returns>
+    private static string WriteLibrary(
+        string directory,
+        string name,
+        string source,
+        string reference,
+        LibraryReference libraryReference
+    )
+    {
+        string libraryPath = Directory.CreateDirectory(System.IO.Path.Combine(directory, name)).FullName;
+        string libraryProject = System.IO.Path.Combine(libraryPath, name + ".csproj");
+        File.WriteAllText(libraryProject, ProjectFile("Library", NetTarget, string.Empty, reference));
+        File.WriteAllText(System.IO.Path.Combine(libraryPath, name + ".cs"), source);
+        if (libraryReference == LibraryReference.Project)
+        {
+            return $"""<ProjectReference Include="{libraryProject}" />""";
+        }
+
+        string[] pack =
+        [
+            "pack", libraryProject,
+            "--nologo",
+            "--configuration", Dotnet.Configuration,
+            "--output", LocalFeed(directory),
+        ];
+        _ = Dotnet.Run(directory, pack).AssertSucceeded();
+        return $"""<PackageReference Include="{name}" Version="1.0.0" />""";
+    }
 
     /// <summary>
     /// The feeds, for every project under <paramref name="directory"/>, restored into a package

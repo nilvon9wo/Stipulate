@@ -238,9 +238,14 @@ public class PackageTest(PackageFeed feed)
     }
 
     [Theory]
-    [InlineData(LibraryReference.Project)]
-    [InlineData(LibraryReference.Package)]
-    public void Build_WhenAProjectGetsThePackageOnlyThroughALibrary_ChecksItsContracts(LibraryReference reference)
+    [InlineData(LibraryReference.Project, 0)]
+    [InlineData(LibraryReference.Package, 0)]
+    [InlineData(LibraryReference.Project, 2)]
+    [InlineData(LibraryReference.Package, 2)]
+    public void Build_WhenAProjectGetsThePackageOnlyThroughALibrary_ChecksItsContracts(
+        LibraryReference reference,
+        int librariesBetween
+    )
     {
         // Arrange
         _ = this._feed.PackResult.AssertSucceeded();
@@ -248,7 +253,8 @@ public class PackageTest(PackageFeed feed)
             this._feed,
             reference,
             ContractLibrary,
-            ProgramOnLibrary + StrongerScale
+            ProgramOnLibrary + StrongerScale,
+            librariesBetween
         );
 
         // Act
@@ -259,9 +265,14 @@ public class PackageTest(PackageFeed feed)
     }
 
     [Theory]
-    [InlineData(LibraryReference.Project)]
-    [InlineData(LibraryReference.Package)]
-    public void Build_WhenAProjectGetsThePackageOnlyThroughALibrary_WeavesIt(LibraryReference reference)
+    [InlineData(LibraryReference.Project, 0)]
+    [InlineData(LibraryReference.Package, 0)]
+    [InlineData(LibraryReference.Project, 2)]
+    [InlineData(LibraryReference.Package, 2)]
+    public void Build_WhenAProjectGetsThePackageOnlyThroughALibrary_WeavesIt(
+        LibraryReference reference,
+        int librariesBetween
+    )
     {
         // Arrange
         _ = this._feed.PackResult.AssertSucceeded();
@@ -269,7 +280,8 @@ public class PackageTest(PackageFeed feed)
             this._feed,
             reference,
             ContractLibrary,
-            ProgramOnLibrary
+            ProgramOnLibrary,
+            librariesBetween
         );
         _ = project.Build().AssertSucceeded();
 
@@ -281,10 +293,13 @@ public class PackageTest(PackageFeed feed)
     }
 
     [Theory]
-    [InlineData(LibraryReference.Project)]
-    [InlineData(LibraryReference.Package)]
+    [InlineData(LibraryReference.Project, 0)]
+    [InlineData(LibraryReference.Package, 0)]
+    [InlineData(LibraryReference.Project, 2)]
+    [InlineData(LibraryReference.Package, 2)]
     public void Build_WhenTransitiveIsOff_LeavesAProjectThatGetsThePackageOnlyThroughALibraryAlone(
-        LibraryReference reference
+        LibraryReference reference,
+        int librariesBetween
     )
     {
         // Arrange - for every project built; the library, which references the package, is still woven
@@ -293,7 +308,8 @@ public class PackageTest(PackageFeed feed)
             this._feed,
             reference,
             ContractLibrary,
-            ProgramOnLibrary + StrongerScale
+            ProgramOnLibrary + StrongerScale,
+            librariesBetween
         );
         ProcessResult build = project.Build("StipulateTransitive=false").AssertSucceeded();
 
