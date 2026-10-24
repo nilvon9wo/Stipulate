@@ -1,5 +1,9 @@
 # Stipulate
 
+[![CI](https://github.com/nilvon9wo/Stipulate/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nilvon9wo/Stipulate/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/vpre/Stipulate)](https://www.nuget.org/packages/Stipulate)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 Make `System.ComponentModel.DataAnnotations` validation attributes on method parameters mean
 something: enforce them at run time, and check at compile time that implementations and overrides
 honour the attributes of the interfaces and base classes they implement.
