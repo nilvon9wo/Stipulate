@@ -1,0 +1,49 @@
+name: SDK preview
+
+# StipulateFSharpChecks=EveryCall passes F# a switch it doesn't document (localoptimize-). If a
+# preview of F# drops it, every F# build that uses Stipulate fails (FS0243): this finds out
+# before the release does, by running the F# tests on the newest preview of the .NET SDK.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/sdk-preview.yml
+      - Stipulate.Package/buildTransitive/Stipulate.targets
+      - Stipulate.Package/buildTransitive/Stipulate.ArgumentChecks.fs
+      - Stipulate.Integration.Test/OtherLanguagesTest.cs
+
+jobs:
+  fsharp-on-preview:
+    name: F# on the newest preview SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # 8.0.x for the weaver and 10.0.x for the tests' target framework, as in ci.yml.
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      # global.json pins no SDK, so the newest installed, this one, builds everything. Once this
+      # version is released, the next one's previews are what to watch: raise it.
+      - name: Set up the newest .NET SDK preview
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 11.0.x
+          dotnet-quality: preview
+
+      - name: Show the SDK
+        run: dotnet --version
+
+      # What this job watches is F#, not a preview's new analyzers: ci.yml holds the code to the
+      # released SDK's.
+      - name: Build
+        run: dotnet build Stipulate.Integration.Test -p:TreatWarningsAsErrors=false -p:AnalysisLevel=10.0
+
+      - name: Test Visual Basic and F#
+        run: dotnet test --project Stipulate.Integration.Test --no-build -p:StipulateCoverage=false --filter-class "*OtherLanguagesTest"

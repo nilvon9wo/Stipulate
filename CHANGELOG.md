@@ -19,8 +19,11 @@ that to `main` publishes the `Stipulate` package at that version (see
 - **`StipulateFSharpChecks`**, for F# projects, whose optimizer can inline a small method before
   it is woven: `EveryCall` (the default; F#'s optimizer inlines nothing), `CallsFromOtherAssemblies`
   or `NoInliningMethods`. A method marked `NoInlining` is checked on every call in any setting;
-  any other value is error ST0009.
-
+  any other value is error ST0009. The compiler switches each setting passes are properties of
+  their own, `StipulateFSharpEveryCallSwitches` and
+  `StipulateFSharpCallsFromOtherAssembliesSwitches`, so a project can pass others should a
+  version of F# drop one (see
+  [if F# rejects a switch](docs/use/other-languages.md#if-f-rejects-a-switch)).
 ### Fixed
 
 - **Visual Basic and F# projects that get Stipulate**, directly or through a library that uses

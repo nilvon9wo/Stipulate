@@ -43,11 +43,19 @@
 
     In every setting, a method marked NoInlining is checked on every call, and an F# inline member
     is never checked when F# calls it: F# always copies it into its callers.
+
+    The switches each setting passes to fsc are properties of their own,
+    StipulateFSharpEveryCallSwitches and StipulateFSharpCallsFromOtherAssembliesSwitches, so that
+    if a version of F# drops one (localoptimize- is undocumented), a project can pass others
+    without waiting for a release of Stipulate: optimize- with nooptimizationdata also inlines
+    nothing, at the cost of the rest of F#'s optimizations.
   -->
   <PropertyGroup>
     <StipulateMode Condition="'$(StipulateMode)' == ''">Weaving</StipulateMode>
     <StipulateTransitive Condition="'$(StipulateTransitive)' == ''">true</StipulateTransitive>
     <StipulateFSharpChecks Condition="'$(StipulateFSharpChecks)' == ''">EveryCall</StipulateFSharpChecks>
+    <StipulateFSharpEveryCallSwitches Condition="'$(StipulateFSharpEveryCallSwitches)' == ''">--localoptimize- --nooptimizationdata</StipulateFSharpEveryCallSwitches>
+    <StipulateFSharpCallsFromOtherAssembliesSwitches Condition="'$(StipulateFSharpCallsFromOtherAssembliesSwitches)' == ''">--nooptimizationdata</StipulateFSharpCallsFromOtherAssembliesSwitches>
   </PropertyGroup>
 
   <!--
@@ -67,10 +75,12 @@
       A change of mode must recompile: the assembly in obj\ was woven, or compiled with the
       interceptors, and nothing a change of mode touches is newer than it. MSBuild hashes these
       items into CoreCompileInputs.cache, which recompiles whenever the hash changes. So must a
-      change of StipulateFSharpChecks, which changes how F# compiles.
+      change of StipulateFSharpChecks or of its switches, which changes how F# compiles.
     -->
     <CoreCompileCache Include="StipulateMode=$(StipulateMode)" />
     <CoreCompileCache Include="StipulateFSharpChecks=$(StipulateFSharpChecks)" />
+    <CoreCompileCache Include="StipulateFSharpEveryCallSwitches=$(StipulateFSharpEveryCallSwitches)" />
+    <CoreCompileCache Include="StipulateFSharpCallsFromOtherAssembliesSwitches=$(StipulateFSharpCallsFromOtherAssembliesSwitches)" />
   </ItemGroup>
 
   <!-- Interceptors -->
@@ -140,8 +150,8 @@
            Code="ST0009"
            Text="StipulateFSharpChecks is '$(StipulateFSharpChecks)', which isn't one of its values, so Stipulate can't tell which calls to check in '$(MSBuildProjectName)'. Set it to EveryCall (the default: every call is checked, and F#'s optimizer inlines nothing), CallsFromOtherAssemblies (calls from other assemblies are checked; within the project, F#'s optimizer may inline a small method, unchecked), or NoInliningMethods (only methods marked [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] are certainly checked; F#'s optimizer works as usual)." />
     <PropertyGroup>
-      <OtherFlags Condition="'$(StipulateFSharpChecks)' == 'EveryCall'">$(OtherFlags) --localoptimize- --nooptimizationdata</OtherFlags>
-      <OtherFlags Condition="'$(StipulateFSharpChecks)' == 'CallsFromOtherAssemblies'">$(OtherFlags) --nooptimizationdata</OtherFlags>
+      <OtherFlags Condition="'$(StipulateFSharpChecks)' == 'EveryCall'">$(OtherFlags) $(StipulateFSharpEveryCallSwitches)</OtherFlags>
+      <OtherFlags Condition="'$(StipulateFSharpChecks)' == 'CallsFromOtherAssemblies'">$(OtherFlags) $(StipulateFSharpCallsFromOtherAssembliesSwitches)</OtherFlags>
     </PropertyGroup>
   </Target>
 

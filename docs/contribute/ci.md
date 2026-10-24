@@ -26,6 +26,17 @@ Builds and runs the tests on Windows. The weaver runs through MSBuild's `Exec`, 
 paths and quoting, which the Linux job never exercises; the integration tests build a consumer
 project through exactly that.
 
+## The SDK preview job
+
+`.github/workflows/sdk-preview.yml` runs every Monday, on demand, and on pull requests that
+change it or what it tests. It builds `Stipulate.Integration.Test` with the newest preview of
+the .NET SDK and runs `OtherLanguagesTest`, so that a preview of F# that drops a switch
+`StipulateFSharpChecks` passes (see
+[if F# rejects a switch](../use/other-languages.md#if-f-rejects-a-switch)) fails here before
+it is released. It doesn't hold the code to the preview's new analyzers; the jobs above hold it
+to the released SDK's. Once that version of the SDK is released, raise its `dotnet-version` to
+the next.
+
 ## Proving the gates fire
 
 A gate that silently stops running looks exactly like a gate that passes. `scripts/verify-gates.py`

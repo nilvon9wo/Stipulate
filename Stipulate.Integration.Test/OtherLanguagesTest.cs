@@ -188,6 +188,11 @@ public class OtherLanguagesTest(PackageFeed feed)
     /// <summary>F#'s optimizer is on in Release, and it is Release that ships: force it on in Debug too.</summary>
     private const string Optimized = "Optimize=true";
 
+    /// <summary>What a project can give EveryCall instead of its own switches: no optimizer at all.</summary>
+    private const string OptimizerOffSwitches = "--optimize- --nooptimizationdata";
+
+    private const string UnknownSwitch = "--stipulate-unknown-switch";
+
     private readonly PackageFeed _feed = feed;
 
     [Theory]
@@ -295,16 +300,8 @@ public class OtherLanguagesTest(PackageFeed feed)
         string marked
     )
     {
-        // Arrange - the program doesn't get Stipulate's settings, as a caller without it wouldn't
-        _ = this._feed.PackResult.AssertSucceeded();
-        using ConsumerProject project = ConsumerProject.CreateOnLibrary(
-            this._feed,
-            LibraryReference.Project,
-            FSharpLibrary,
-            FSharpProgramOnFSharpLibrary,
-            language: ProjectLanguage.FSharp,
-            libraryLanguage: ProjectLanguage.FSharp
-        );
+        // Arrange
+        using ConsumerProject project = this.CreateFSharpProgramOnFSharpLibrary();
         _ = project.Build(Optimized, "StipulateTransitive=false", $"StipulateFSharpChecks={checks}")
             .AssertSucceeded();
 
@@ -314,7 +311,54 @@ public class OtherLanguagesTest(PackageFeed feed)
         // Assert
         Assert.Equal(
             [$"within: {within}", $"across: {across}", $"marked: {marked}"],
-            run.Output.Trim().Split('\n', StringSplitOptions.TrimEntries)
+            SplitLines(run.Output)
+        );
+    }
+
+    [Fact]
+    public void Build_WhenEveryCallIsGivenOtherSwitches_PassesThemAndStillChecksEveryCall()
+    {
+        // Arrange - the fallback the documentation gives, should F# drop localoptimize-
+        using ConsumerProject project = this.CreateFSharpProgramOnFSharpLibrary();
+        _ = project.Build(
+                Optimized,
+                "StipulateTransitive=false",
+                "StipulateFSharpEveryCallSwitches=" + OptimizerOffSwitches
+            )
+            .AssertSucceeded();
+
+        // Act
+        ProcessResult run = project.RunProgram().AssertSucceeded();
+
+        // Assert
+        Assert.Equal(
+            [$"within: {Validated}", $"across: {Validated}", $"marked: {Validated}"],
+            SplitLines(run.Output)
+        );
+    }
+
+    [Theory]
+    [InlineData("EveryCall", "StipulateFSharpEveryCallSwitches")]
+    [InlineData("CallsFromOtherAssemblies", "StipulateFSharpCallsFromOtherAssembliesSwitches")]
+    public void Build_WhenASettingsSwitchIsUnknownToFSharp_FailsNamingIt(string checks, string switches)
+    {
+        // Arrange - as a version of F# that dropped a switch would
+        _ = this._feed.PackResult.AssertSucceeded();
+        using ConsumerProject project = ConsumerProject.CreateFromPackage(
+            this._feed,
+            FSharpProgram,
+            language: ProjectLanguage.FSharp
+        );
+
+        // Act
+        ProcessResult build = project.Build($"StipulateFSharpChecks={checks}", $"{switches}={UnknownSwitch}");
+
+        // Assert
+        Assert.NotEqual(0, build.ExitCode);
+        Assert.Contains(
+            $"error FS0243: Unrecognized option: '{UnknownSwitch}'",
+            build.Output,
+            StringComparison.Ordinal
         );
     }
 
@@ -363,6 +407,8 @@ public class OtherLanguagesTest(PackageFeed feed)
         );
     }
 
+    private static string[] SplitLines(string output) => output.Trim().Split('\n', StringSplitOptions.TrimEntries);
+
     private static string ProgramIn(ProjectLanguage language)
         => language == ProjectLanguage.VisualBasic
             ? VisualBasicProgram
@@ -377,4 +423,21 @@ public class OtherLanguagesTest(PackageFeed feed)
         => language == ProjectLanguage.VisualBasic
             ? VisualBasicProgramOnLibrary
             : FSharpProgramOnLibrary;
+
+    /// <summary>
+    /// <see cref="FSharpProgramOnFSharpLibrary"/> on <see cref="FSharpLibrary"/>, by project reference; built
+    /// with StipulateTransitive=false, the program doesn't get Stipulate's settings, as a caller without it wouldn't.
+    /// </summary>
+    private ConsumerProject CreateFSharpProgramOnFSharpLibrary()
+    {
+        _ = this._feed.PackResult.AssertSucceeded();
+        return ConsumerProject.CreateOnLibrary(
+            this._feed,
+            LibraryReference.Project,
+            FSharpLibrary,
+            FSharpProgramOnFSharpLibrary,
+            language: ProjectLanguage.FSharp,
+            libraryLanguage: ProjectLanguage.FSharp
+        );
+    }
 }
