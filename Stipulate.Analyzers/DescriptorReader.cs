@@ -1,0 +1,127 @@
+using System;
+using System.Collections.Immutable;
+using System.Linq;
+using Microsoft.CodeAnalysis;
+
+namespace Net.NowhereAtAll.Stipulate.Analyzers;
+
+/// <summary>
+/// Reads one <c>[ComparableValidation]</c> describing a validation attribute class, checking it
+/// against one rule after another; the first rule broken is the reason it is invalid.
+/// </summary>
+internal static class DescriptorReader
+{
+    private const string MissingDimensionOrComparison = "it needs a dimension and a comparison";
+
+    private static readonly ImmutableArray<Func<MarkerArguments, ITypeSymbol, string?>> CommonRules =
+    [
+        RejectEmptyDimension,
+        RejectUndefinedComparison,
+        RejectNonValidationTarget,
+    ];
+
+    private static readonly ImmutableArray<Func<MarkerArguments, INamedTypeSymbol, string?>> FlagRules =
+    [
+        RejectFlagArguments,
+    ];
+
+    private static readonly ImmutableArray<Func<MarkerArguments, INamedTypeSymbol, string?>> LimitRules =
+    [
+        RequireArgumentOrValue,
+        RequireArgumentMember,
+        RequireValueOfKind,
+        RejectExclusiveValues,
+        RequireExclusiveArgumentMember,
+    ];
+
+    /// <param name="marker">The <c>[ComparableValidation]</c>.</param>
+    /// <param name="target">The validation attribute class the marker describes.</param>
+    public static DescriptorReading Read(AttributeData marker, ITypeSymbol target)
+    {
+        MarkerArguments? arguments = MarkerArguments.Read(marker);
+        return arguments is null
+            ? DescriptorReading.Invalid(MissingDimensionOrComparison)
+            : Validate(arguments, target);
+    }
+
+    private static DescriptorReading Validate(MarkerArguments arguments, ITypeSymbol target)
+    {
+        string? error = FindError(CommonRules, arguments, target) ?? FindKindError(arguments, target);
+        return error is null
+            ? DescriptorReading.Valid(arguments.ToDescriptor())
+            : DescriptorReading.Invalid(error);
+    }
+
+    /// <remarks>
+    /// Only called once the common rules hold: the comparison is defined, and the target is a
+    /// validation attribute, and so a class.
+    /// </remarks>
+    private static string? FindKindError(MarkerArguments arguments, ITypeSymbol target)
+    {
+        ImmutableArray<Func<MarkerArguments, INamedTypeSymbol, string?>> rules = arguments.Kind == ConstraintKind.Flag
+            ? FlagRules
+            : LimitRules;
+        return FindError(rules, arguments, (INamedTypeSymbol)target);
+    }
+
+    private static string? FindError<TTarget>(
+        ImmutableArray<Func<MarkerArguments, TTarget, string?>> rules,
+        MarkerArguments arguments,
+        TTarget target
+    )
+        => rules
+            .Select(rule => rule(arguments, target))
+            .FirstOrDefault(static error => error is not null);
+
+    private static string? RejectEmptyDimension(MarkerArguments arguments, ITypeSymbol target)
+        => arguments.Dimension.Trim().Length == 0
+            ? "the dimension is empty"
+            : null;
+
+    private static string? RejectUndefinedComparison(MarkerArguments arguments, ITypeSymbol target)
+        => arguments.IsDefinedKind
+            ? null
+            : $"{arguments.Comparison} isn't a ValidationComparison";
+
+    private static string? RejectNonValidationTarget(MarkerArguments arguments, ITypeSymbol target)
+        => ValidationAttributeTypes.IsValidationAttribute(target)
+            ? null
+            : $"'{target.ToDisplayString()}' isn't a ValidationAttribute";
+
+    private static string? RejectFlagArguments(MarkerArguments arguments, INamedTypeSymbol target)
+        => arguments.HasSource || arguments.HasExclusivity
+            ? "a Flag takes no Argument, Value, IsExclusive or ExclusiveArgument"
+            : null;
+
+    private static string? RequireArgumentOrValue(MarkerArguments arguments, INamedTypeSymbol target)
+        => arguments.HasSource
+            ? null
+            : $"a {arguments.Kind} needs an Argument or a Value";
+
+    private static string? RequireArgumentMember(MarkerArguments arguments, INamedTypeSymbol target)
+        => arguments.Argument is { } argument
+            && !AttributeMembers.HasArgument(target, argument, isBooleanRequired: false)
+            ? $"'{target.Name}' has no constructor parameter or settable property named '{argument}'"
+            : null;
+
+    private static string? RequireValueOfKind(MarkerArguments arguments, INamedTypeSymbol target)
+    {
+        string expected = arguments.IsBound
+            ? "a number"
+            : "an array";
+        return arguments.ValueConstant is not null && arguments.Value is null
+            ? $"the Value of a {arguments.Kind} must be {expected}"
+            : null;
+    }
+
+    private static string? RejectExclusiveValues(MarkerArguments arguments, INamedTypeSymbol target)
+        => arguments.HasMisplacedExclusivity
+            ? "only a LowerBound or an UpperBound can be exclusive"
+            : null;
+
+    private static string? RequireExclusiveArgumentMember(MarkerArguments arguments, INamedTypeSymbol target)
+        => arguments.ExclusiveArgument is { } argument
+            && !AttributeMembers.HasArgument(target, argument, isBooleanRequired: true)
+            ? $"'{target.Name}' has no bool constructor parameter or settable property named '{argument}'"
+            : null;
+}

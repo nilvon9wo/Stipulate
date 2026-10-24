@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Builds a small consumer project with `dotnet build`, the way a real one is built: through
+    Directory.Build.props and Directory.Build.targets, in each mode. The references below only
+    make sure every tool is built first, in this configuration; the consumer uses their outputs.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stipulate.Analyzers\Stipulate.Analyzers.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Stipulate.CodeFixes\Stipulate.CodeFixes.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Stipulate.Contracts\Stipulate.Contracts.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Stipulate.Generator\Stipulate.Generator.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Stipulate.Weaver\Stipulate.Weaver.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="RepositoryRoot" Value="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))" />
+    <AssemblyMetadata Include="Configuration" Value="$(Configuration)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

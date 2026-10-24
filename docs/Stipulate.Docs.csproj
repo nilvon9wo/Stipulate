@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Exists only so Visual Studio and Rider show docs/ in Solution Explorer: neither shows a file
+    that isn't part of some project. An SDK-style project includes every non-code file under its
+    folder as a None item, so a new page anywhere under docs/ just shows up. Builds nothing, and
+    isn't packed or referenced.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);NETSDK1085</NoWarn>
+  </PropertyGroup>
+
+</Project>

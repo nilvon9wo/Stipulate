@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    What the test projects share: compiling C# in memory, parsing diagnostic markup, running the
+    analyzer. Not itself a test project (its name doesn't end in .Test), so it isn't measured for
+    coverage.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
+    <PackageReference Include="xunit.v3.assert" Version="4.0.2" />
+    <PackageReference Include="xunit.v3.extensibility.core" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stipulate.Analyzers\Stipulate.Analyzers.csproj" />
+    <ProjectReference Include="..\Stipulate.Contracts\Stipulate.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

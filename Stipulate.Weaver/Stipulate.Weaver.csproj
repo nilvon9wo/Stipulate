@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A tool the consumer's build runs with `dotnet`, so its target decides which machines can build,
+    not which projects can be woven: it reads the IL of any target framework. The oldest runtime
+    it needs, rolling forward to any later major version, so any SDK from .NET 8 on can run it. An
+    executable can't target netstandard.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The tests exercise the internal collaborators directly. Internal, so no consumer sees them. -->
+    <InternalsVisibleTo Include="Net.NowhereAtAll.Stipulate.Weaver.Test" />
+  </ItemGroup>
+
+</Project>

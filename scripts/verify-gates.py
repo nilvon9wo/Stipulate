@@ -1,0 +1,254 @@
+#!/usr/bin/env python3
+"""
+Prove every quality gate still catches what it is supposed to catch.
+
+A gate that silently stops running looks exactly like a gate that passes. So:
+
+* StyleCanary/ holds deliberately non-compliant code, each violation tagged
+  `// expect: <gate>:<rule>` on the line a gate must report. Each static gate
+  (build, format, layout, inspect) runs against it; every marker must be
+  matched by a finding, and every gate must have at least one marker.
+* The coverage gate is proven by adding a throwaway uncovered class to
+  Stipulate.Contracts/ - its tests must then fail with none of them
+  failing, and the coverage report must show the class was measured: a
+  coverlet that measures nothing fails the threshold too, for the wrong reason.
+* The doc gates are proven by a temporary page, docs/gate-canary.md, with a
+  broken link and an example claiming a diagnostic the analyzer doesn't
+  report: the analyzer's documentation example test and verify-doc-links.py
+  must both fail on it.
+* run-tests.py's INCONCLUSIVE verdict is proven by hiding one test module's
+  apphost, so it cannot start - the way Smart App Control blocks one on
+  Windows - and requiring that verdict instead of dotnet test's "Passed!".
+
+Every temporary change is undone again, however the run ends. Run after
+`dotnet tool restore` (inspectcode). See StyleCanary/README.md.
+
+Usage: verify-gates.py
+Exits 1, naming every gate that missed something, if any gate is unproven.
+"""
+import glob
+import os
+import re
+import subprocess
+import sys
+import xml.etree.ElementTree as ElementTree
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CANARY_PROJECT = os.path.join("StyleCanary", "StyleCanary.csproj")
+CANARY_SOURCE = os.path.join("StyleCanary", "Violations.cs")
+
+ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+EXPECT_MARKER = re.compile(r"// expect: (?P<gate>[\w-]+):(?P<rule>[\w.-]+)")
+# `File.cs(line,col): error RULE` - MSBuild's diagnostic shape, which both
+# `dotnet build` and `dotnet format` use. `info` counts: format fails on it.
+MSBUILD_DIAGNOSTIC = re.compile(
+    r"(?P<path>[^\s(:]+\.cs)\((?P<line>\d+),\d+\): (?:error|warning|info) (?P<rule>[A-Za-z]+\d*)"
+)
+# The build gate only reports what fails the build: errors. A compiler
+# warning the canary expects (CS0649) therefore proves TreatWarningsAsErrors.
+BUILD_ERROR = re.compile(r"(?P<path>[^\s(:]+\.cs)\((?P<line>\d+),\d+\): error (?P<rule>[A-Za-z]+\d*)")
+# `path:line: rule: message` - the shape check-line-layout.py and
+# inspect-code.py print.
+COLON_DIAGNOSTIC = re.compile(r"^(?P<path>[^\s:]+\.cs):(?P<line>\d+): (?P<rule>[\w.-]+):", re.M)
+
+UNCOVERED_PATH = os.path.join("Stipulate.Contracts", "GateCanaryUncovered.cs")
+UNCOVERED_CLASS = "GateCanaryUncovered"
+UNCOVERED_SOURCE = """namespace Net.NowhereAtAll.Stipulate.Contracts;
+
+/// <summary>Written and removed by scripts/verify-gates.py - never tested, on purpose.</summary>
+internal static class GateCanaryUncovered
+{
+    public static int Answer() => 42;
+}
+"""
+STALE_DOC_PATH = os.path.join("docs", "gate-canary.md")
+STALE_DOC_SOURCE = """# Gate canary
+
+Written and removed by scripts/verify-gates.py: a [link to nowhere](gate-canary-missing.md),
+and an example that claims a diagnostic the analyzer doesn't report.
+
+```csharp
+// error ST1001: nothing here strengthens anything
+public interface IGateCanary { void Accept(int value); }
+```
+"""
+ANALYZERS_TEST_PROJECT = os.path.join(
+    "Stipulate.Analyzers.Test", "Stipulate.Analyzers.Test.csproj"
+)
+COVERAGE_PROJECT = os.path.join("Stipulate.Contracts.Test", "Stipulate.Contracts.Test.csproj")
+UNSTARTABLE_PROJECT = os.path.join("Stipulate.CodeFixes.Test", "Stipulate.CodeFixes.Test.csproj")
+UNSTARTABLE_APPHOST = os.path.join(
+    "Stipulate.CodeFixes.Test", "bin", "Debug", "net10.0",
+    "Net.NowhereAtAll.Stipulate.CodeFixes.Test" + (".exe" if os.name == "nt" else ""),
+)
+
+
+def run(command: list) -> tuple:
+    completed = subprocess.run(
+        command, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace"
+    )
+    # Strip terminal colours: the test platform colours its output on CI runners
+    # (GitHub Actions), which would otherwise break every pattern matched against it.
+    return completed.returncode, ANSI_ESCAPE.sub("", completed.stdout + completed.stderr)
+
+
+def python_script(name: str, *arguments: str) -> list:
+    return [sys.executable, os.path.join("scripts", name), *arguments]
+
+
+def findings(pattern: re.Pattern, output: str) -> set:
+    return {
+        (os.path.basename(match["path"]), int(match["line"]), match["rule"])
+        for match in pattern.finditer(output)
+    }
+
+
+STATIC_GATES = {
+    "build": lambda: findings(
+        BUILD_ERROR, run(["dotnet", "build", CANARY_PROJECT, "-nologo", "--no-incremental"])[1]
+    ),
+    "format": lambda: findings(
+        MSBUILD_DIAGNOSTIC,
+        run(["dotnet", "format", CANARY_PROJECT, "--verify-no-changes", "--severity", "info"])[1],
+    ),
+    "layout": lambda: findings(COLON_DIAGNOSTIC, run(python_script("check-line-layout.py", CANARY_SOURCE))[1]),
+    "inspect": lambda: findings(COLON_DIAGNOSTIC, run(python_script("inspect-code.py", CANARY_PROJECT))[1]),
+}
+
+
+def expectations() -> list:
+    with open(os.path.join(ROOT, CANARY_SOURCE), encoding="utf-8-sig") as fh:
+        lines = fh.read().splitlines()
+    return [
+        (match["gate"], os.path.basename(CANARY_SOURCE), number, match["rule"])
+        for number, line in enumerate(lines, start=1)
+        for match in EXPECT_MARKER.finditer(line)
+    ]
+
+
+def verify_static_gates() -> bool:
+    expected = expectations()
+    reported = {gate: run_gate() for gate, run_gate in STATIC_GATES.items()}
+    missed = [
+        (gate, file_name, line, rule)
+        for gate, file_name, line, rule in expected
+        if (file_name, line, rule) not in reported.get(gate, set())
+    ]
+    unproven = sorted(set(STATIC_GATES) - {gate for gate, *_ in expected})
+    for gate, file_name, line, rule in missed:
+        print(f"[MISSED] {gate} did not report {rule} at {file_name}:{line}")
+    for gate in unproven:
+        print(f"[UNPROVEN] no StyleCanary marker exercises the '{gate}' gate")
+    print(f"static gates: {len(expected) - len(missed)}/{len(expected)} expected findings reported")
+    return not missed and not unproven
+
+
+def with_temporary_file(path: str, content: str, check):
+    absolute = os.path.join(ROOT, path)
+    with open(absolute, "w", encoding="utf-8", newline="") as fh:
+        fh.write(content)
+    try:
+        return check()
+    finally:
+        os.remove(absolute)
+
+
+def coverage_reports() -> set:
+    return set(glob.glob(os.path.join(ROOT, "**", "coverage.cobertura.*.xml"), recursive=True))
+
+
+def uncovered_class_rates(reports: set) -> list:
+    """The canary class's line rate in each report that lists it."""
+    return [
+        element.get("line-rate")
+        for report in reports
+        for element in ElementTree.parse(report).iter("class")
+        if element.get("name", "").endswith("." + UNCOVERED_CLASS)
+    ]
+
+
+def coverage_gate_fails() -> bool:
+    """The Contracts tests must fail on the threshold - every test passing, the canary measured."""
+    def check() -> bool:
+        before = coverage_reports()
+        code, output = run(["dotnet", "test", "--project", COVERAGE_PROJECT])
+        new_reports = coverage_reports() - before
+        rates = uncovered_class_rates(new_reports)
+        conditions = {
+            "the run failed": code != 0,
+            "tests ran": re.search(r"total: [1-9]", output) is not None,
+            "no test failed": re.search(r"failed: 0\b", output) is not None,
+            "the class was measured, uncovered": bool(rates) and all(float(rate) == 0 for rate in rates),
+        }
+        unmet = [name for name, is_met in conditions.items() if not is_met]
+        if unmet:
+            print(
+                f"coverage gate: not met: {', '.join(unmet)}; new reports: {sorted(new_reports)}; "
+                f"the class's line rates in them: {rates}; the run's output ends:\n{output[-3000:]}"
+            )
+        return not unmet
+
+    caught = with_temporary_file(UNCOVERED_PATH, UNCOVERED_SOURCE, check)
+    print(f"coverage gate caught an uncovered class: {caught}")
+    return caught
+
+
+def doc_examples_gate_fails() -> bool:
+    """The analyzer's tests must fail on the canary page's false claim, and name the page."""
+    def check() -> bool:
+        code, output = run(
+            ["dotnet", "test", "--project", ANALYZERS_TEST_PROJECT, "-p:StipulateCoverage=false"]
+        )
+        return code != 0 and "gate-canary.md" in output
+
+    caught = with_temporary_file(STALE_DOC_PATH, STALE_DOC_SOURCE, check)
+    print(f"the documentation example test caught the canary page: {caught}")
+    return caught
+
+
+def doc_links_gate_fails() -> bool:
+    def check() -> bool:
+        code, output = run(python_script("verify-doc-links.py"))
+        return code != 0 and "gate-canary" in output
+
+    caught = with_temporary_file(STALE_DOC_PATH, STALE_DOC_SOURCE, check)
+    print(f"verify-doc-links.py caught the canary page: {caught}")
+    return caught
+
+
+def runner_reports_an_unstarted_module() -> bool:
+    """With one module unable to start, run-tests.py must say INCONCLUSIVE, not pass."""
+    build_code, _ = run(["dotnet", "build", UNSTARTABLE_PROJECT, "-nologo"])
+    apphost = os.path.join(ROOT, UNSTARTABLE_APPHOST)
+    hidden = apphost + ".gate-canary"
+    if build_code != 0 or not os.path.exists(apphost):
+        print(f"run-tests.py could not be checked: no apphost at {UNSTARTABLE_APPHOST}")
+        return False
+    os.rename(apphost, hidden)
+    try:
+        code, output = run(python_script("run-tests.py", "--project", UNSTARTABLE_PROJECT, "--no-build"))
+    finally:
+        os.rename(hidden, apphost)
+    caught = code == 3 and "INCONCLUSIVE" in output
+    print(f"run-tests.py reported a module that never started as INCONCLUSIVE: {caught}")
+    return caught
+
+
+def main() -> int:
+    results = {
+        "static gates": verify_static_gates(),
+        "coverage": coverage_gate_fails(),
+        "doc examples": doc_examples_gate_fails(),
+        "doc links": doc_links_gate_fails(),
+        "inconclusive runs": runner_reports_an_unstarted_module(),
+    }
+    failed = [name for name, proven in results.items() if not proven]
+    if failed:
+        print(f"verify-gates: NOT PROVEN - {', '.join(failed)}", file=sys.stderr)
+        return 1
+    print("verify-gates: every gate caught its canary")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

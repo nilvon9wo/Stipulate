@@ -1,44 +1,63 @@
 <Project>
 
-  <PropertyGroup Condition="'$(ParameterValidationMode)' == 'Weaving' And '$(IsParameterValidationTool)' != 'true'">
-    <ParameterValidationWeave>true</ParameterValidationWeave>
-    <ParameterValidationWeaverPath Condition="'$(ParameterValidationWeaverPath)' == ''">$(MSBuildThisFileDirectory)ParameterValidation.Weaver\bin\$(Configuration)\net10.0\ParameterValidation.Weaver.dll</ParameterValidationWeaverPath>
-    <ParameterValidationReferencesFile>$(IntermediateOutputPath)ParameterValidation.references</ParameterValidationReferencesFile>
-    <ParameterValidationDotnet>$(DOTNET_HOST_PATH)</ParameterValidationDotnet>
-    <ParameterValidationDotnet Condition="'$(ParameterValidationDotnet)' == ''">dotnet</ParameterValidationDotnet>
+  <!--
+    The Roslyn components (analyzer, code fix, generator) are loaded into the compiler or the IDE
+    one assembly each, so they can't share a library: the code they have in common, in Shared/, is
+    compiled into each. PolySharp supplies the netstandard2.0 polyfills (IsExternalInit for records)
+    without a dependency consumers would see; only the ones used, because each is internal and would
+    clash, in a test that sees the component's internals, with the real type in the test's runtime.
+    Here rather than in Directory.Build.props because IsRoslynComponent is set by the project itself.
+  -->
+  <PropertyGroup Condition="'$(IsRoslynComponent)' == 'true'">
+    <PolySharpIncludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit;System.Index;System.Range;System.Diagnostics.CodeAnalysis.NotNullWhenAttribute;System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute</PolySharpIncludeGeneratedTypes>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(IsRoslynComponent)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+    <PackageReference Include="PolySharp" Version="1.15.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(StipulateMode)' == 'Weaving' And '$(IsStipulateTool)' != 'true'">
+    <StipulateWeave>true</StipulateWeave>
+    <StipulateWeaverPath Condition="'$(StipulateWeaverPath)' == ''">$(MSBuildThisFileDirectory)Stipulate.Weaver\bin\$(Configuration)\net8.0\Net.NowhereAtAll.Stipulate.Weaver.dll</StipulateWeaverPath>
+    <StipulateReferencesFile>$(IntermediateOutputPath)Stipulate.references</StipulateReferencesFile>
+    <StipulateDotnet>$(DOTNET_HOST_PATH)</StipulateDotnet>
+    <StipulateDotnet Condition="'$(StipulateDotnet)' == ''">dotnet</StipulateDotnet>
   </PropertyGroup>
 
   <!-- Recompile (and so re-weave) when the weaver itself changes. -->
-  <ItemGroup Condition="'$(ParameterValidationWeave)' == 'true'">
-    <CustomAdditionalCompileInputs Include="$(ParameterValidationWeaverPath)" />
+  <ItemGroup Condition="'$(StipulateWeave)' == 'true'">
+    <CustomAdditionalCompileInputs Include="$(StipulateWeaverPath)" />
   </ItemGroup>
 
   <!--
     Rewrite the freshly compiled assembly in obj\ before it is copied to bin\. Runs even when
     CoreCompile was skipped; the weaver recognises an already-woven assembly and leaves it alone.
   -->
-  <Target Name="WeaveParameterValidation"
+  <Target Name="WeaveStipulate"
           AfterTargets="CoreCompile"
-          Condition="'$(ParameterValidationWeave)' == 'true'">
-    <Error Condition="!Exists('$(ParameterValidationWeaverPath)')"
-           Code="PV0005"
-           Text="ParameterValidation.Weaver has not been built: '$(ParameterValidationWeaverPath)' does not exist." />
-    <WriteLinesToFile File="$(ParameterValidationReferencesFile)"
+          Condition="'$(StipulateWeave)' == 'true'">
+    <Error Condition="!Exists('$(StipulateWeaverPath)')"
+           Code="ST0005"
+           Text="Stipulate.Weaver has not been built: '$(StipulateWeaverPath)' does not exist." />
+    <WriteLinesToFile File="$(StipulateReferencesFile)"
                       Lines="@(ReferencePath->'%(FullPath)')"
                       Overwrite="true"
                       WriteOnlyWhenDifferent="true" />
     <!--
-      The weaver reports its own failures as canonical "error PVxxxx:" lines (which Exec turns into
+      The weaver reports its own failures as canonical "error STxxxx:" lines (which Exec turns into
       build errors) and then exits with 2. Any other non-zero exit means it crashed or never
       started, without reporting anything, so that gets a specific error instead of MSB3073.
     -->
-    <Exec Command="&quot;$(ParameterValidationDotnet)&quot; &quot;$(ParameterValidationWeaverPath)&quot; &quot;@(IntermediateAssembly->'%(FullPath)')&quot; &quot;$(ParameterValidationReferencesFile)&quot;"
+    <Exec Command="&quot;$(StipulateDotnet)&quot; &quot;$(StipulateWeaverPath)&quot; &quot;@(IntermediateAssembly->'%(FullPath)')&quot; &quot;$(StipulateReferencesFile)&quot;"
           IgnoreExitCode="true">
-      <Output TaskParameter="ExitCode" PropertyName="_ParameterValidationExitCode" />
+      <Output TaskParameter="ExitCode" PropertyName="_StipulateExitCode" />
     </Exec>
-    <Error Condition="'$(_ParameterValidationExitCode)' != '0' And '$(_ParameterValidationExitCode)' != '2'"
-           Code="PV0004"
-           Text="ParameterValidation.Weaver crashed before it could weave '@(IntermediateAssembly)' (exit code $(_ParameterValidationExitCode)); see the build output above for the exception. On Windows, 'An Application Control policy has blocked this file' means Windows refused to load the freshly built weaver; build under WSL or ask for an exception for this folder." />
+    <Error Condition="'$(_StipulateExitCode)' != '0' And '$(_StipulateExitCode)' != '2'"
+           Code="ST0004"
+           Text="Stipulate.Weaver crashed before it could weave '@(IntermediateAssembly)' (exit code $(_StipulateExitCode)); see the build output above for the exception. On Windows, 'An Application Control policy has blocked this file' means Windows refused to load the freshly built weaver; build under WSL or ask for an exception for this folder." />
   </Target>
 
 </Project>
