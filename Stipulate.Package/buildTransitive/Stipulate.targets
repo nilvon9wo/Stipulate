@@ -95,11 +95,13 @@
   <!--
     Rewrite the freshly compiled assembly in obj\ before it is copied to bin\. Runs even when
     CoreCompile was skipped; the weaver recognises an already-woven assembly and leaves it alone.
-    Not in a project StipulateTransitive=false leaves out (see StipulateResolveAnalyzers).
+    Not in a project StipulateTransitive=false leaves out (see StipulateResolveAnalyzers), nor in
+    an IDE's design-time build, which runs CoreCompile only for the compiler's arguments: nothing
+    is compiled there, and the weaver may not even be built yet.
   -->
   <Target Name="StipulateWeave"
           AfterTargets="CoreCompile"
-          Condition="'$(StipulateWeave)' == 'true' And '$(_StipulateLeftOut)' != 'true'">
+          Condition="'$(StipulateWeave)' == 'true' And '$(_StipulateLeftOut)' != 'true' And '$(DesignTimeBuild)' != 'true' And '$(SkipCompilerExecution)' != 'true'">
     <Error Condition="!Exists('$(StipulateWeaverPath)')"
            Code="ST0005"
            Text="The Stipulate weaver isn't where StipulateWeaverPath says: '$(StipulateWeaverPath)' does not exist." />

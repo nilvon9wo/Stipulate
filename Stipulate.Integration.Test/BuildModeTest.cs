@@ -98,6 +98,23 @@ public class BuildModeTest
         Assert.DoesNotContain("Stipulate: wove", build.Output, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("DesignTimeBuild=true")]
+    [InlineData("SkipCompilerExecution=true")]
+    public void CompileAtDesignTime_WhenTheWeaverHasNotBeenBuilt_NeitherWeavesNorFails(string designTime)
+    {
+        // Arrange - as when an IDE opens a solution before its first build
+        using ConsumerProject project = ConsumerProject.Create(Program);
+        string missing = Path.Combine(project.Path, "missing", "Weaver.dll");
+
+        // Act
+        ProcessResult compile = project.CompileAtDesignTime(designTime, $"StipulateWeaverPath={missing}");
+
+        // Assert
+        _ = compile.AssertSucceeded();
+        Assert.DoesNotContain("ST0005", compile.Output, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Build_WhenNothingChanged_DoesNotWeaveAgain()
     {
