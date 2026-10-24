@@ -17,4 +17,11 @@ internal interface IConstraintComparing
     /// <c>null</c> if nothing.
     /// </returns>
     string? FindStrengthening(Constraint constraint, Comparand other);
+
+    /// <returns>
+    /// Why <paramref name="constraint"/> rejects <paramref name="value"/>, phrased to follow
+    /// "which"; or <c>null</c> if it accepts it, or what is known of the value can't tell. Only a
+    /// value certain to be rejected is: a check that could go either way at run time accepts.
+    /// </returns>
+    string? FindRejection(Constraint constraint, ArgumentValue value);
 }

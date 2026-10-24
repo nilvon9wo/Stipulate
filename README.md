@@ -50,6 +50,7 @@ contract promises (the Liskov substitution principle).
 | [ST2001](docs/rules/ST2001.md) | Error | An attribute declared in this solution can't be compared; describe it with `[ComparableValidation]`. |
 | [ST2002](docs/rules/ST2002.md) | Error | An attribute from outside the solution can't be compared; repeat it exactly, or describe it from your assembly. |
 | [ST2003](docs/rules/ST2003.md) | Error | A `[ComparableValidation]` description is invalid. |
+| [ST3001](docs/rules/ST3001.md) | Error | A value known at compile time, such as a constant, `null` or `[]`, is passed to a parameter whose attribute rejects it. |
 
 Parameters, properties and indexers are checked, for interface implementations (implicit, explicit,
 inherited and `static abstract`) and overrides. A property's attributes are preconditions of its

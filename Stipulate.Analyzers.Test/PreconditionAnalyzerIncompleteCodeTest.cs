@@ -30,6 +30,22 @@ public class PreconditionAnalyzerIncompleteCodeTest
     }
 
     [Fact]
+    public async Task Analyze_WhenAnAllowedValueDoesNotBind_ChecksNoArgumentAgainstIt()
+    {
+        // Arrange - Missing might be 2
+        CSharpCompilation compilation = Compile("""
+            public static class Target { public static void Accept([AllowedValues(1, Missing)] int value) { } }
+            public static class Caller { public static void Call() => Target.Accept(2); }
+            """);
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(compilation);
+
+        // Assert
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
     public async Task Analyze_WhenAnAttributesConstructorDoesNotBind_CannotCompareIt()
     {
         // Arrange

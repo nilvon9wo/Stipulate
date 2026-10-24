@@ -46,7 +46,7 @@ internal static class ConstraintEvaluator
         {
             double bound => [new Constraint(descriptor.Dimension, descriptor.Kind, bound, isExclusive, [])],
             ParsedBound parsed => [ToConstraint(descriptor, parsed, isExclusive)],
-            ImmutableArray<string> values => [ToConstraint(descriptor, values)],
+            ImmutableArray<string> values => [ToConstraint(descriptor, values, FindConstants(descriptor, attribute))],
             _ => null,
         };
     }
@@ -54,19 +54,32 @@ internal static class ConstraintEvaluator
     private static Constraint ToConstraint(Descriptor descriptor, ParsedBound parsed, bool isExclusive)
         => new(descriptor.Dimension, descriptor.Kind, parsed.Value, isExclusive, [], parsed.Display);
 
-    private static Constraint ToConstraint(Descriptor descriptor, ImmutableArray<string> values)
-        => new(descriptor.Dimension, descriptor.Kind, 0, IsExclusive: false, values);
+    private static Constraint ToConstraint(
+        Descriptor descriptor,
+        ImmutableArray<string> values,
+        ImmutableArray<TypedConstant> constants
+    )
+        => new(descriptor.Dimension, descriptor.Kind, 0, IsExclusive: false, values, Constants: constants);
+
+    /// <returns>
+    /// The usage's array of values, or default if the values are the descriptor's own. Only called
+    /// for values read from an array, either the usage's or else the descriptor's.
+    /// </returns>
+    private static ImmutableArray<TypedConstant> FindConstants(Descriptor descriptor, AttributeData attribute)
+        => FindArgument(descriptor, attribute) is { } array
+            ? array.Values
+            : default;
+
+    private static TypedConstant? FindArgument(Descriptor descriptor, AttributeData attribute)
+        => descriptor.Argument is { } name
+            ? AttributeArguments.Find(attribute, name)
+            : null;
 
     /// <summary>The usage's argument, converted for the kind, or else the descriptor's default.</summary>
     private static object? ReadValue(Descriptor descriptor, AttributeData attribute)
-    {
-        TypedConstant? argument = descriptor.Argument is { } name
-            ? AttributeArguments.Find(attribute, name)
-            : null;
-        return argument is { } constant
+        => FindArgument(descriptor, attribute) is { } constant
             ? ConvertArgument(descriptor.Kind, constant, attribute)
             : descriptor.Value;
-    }
 
     /// <summary>A bound can also be one of <c>Range(typeof(T), ...)</c>'s string limits.</summary>
     private static object? ConvertArgument(ConstraintKind kind, TypedConstant constant, AttributeData attribute)

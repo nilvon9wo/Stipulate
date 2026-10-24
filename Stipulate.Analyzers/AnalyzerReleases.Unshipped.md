@@ -11,3 +11,4 @@ ST1003 | Stipulate | Error | An implementation weakens its contract's guarantee
 ST2001 | Stipulate | Error | A validation attribute declared in this solution can't be compared with the contract
 ST2002 | Stipulate | Error | A validation attribute from outside this solution can't be compared with the contract
 ST2003 | Stipulate | Error | An invalid [ComparableValidation] description
+ST3001 | Stipulate | Error | An argument known at compile time is rejected by its parameter's validation attribute

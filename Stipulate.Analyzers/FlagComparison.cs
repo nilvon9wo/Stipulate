@@ -17,6 +17,15 @@ internal sealed class FlagComparison : IConstraintComparing
             : DescribeRejection(constraint.Dimension, other.Side);
     }
 
+    /// <remarks>Only NotNull and NotBlank say what they reject; another dimension's flag can't tell.</remarks>
+    public string? FindRejection(Constraint constraint, ArgumentValue value) => constraint.Dimension switch
+    {
+        Dimensions.NotNull when value.IsNull => "rejects null",
+        Dimensions.NotBlank when value.Constant is string text && string.IsNullOrWhiteSpace(text) =>
+            "rejects empty and whitespace-only strings",
+        _ => null,
+    };
+
     private static string DescribeRejection(string dimension, string side) => dimension switch
     {
         Dimensions.NotNull => $"rejects null, which {side} accepts",

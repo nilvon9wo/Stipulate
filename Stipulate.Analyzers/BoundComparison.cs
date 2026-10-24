@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -34,6 +35,11 @@ internal abstract class BoundComparison : IConstraintComparing
             : this.DescribeStrongerBound(constraint, bounds, other.Side);
     }
 
+    public string? FindRejection(Constraint constraint, ArgumentValue value)
+        => Measure(constraint, value) is { } measured && this.Rejects(constraint, measured)
+            ? $"requires {this.Describe(constraint)}, but {constraint.Dimension} is {FormatNumber(measured)}"
+            : null;
+
     /// <summary>Whether bound <paramref name="value"/> is tighter than bound <paramref name="other"/>.</summary>
     protected abstract bool IsTighter(double value, double other);
 
@@ -48,6 +54,36 @@ internal abstract class BoundComparison : IConstraintComparing
             ? $"requires {this.Describe(constraint)}, but {side} accepts {this.Describe(strongest)}"
             : null;
     }
+
+    /// <summary>
+    /// The value on the bound's dimension, or <c>null</c> if it isn't known for certain how the
+    /// attribute will measure it:
+    /// <list type="bullet">
+    /// <item>A negative upper bound on Length is <c>MaxLength(-1)</c>'s, which means no maximum.</item>
+    /// <item>A bound given as text, such as a date's, is in units no constant has.</item>
+    /// <item>
+    /// A whole-number bound may be <c>Range(int, int)</c>'s, which first converts the value to an
+    /// int, rounding a fraction; so a fraction isn't compared with one.
+    /// </item>
+    /// </list>
+    /// </summary>
+    private static double? Measure(Constraint constraint, ArgumentValue value) => constraint.Dimension switch
+    {
+        Dimensions.Length when constraint.Bound >= 0 => value.Length,
+        Dimensions.Value when constraint.BoundDisplay is null && value.Number is { } number
+            && !IsRoundedFor(number, constraint.Bound) => number,
+        _ => null,
+    };
+
+    private static bool IsRoundedFor(double number, double bound) => !IsWholeNumber(number) && IsWholeNumber(bound);
+
+    private static bool IsWholeNumber(double number) => Math.Floor(number).Equals(number);
+
+    /// <summary>Whether the bound rejects <paramref name="measured"/>: the bound itself only if exclusive.</summary>
+    private bool Rejects(Constraint bound, double measured)
+        => measured.Equals(bound.Bound)
+            ? bound.IsExclusive
+            : this.IsTighter(bound.Bound, measured);
 
     private Constraint Stronger(Constraint current, Constraint candidate)
         => this.IsStronger(candidate, current)

@@ -7,7 +7,9 @@ using Net.NowhereAtAll.Stipulate.Analyzers;
 
 namespace Net.NowhereAtAll.Stipulate.Testing;
 
-/// <summary>Runs <see cref="PreconditionAnalyzer"/> over C# source in memory.</summary>
+/// <summary>
+/// Runs <see cref="PreconditionAnalyzer"/> and <see cref="ArgumentAnalyzer"/> over C# source in memory.
+/// </summary>
 public static class AnalyzerRunner
 {
     public const string SolutionRootProperty = "build_property.StipulateSolutionRoot";
@@ -53,7 +55,7 @@ public static class AnalyzerRunner
             logAnalyzerExecutionTime: false
         );
         ImmutableArray<Diagnostic> diagnostics = await compilation
-            .WithAnalyzers([new PreconditionAnalyzer()], options)
+            .WithAnalyzers([new PreconditionAnalyzer(), new ArgumentAnalyzer()], options)
             .GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken)
             .ConfigureAwait(false);
         Assert.Empty(exceptions);

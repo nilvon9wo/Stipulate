@@ -22,6 +22,11 @@ internal sealed class AllowedValuesComparison : IConstraintComparing
             : DescribeRejected(constraint, accepted, other);
     }
 
+    public string? FindRejection(Constraint constraint, ArgumentValue value)
+        => value.IsAmong(constraint.Constants) is false
+            ? $"accepts only {string.Join(ValueSeparator, constraint.Values)}"
+            : null;
+
     private static string DescribeUnlimited(Constraint constraint, string side)
     {
         string values = string.Join(ValueSeparator, constraint.Values);

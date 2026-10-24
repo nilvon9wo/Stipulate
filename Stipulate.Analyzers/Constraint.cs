@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 
 namespace Net.NowhereAtAll.Stipulate.Analyzers;
 
@@ -12,13 +13,18 @@ namespace Net.NowhereAtAll.Stipulate.Analyzers;
 /// <param name="BoundDisplay">
 /// How to show <paramref name="Bound"/>, if not as a number: e.g. a date, as written.
 /// </param>
+/// <param name="Constants">
+/// The values as the usage gives them, for checking an argument against them; default if they
+/// come from a description's <c>Value</c> instead.
+/// </param>
 internal sealed record Constraint(
     string Dimension,
     ConstraintKind Kind,
     double Bound,
     bool IsExclusive,
     ImmutableArray<string> Values,
-    string? BoundDisplay = null
+    string? BoundDisplay = null,
+    ImmutableArray<TypedConstant> Constants = default
 )
 {
     public IConstraintComparing Comparison => ConstraintComparisons.Of(this.Kind);
@@ -33,6 +39,12 @@ internal sealed record Constraint(
         => this.IsVacuous
             ? null
             : this.Comparison.FindStrengthening(this, other);
+
+    /// <returns>Why this rejects <paramref name="value"/>, or <c>null</c> if it accepts it or can't tell.</returns>
+    public string? FindRejection(ArgumentValue value)
+        => this.IsVacuous
+            ? null
+            : this.Comparison.FindRejection(this, value);
 
     /// <returns>
     /// What the first of <paramref name="constraints"/> that rejects something <paramref name="other"/>

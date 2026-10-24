@@ -18,6 +18,8 @@ public class PackageTest(PackageFeed feed)
     private const string Program = """
         using System.ComponentModel.DataAnnotations;
 
+        #pragma warning disable ST3001 // Each call is meant to throw where the check is enforced.
+
         try
         {
             Target.Check(0);
@@ -59,6 +61,8 @@ public class PackageTest(PackageFeed feed)
     /// <summary>Calls the library's validated method, then its own, saying of each whether it validated.</summary>
     private const string ProgramOnLibrary = """
         using System.ComponentModel.DataAnnotations;
+
+        #pragma warning disable ST3001 // Each call is meant to throw where the check is enforced.
 
         Console.WriteLine(Validates(() => Levels.Check(0)));
         Console.WriteLine(Validates(() => Target.Check(0)));
