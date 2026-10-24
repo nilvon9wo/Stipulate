@@ -42,14 +42,14 @@
       measures no one assembly, so it is not measured.
     - Running a filtered subset (one class, say) cannot reach 100%: pass
       `-p:StipulateCoverage=false` to `dotnet test` for those runs.
+    - A test project that measures more than one assembly says which in StipulateCoverageInclude,
+      a coverlet filter (Stipulate.ArgumentChecks.Test measures each language's copy of the check).
+      The arguments are composed in Directory.Build.targets, after the project's own properties.
   -->
   <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Stipulate.')) And $(MSBuildProjectName.EndsWith('.Test')) And '$(MSBuildProjectName)' != 'Stipulate.Integration.Test'">
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <StipulateCoverage Condition="'$(StipulateCoverage)' == ''">true</StipulateCoverage>
     <StipulateCoveredAssembly>Net.NowhereAtAll.$(MSBuildProjectName.Substring(0, $(MSBuildProjectName.LastIndexOf('.Test'))))</StipulateCoveredAssembly>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(StipulateCoverage)' == 'true' And '$(StipulateCoveredAssembly)' != ''">
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet --coverlet-include "[$(StipulateCoveredAssembly)]*" --coverlet-exclude "[Net.NowhereAtAll.Stipulate.Testing]*" --coverlet-output-format cobertura --coverlet-threshold 100 --coverlet-threshold-type line --coverlet-threshold-type branch</TestingPlatformCommandLineArguments>
   </PropertyGroup>
   <ItemGroup Condition="'$(StipulateCoveredAssembly)' != ''">
     <PackageReference Include="coverlet.MTP" Version="10.1.0" />

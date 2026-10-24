@@ -4,6 +4,10 @@
   <Project Path="docs/Stipulate.Docs.csproj" />
   <Project Path="Stipulate.Analyzers.Test/Stipulate.Analyzers.Test.csproj" />
   <Project Path="Stipulate.Analyzers/Stipulate.Analyzers.csproj" />
+  <Project Path="Stipulate.ArgumentChecks.CSharp/Stipulate.ArgumentChecks.CSharp.csproj" />
+  <Project Path="Stipulate.ArgumentChecks.FSharp/Stipulate.ArgumentChecks.FSharp.fsproj" />
+  <Project Path="Stipulate.ArgumentChecks.Test/Stipulate.ArgumentChecks.Test.csproj" />
+  <Project Path="Stipulate.ArgumentChecks.VisualBasic/Stipulate.ArgumentChecks.VisualBasic.vbproj" />
   <Project Path="Stipulate.CodeFixes.Test/Stipulate.CodeFixes.Test.csproj" />
   <Project Path="Stipulate.CodeFixes/Stipulate.CodeFixes.csproj" />
   <Project Path="Stipulate.Contracts.Test/Stipulate.Contracts.Test.csproj" />

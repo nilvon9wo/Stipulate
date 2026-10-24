@@ -50,7 +50,7 @@ jobs:
 
       # Every Stipulate.*.Test project also enforces 100% line and
       # branch coverage of its package (coverlet.MTP, wired in
-      # Directory.Build.props); Stipulate.Integration.Test builds a
+      # Directory.Build.props and .targets); Stipulate.Integration.Test builds a
       # consumer project in each mode. run-tests.py is dotnet test plus one
       # guarantee: a module that never started is reported INCONCLUSIVE, never
       # hidden behind "Passed!".

@@ -12,7 +12,7 @@
       buildTransitive/Stipulate.targets
                                the build integration, for every project that gets Stipulate,
                                directly or not
-      buildTransitive/Stipulate.ArgumentChecks.cs
+      buildTransitive/Stipulate.ArgumentChecks.cs, .vb, .fs
                                the run-time check, which the build integration compiles into
                                every project that enforces the attributes
 
@@ -47,6 +47,8 @@
   <ItemGroup>
     <None Include="buildTransitive\Stipulate.targets" Pack="true" PackagePath="buildTransitive\" />
     <None Include="buildTransitive\Stipulate.ArgumentChecks.cs" Pack="true" PackagePath="buildTransitive\" />
+    <None Include="buildTransitive\Stipulate.ArgumentChecks.vb" Pack="true" PackagePath="buildTransitive\" />
+    <None Include="buildTransitive\Stipulate.ArgumentChecks.fs" Pack="true" PackagePath="buildTransitive\" />
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 

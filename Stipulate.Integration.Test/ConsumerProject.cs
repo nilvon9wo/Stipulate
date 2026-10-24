@@ -15,6 +15,7 @@ internal sealed class ConsumerProject : IDisposable
     private const string LibraryName = "Library";
     private const string MiddleLibraryName = "Middle";
     private const string UnknownLanguage = "Not a language a project can be in.";
+    private const string ProgramName = "Program";
 
     /// <summary>The temporary directory, holding the project and any other it references.</summary>
     private readonly string _directory;
@@ -84,27 +85,38 @@ internal sealed class ConsumerProject : IDisposable
     /// How the program references the library, and each library the one before it; a package is
     /// packed here, with the library's defaults, into a feed of the project's own.
     /// </param>
-    /// <param name="library">The library's one source file, in C#, as every library here is.</param>
+    /// <param name="library">The library's one source file.</param>
     /// <param name="program">The program's Program.cs (or .vb, or .fs).</param>
     /// <param name="librariesBetween">How many libraries, with nothing of Stipulate's in them, stand between.</param>
     /// <param name="language">The language the program is written in.</param>
+    /// <param name="libraryLanguage">
+    /// The language the library is written in; any between are C#.
+    /// </param>
     public static ConsumerProject CreateOnLibrary(
         PackageFeed feed,
         LibraryReference libraryReference,
         [StringSyntax("C#")] string library,
         [StringSyntax("C#")] string program,
         int librariesBetween = 0,
-        ProjectLanguage language = ProjectLanguage.CSharp
+        ProjectLanguage language = ProjectLanguage.CSharp,
+        ProjectLanguage libraryLanguage = ProjectLanguage.CSharp
     )
     {
         string directory = CreateDirectory();
         WriteFeed(directory, feed);
-        string reference = PackageReference;
-        for (int index = 0; index <= librariesBetween; index++)
+        string reference = WriteLibrary(
+            directory,
+            LibraryName,
+            library,
+            PackageReference,
+            libraryReference,
+            libraryLanguage
+        );
+        for (int index = 1; index <= librariesBetween; index++)
         {
-            string name = index == 0 ? LibraryName : MiddleLibraryName + index;
-            string source = index == 0 ? library : $"public static class {name} {{ }}";
-            reference = WriteLibrary(directory, name, source, reference, libraryReference);
+            string name = MiddleLibraryName + index;
+            string source = $"public static class {name} {{ }}";
+            reference = WriteLibrary(directory, name, source, reference, libraryReference, ProjectLanguage.CSharp);
         }
 
         string path = System.IO.Path.Combine(directory, Name);
@@ -175,13 +187,15 @@ internal sealed class ConsumerProject : IDisposable
         string name,
         string source,
         string reference,
-        LibraryReference libraryReference
+        LibraryReference libraryReference,
+        ProjectLanguage language
     )
     {
         string libraryPath = Directory.CreateDirectory(System.IO.Path.Combine(directory, name)).FullName;
-        string libraryProject = System.IO.Path.Combine(libraryPath, name + ".csproj");
-        File.WriteAllText(libraryProject, ProjectFile(ProjectLanguage.CSharp, "Library", NetTarget, reference));
-        File.WriteAllText(System.IO.Path.Combine(libraryPath, name + ".cs"), source);
+        string libraryProject = System.IO.Path.Combine(libraryPath, name + ProjectExtension(language));
+        string projectFile = ProjectFile(language, "Library", NetTarget, reference, sourceName: name);
+        File.WriteAllText(libraryProject, projectFile);
+        File.WriteAllText(System.IO.Path.Combine(libraryPath, SourceFileName(language, name)), source);
         if (libraryReference == LibraryReference.Project)
         {
             return $"""<ProjectReference Include="{libraryProject}" />""";
@@ -220,7 +234,8 @@ internal sealed class ConsumerProject : IDisposable
         ProjectLanguage language,
         string outputType,
         string targetFramework,
-        string items = ""
+        string items = "",
+        string sourceName = ProgramName
     )
         => $"""
             <Project Sdk="Microsoft.NET.Sdk">
@@ -230,7 +245,7 @@ internal sealed class ConsumerProject : IDisposable
                 {LanguageProperties(language)}
               </PropertyGroup>
               <ItemGroup>
-                {LanguageItems(language)}
+                {LanguageItems(language, sourceName)}
                 {items}
               </ItemGroup>
             </Project>
@@ -243,9 +258,9 @@ internal sealed class ConsumerProject : IDisposable
             : string.Empty;
 
     /// <summary>An F# project lists its source files; the others find theirs.</summary>
-    private static string LanguageItems(ProjectLanguage language)
+    private static string LanguageItems(ProjectLanguage language, string sourceName)
         => language == ProjectLanguage.FSharp
-            ? $"""<Compile Include="{SourceFileName(language)}" />"""
+            ? $"""<Compile Include="{SourceFileName(language, sourceName)}" />"""
             : string.Empty;
 
     private static string ProjectExtension(ProjectLanguage language)
@@ -257,12 +272,12 @@ internal sealed class ConsumerProject : IDisposable
             _ => throw new ArgumentOutOfRangeException(nameof(language), language, UnknownLanguage),
         };
 
-    private static string SourceFileName(ProjectLanguage language)
-        => language switch
+    private static string SourceFileName(ProjectLanguage language, string sourceName = ProgramName)
+        => sourceName + language switch
         {
-            ProjectLanguage.CSharp => "Program.cs",
-            ProjectLanguage.VisualBasic => "Program.vb",
-            ProjectLanguage.FSharp => "Program.fs",
+            ProjectLanguage.CSharp => ".cs",
+            ProjectLanguage.VisualBasic => ".vb",
+            ProjectLanguage.FSharp => ".fs",
             _ => throw new ArgumentOutOfRangeException(nameof(language), language, UnknownLanguage),
         };
 }

@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The same tests, against each language's copy of the check: there is no
+    Net.NowhereAtAll.Stipulate.ArgumentChecks to measure, but one assembly per language, and every
+    one must be covered.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <StipulateCoverageInclude>[Net.NowhereAtAll.Stipulate.ArgumentChecks.*]*</StipulateCoverageInclude>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" Version="4.0.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic" Version="4.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stipulate.Testing\Stipulate.Testing.csproj" />
+    <ProjectReference Include="..\Stipulate.ArgumentChecks.CSharp\Stipulate.ArgumentChecks.CSharp.csproj" />
+    <ProjectReference Include="..\Stipulate.ArgumentChecks.VisualBasic\Stipulate.ArgumentChecks.VisualBasic.vbproj" />
+    <ProjectReference Include="..\Stipulate.ArgumentChecks.FSharp\Stipulate.ArgumentChecks.FSharp.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- The Visual Basic copy, as shipped, for VisualBasicArgumentChecksTest to compile as a consumer would. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\Stipulate.Package\buildTransitive\Stipulate.ArgumentChecks.vb"
+                      LogicalName="Stipulate.ArgumentChecks.vb" />
+  </ItemGroup>
+
+</Project>

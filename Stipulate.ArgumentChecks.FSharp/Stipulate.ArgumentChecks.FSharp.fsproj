@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The check F# projects get, Stipulate.ArgumentChecks.fs, built on its own for
+    Stipulate.ArgumentChecks.Test; see Stipulate.ArgumentChecks.CSharp. With every warning, and
+    nullness checking, on: a consumer may turn them on, with TreatWarningsAsErrors.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <DefineConstants>$(DefineConstants);STIPULATE_MEASURES_ARGUMENT_CHECKS</DefineConstants>
+    <WarningLevel>5</WarningLevel>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Stipulate.Package\buildTransitive\Stipulate.ArgumentChecks.fs" Link="Stipulate.ArgumentChecks.fs" />
+  </ItemGroup>
+
+</Project>

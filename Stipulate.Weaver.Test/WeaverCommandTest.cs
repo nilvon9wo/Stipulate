@@ -107,9 +107,9 @@ public class WeaverCommandTest
         Assert.Equal(
             $"{directory.AssemblyPath} : error ST0007: Test.dll has parameters with validation attributes, but "
                 + "not the check that enforces them, Net.NowhereAtAll.Stipulate.Runtime.ArgumentChecks.Check. "
-                + "Stipulate.targets compiles it into every project it weaves, from Stipulate.ArgumentChecks.cs in "
-                + "the package's buildTransitive folder: check that the project imports Stipulate.targets, and that "
-                + "nothing removes that file from its Compile items.",
+                + "Stipulate.targets compiles it into every project it weaves, from Stipulate.ArgumentChecks.cs (or "
+                + ".vb, or .fs, in the project's language) in the package's buildTransitive folder: check that the "
+                + "project imports Stipulate.targets, and that nothing removes that file from its Compile items.",
             error.ToString().TrimEnd()
         );
     }

@@ -35,7 +35,7 @@ public class Multiplier : IMultiplier
 | `Stipulate.Package` | Packs all of the above, and the build integration, as the `Stipulate` NuGet package. |
 
 Install it with `dotnet add package Stipulate`; see [getting started](docs/use/getting-started.md).
-It is for C#: Visual Basic and F# projects build with it but aren't checked; see
+Visual Basic and F# projects are woven too, though only C# gets the analyzer and interceptors; see
 [other .NET languages](docs/use/other-languages.md).
 
 `ArrayFoo` and `ArrayFooTest` are the sample that inspired the project.

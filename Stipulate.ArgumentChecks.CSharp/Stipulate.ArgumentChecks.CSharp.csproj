@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The check C# projects get, Stipulate.ArgumentChecks.cs, built on its own for
+    Stipulate.ArgumentChecks.Test, which runs the same tests against each language's copy and
+    measures their coverage: STIPULATE_MEASURES_ARGUMENT_CHECKS takes off the ExcludeFromCodeCoverage
+    every other project compiles it with.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <DefineConstants>$(DefineConstants);STIPULATE_MEASURES_ARGUMENT_CHECKS</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Stipulate.Package\buildTransitive\Stipulate.ArgumentChecks.cs" Link="Stipulate.ArgumentChecks.cs" />
+  </ItemGroup>
+
+</Project>

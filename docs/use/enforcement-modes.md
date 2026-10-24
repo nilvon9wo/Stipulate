@@ -87,7 +87,8 @@ the message, not what the method accepts, so the analyzer doesn't compare it wit
 The check is source, not a library: Stipulate compiles `Stipulate.ArgumentChecks.cs`, an internal
 class in the `Net.NowhereAtAll.Stipulate.Runtime` namespace, into each project whose attributes it
 enforces. So enforcing them adds no dependency at run time, and the file compiles as C# 7.3, for
-any target framework.
+any target framework. A Visual Basic or F# project gets the same check in its own language,
+`Stipulate.ArgumentChecks.vb` or `.fs` (see [other .NET languages](other-languages.md)).
 
 ## Weaving
 
@@ -107,12 +108,16 @@ arguments however it is called.
   woven assembly in place, and the weaver recognises it ("is already woven").
 - **Debugging**: the weaver rewrites the symbols (`.pdb`) along with the assembly. If they don't
   match, it leaves them alone and warns (ST0006).
+- **Visual Basic and F#** projects are woven too. F#'s optimizer can inline a small method into
+  its callers before it is woven; `StipulateFSharpChecks` chooses which calls are guaranteed to be
+  checked (see [F# and its optimizer](other-languages.md#f-and-its-optimizer)).
 
 If weaving fails, the build fails with one of the [build errors](../rules/build-errors.md).
 
 ## Interceptors
 
-The generator uses C# interceptors: for each call to a method with validated parameters, it
+The generator uses C# interceptors, a C# feature, so this mode enforces nothing in Visual Basic or
+F# projects (ST0008). For each call to a method with validated parameters, it
 generates a method with the same signature that validates the arguments and then calls the
 original. Calls it can't intercept are left as they are, unvalidated:
 

@@ -51,9 +51,9 @@ internal sealed class WellKnownReferences
             ?? throw new WeavingException(
                 $"{this.Module.Name} has parameters with validation attributes, but not the check that "
                 + $"enforces them, {ArgumentChecksName}.{CheckName}. Stipulate.targets compiles it into "
-                + "every project it weaves, from Stipulate.ArgumentChecks.cs in the package's "
-                + "buildTransitive folder: check that the project imports Stipulate.targets, and that "
-                + "nothing removes that file from its Compile items.",
+                + "every project it weaves, from Stipulate.ArgumentChecks.cs (or .vb, or .fs, in the project's "
+                + "language) in the package's buildTransitive folder: check that the project imports "
+                + "Stipulate.targets, and that nothing removes that file from its Compile items.",
                 WeavingErrorCodes.ChecksMissing
             );
 
