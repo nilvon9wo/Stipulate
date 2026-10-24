@@ -55,6 +55,23 @@ public class Multiplier : IMultiplier
 
 See [contracts](contracts.md) for everything the analyzer checks.
 
+**It checks arguments known at compile time.** A call that passes a constant, `null`, or a
+collection written in place that an attribute rejects can only throw, so it is reported as it is
+written ([ST3001](../rules/ST3001.md)):
+
+```csharp
+public static class Multiplier
+{
+    public static int[] Multiply([Required, MinLength(1)] int[] array) => array;
+}
+
+public static class Caller
+{
+    // error ST3001: the argument [] is rejected by [MinLength(1)]: Length is 0
+    public static int[] Call() => Multiplier.Multiply([]);
+}
+```
+
 ## Setting it up
 
 Reference the `Stipulate` package:

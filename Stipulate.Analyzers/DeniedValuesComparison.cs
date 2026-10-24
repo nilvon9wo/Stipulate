@@ -25,6 +25,11 @@ internal sealed class DeniedValuesComparison : IConstraintComparing
             : $"rejects {rejected}, which {other.Side} accepts";
     }
 
+    public string? FindRejection(Constraint constraint, ArgumentValue value)
+        => value.IsAmong(constraint.Constants) is true
+            ? "lists it among the values it denies"
+            : null;
+
     /// <param name="value">One of the constraint's denied values.</param>
     /// <param name="denied">The values the other side denies.</param>
     /// <param name="accepted">The only values accepted, or <c>null</c> if any value not denied is.</param>

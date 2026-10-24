@@ -30,6 +30,10 @@ public class Multiplier : IMultiplier
 }
 ```
 
+**It checks arguments known at compile time.** Passing a constant, `null`, or a collection
+written in place that an attribute rejects is an error where it is written:
+`Multiplier.Multiply([])` above is error ST3001.
+
 ## Getting started
 
 ```shell

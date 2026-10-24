@@ -32,6 +32,9 @@ method parameters mean something.
 - **Every project that gets the package**, directly or through another project or package, is
   checked and enforced; `StipulateTransitive=false` leaves out the projects that don't reference
   it themselves.
+- **Argument checks** at compile time (ST3001): a constant, `null`, a collection written where it
+  is passed, the arguments of a `params` parameter, or a parameter's default value, that one of
+  the parameter's attributes certainly rejects. The message says what will throw, and how to fix it.
 - **A code fix** that restates a missing attribute from the contract, one at a time or all at once.
 - **`[ComparableValidation]`**, which describes a custom validation attribute, your own or a
   package's, so the analyzer can compare it with the built-in ones (ST2001-ST2003).

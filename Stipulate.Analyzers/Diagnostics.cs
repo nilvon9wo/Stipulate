@@ -76,6 +76,24 @@ internal static class Diagnostics
         + "compared with identical usages."
     );
 
+    /// <remarks>
+    /// {0} is the value (e.g. "The argument 0"), {1} the parameter's name, {2} its method, {3} the
+    /// attribute, {4} why it rejects the value, {5} which calls throw (e.g. "this call"), and {6}
+    /// the exception they throw.
+    /// </remarks>
+    public static readonly DiagnosticDescriptor ArgumentRejected = Create(
+        DiagnosticIds.ArgumentRejected,
+        "Argument is rejected by its parameter's validation attribute",
+        "{0} for parameter '{1}' of '{2}' is rejected by [{3}], which {4}. Wherever Stipulate enforces the "
+        + "attribute at run time, {5} throws {6}. Pass a value [{3}] accepts, or, if the value is right, "
+        + "correct the attribute. If the call is meant to throw, as in a test of the check, suppress ST3001 "
+        + "there.",
+        DiagnosticSeverity.Error,
+        "The value passed is known at compile time, and a validation attribute on the parameter rejects "
+        + "it: when its checks are enforced, the call throws. A default value the parameter's own "
+        + "attributes reject throws whenever it is used."
+    );
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

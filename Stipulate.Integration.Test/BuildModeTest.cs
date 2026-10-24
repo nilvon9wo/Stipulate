@@ -16,6 +16,8 @@ public class BuildModeTest
     private const string Program = """
         using System.ComponentModel.DataAnnotations;
 
+        #pragma warning disable ST3001 // Each call is meant to throw where the check is enforced.
+
         try
         {
             Target.Check(0);
