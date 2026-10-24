@@ -34,8 +34,8 @@ the .NET SDK and runs `OtherLanguagesTest`, so that a preview of F# that drops a
 `StipulateFSharpChecks` passes (see
 [if F# rejects a switch](../use/other-languages.md#if-f-rejects-a-switch)) fails here before
 it is released. It doesn't hold the code to the preview's new analyzers; the jobs above hold it
-to the released SDK's. Once that version of the SDK is released, raise its `dotnet-version` to
-the next.
+to the released SDK's. Once that version of the SDK is released, the job fails, after its
+tests, saying so: raise its `dotnet-version` to the next.
 
 ## Proving the gates fire
 

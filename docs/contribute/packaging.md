@@ -46,6 +46,15 @@ a project file.
    `Directory.Build.props`, builds and tests in Release (the package tests included, at that
    version), packs, pushes to nuget.org, tags the commit `v0.1.0-preview.1`, and opens a GitHub
    Release with that section as its notes.
+3. Once nuget.org lists it, some minutes later, check it as a consumer gets it:
+
+   ```shell
+   python3 scripts/smoke-test-release.py
+   ```
+
+   For the newest release in `CHANGELOG.md` (or the version given), it builds a C#, a Visual
+   Basic and an F# program, in Release, outside the repository and from nuget.org alone, and
+   requires each to print the message the woven check throws.
 
 A merge that adds no new heading publishes nothing. A version with a `-suffix` is published as a
 prerelease. A release whose push half-failed can be pushed again with the workflow's

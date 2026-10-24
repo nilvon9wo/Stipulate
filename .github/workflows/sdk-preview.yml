@@ -47,3 +47,14 @@ jobs:
 
       - name: Test Visual Basic and F#
         run: dotnet test --project Stipulate.Integration.Test --no-build -p:StipulateCoverage=false --filter-class "*OtherLanguagesTest"
+
+      # Once this version is released, setup-dotnet installs the release, and this job would
+      # quietly test what ci.yml already does: fail, so that the failed scheduled run's email says
+      # to raise dotnet-version to the next version's previews.
+      - name: Check the SDK is still a preview
+        run: |
+          version=$(dotnet --version)
+          case "$version" in
+            *-*) echo "Tested on the preview SDK $version." ;;
+            *) echo "::error::The .NET SDK $version is released, so this job no longer tests a preview: raise dotnet-version in sdk-preview.yml to the next major version."; exit 1 ;;
+          esac
