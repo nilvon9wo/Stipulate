@@ -5,7 +5,7 @@
 Every `Stipulate.*.Test` project measures the one package it tests and **fails below
 100% line and 100% branch coverage**: every guard, every `switch` arm, both sides of every
 ternary and null-coalescing operator. It is not a CI extra: the threshold is part of every
-`dotnet test`, local or CI, wired once in `Directory.Build.props`:
+`dotnet test`, local or CI, wired once in `Directory.Build.props` and `Directory.Build.targets`:
 
 - `coverlet.MTP`, not `coverlet.collector`, a VSTest data collector that silently measures
   nothing under the Microsoft Testing Platform runner that `global.json` selects.
@@ -19,6 +19,12 @@ ternary and null-coalescing operator. It is not a CI extra: the threshold is par
   excludes the measured assembly too, and the threshold fails on "No coverable data".
 - `Stipulate.Integration.Test` isn't measured: it builds a consumer project with
   `dotnet build`, so it measures no one assembly.
+- `Stipulate.ArgumentChecks.Test` measures the run-time check's three copies, one assembly per
+  language, so it sets `StipulateCoverageInclude` to a filter for all three; that is why the
+  arguments are composed in `Directory.Build.targets`, after the project's own properties. The
+  test assembly itself is always excluded. Every other project compiles the check with
+  `[ExcludeFromCodeCoverage]`, so that it counts against no consumer's coverage; these three
+  define `STIPULATE_MEASURES_ARGUMENT_CHECKS`, which leaves it off.
 
 **Release counts too.** Optimized IL branches differently from Debug: a condition that one
 configuration compiles away can be an uncovered branch in the other. CI runs the tests in both.

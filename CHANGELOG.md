@@ -10,13 +10,23 @@ that to `main` publishes the `Stipulate` package at that version (see
 
 ## [Unreleased]
 
+### Added
+
+- **Weaving for Visual Basic and F# projects**, with the run-time check in their own language
+  (`Stipulate.ArgumentChecks.vb` and `.fs`, beside the `.cs`), throwing the same exceptions with
+  the same messages. One set of tests runs against all three copies, and each must be covered in
+  full, so they can't drift apart. The analyzer, the code fix and interceptors remain C# only.
+- **`StipulateFSharpChecks`**, for F# projects, whose optimizer can inline a small method before
+  it is woven: `EveryCall` (the default; F#'s optimizer inlines nothing), `CallsFromOtherAssemblies`
+  or `NoInliningMethods`. A method marked `NoInlining` is checked on every call in any setting;
+  any other value is error ST0009.
+
 ### Fixed
 
 - **Visual Basic and F# projects that get Stipulate**, directly or through a library that uses
   it, no longer fail to build: they were given the C# source of the run-time check to compile.
-  They now get only `Stipulate.Contracts`, and a warning, ST0008, that their attributes aren't
-  enforced, unless their `StipulateMode` is `None`. Their calls into C# assemblies that Stipulate
-  wove are checked as before. See
+  A project Stipulate can't enforce anything in, a Visual Basic or F# one in `Interceptors` mode
+  or one in another language, is warned (ST0008) unless its `StipulateMode` is `None`. See
   [other .NET languages](docs/use/other-languages.md).
 
 ## [0.1.0-preview.1] - 2026-10-24

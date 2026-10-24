@@ -20,6 +20,16 @@
   </ItemGroup>
 
   <!--
+    Coverage, as Directory.Build.props sets it up: here, after the project's own properties, so that
+    a test project can set StipulateCoverageInclude. The test assembly itself is never measured,
+    even when the include filter's wildcard would take it in.
+  -->
+  <PropertyGroup Condition="'$(StipulateCoverage)' == 'true' And '$(StipulateCoveredAssembly)' != ''">
+    <StipulateCoverageInclude Condition="'$(StipulateCoverageInclude)' == ''">[$(StipulateCoveredAssembly)]*</StipulateCoverageInclude>
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet --coverlet-include "$(StipulateCoverageInclude)" --coverlet-exclude "[Net.NowhereAtAll.Stipulate.Testing]*" --coverlet-exclude "[$(AssemblyName)]*" --coverlet-output-format cobertura --coverlet-threshold 100 --coverlet-threshold-type line --coverlet-threshold-type branch</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
+  <!--
     The build integration the Stipulate package ships, for every project here that isn't one of
     Stipulate's own; see Directory.Build.props. The weaver is this repository's own build of it.
   -->

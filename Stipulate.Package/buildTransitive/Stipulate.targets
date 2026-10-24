@@ -21,15 +21,33 @@
       Interceptors  The generator intercepts each call to such a method at compile time.
       None          No enforcement; the analyzer still checks contracts.
 
-    Stipulate is for C# projects: the analyzer, the code fix and the generator are built for C#'s
-    compiler (NuGet gives them only to C# projects), and the check that weaving and interceptors
-    both call is C# source. A project in another language, such as Visual Basic or F#, gets
-    Stipulate.Contracts and nothing else, and a warning (ST0008) unless its StipulateMode is None.
-    What it calls in C# assemblies that Stipulate wove is checked as usual.
+    Stipulate is for C# above all: the analyzer, the code fix and the generator are built for C#'s
+    compiler (NuGet gives them only to C# projects). Weaving works in Visual Basic and F# projects
+    too, with the check in their language. Interceptors, a C# feature, don't, nor does anything in
+    a project in another language: such a project gets Stipulate.Contracts alone, and a warning
+    (ST0008) unless its StipulateMode is None.
+
+    StipulateFSharpChecks chooses, in an F# project that is woven, which calls the checks are
+    guaranteed on. F#'s optimizer, unlike C#'s and Visual Basic's compilers, copies a small method's
+    body into its callers before the weaver adds the checks to the method, so such a call isn't
+    checked:
+
+      EveryCall                  (default) Every call: F#'s optimizer inlines nothing in this
+                                 project (fsc's localoptimize- switch; the JIT still optimizes),
+                                 and offers nothing to other assemblies to inline (its
+                                 nooptimizationdata switch).
+      CallsFromOtherAssemblies   Calls from other assemblies: F#'s optimizer works as usual within
+                                 the project, but offers nothing to other assemblies to inline.
+      NoInliningMethods          Only calls to methods marked [<MethodImpl(MethodImplOptions.NoInlining)>],
+                                 which F# never inlines: F#'s optimizer works as usual.
+
+    In every setting, a method marked NoInlining is checked on every call, and an F# inline member
+    is never checked when F# calls it: F# always copies it into its callers.
   -->
   <PropertyGroup>
     <StipulateMode Condition="'$(StipulateMode)' == ''">Weaving</StipulateMode>
     <StipulateTransitive Condition="'$(StipulateTransitive)' == ''">true</StipulateTransitive>
+    <StipulateFSharpChecks Condition="'$(StipulateFSharpChecks)' == ''">EveryCall</StipulateFSharpChecks>
   </PropertyGroup>
 
   <!--
@@ -48,9 +66,11 @@
     <!--
       A change of mode must recompile: the assembly in obj\ was woven, or compiled with the
       interceptors, and nothing a change of mode touches is newer than it. MSBuild hashes these
-      items into CoreCompileInputs.cache, which recompiles whenever the hash changes.
+      items into CoreCompileInputs.cache, which recompiles whenever the hash changes. So must a
+      change of StipulateFSharpChecks, which changes how F# compiles.
     -->
     <CoreCompileCache Include="StipulateMode=$(StipulateMode)" />
+    <CoreCompileCache Include="StipulateFSharpChecks=$(StipulateFSharpChecks)" />
   </ItemGroup>
 
   <!-- Interceptors -->
@@ -64,23 +84,31 @@
     package whose dependency on Stipulate excludes them, as a PackageReference's defaults do).
 
     A project left out by StipulateTransitive=false, one that doesn't reference Stipulate itself,
-    gets none of them, and neither does a project that isn't C# (see StipulateReportLanguage).
+    gets none of them; nor does a project nothing can be enforced in (see StipulateReportLanguage):
+    one in a language other than C#, Visual Basic and F#, or a Visual Basic or F# one in
+    Interceptors mode.
 
     The package ships the generator with the analyzers, so the compiler would load it in every
     mode; outside Interceptors mode, take it out again.
 
     A project that enforces the attributes, by weaving or with interceptors, compiles in the check
-    they both call, Stipulate.ArgumentChecks.cs: as source, so that enforcing them adds no
-    dependency at run time.
+    they both call, Stipulate.ArgumentChecks.cs (or .vb, or .fs): as source, so that enforcing them
+    adds no dependency at run time. F# compiles its files in order, so there the check comes first.
   -->
   <Target Name="StipulateResolveAnalyzers" AfterTargets="ResolveLockFileAnalyzers">
     <ItemGroup>
       <_StipulateDirectReference Include="@(PackageReference)" Condition="'%(Identity)' == 'Stipulate'" />
     </ItemGroup>
     <PropertyGroup>
+      <_StipulateCheckSource Condition="'$(Language)' == 'C#'">Stipulate.ArgumentChecks.cs</_StipulateCheckSource>
+      <_StipulateCheckSource Condition="'$(Language)' == 'VB'">Stipulate.ArgumentChecks.vb</_StipulateCheckSource>
+      <_StipulateCheckSource Condition="'$(Language)' == 'F#'">Stipulate.ArgumentChecks.fs</_StipulateCheckSource>
+      <_StipulateUnenforceable Condition="'$(_StipulateCheckSource)' == ''">true</_StipulateUnenforceable>
+      <_StipulateUnenforceable Condition="'$(Language)' != 'C#' And '$(StipulateMode)' == 'Interceptors'">true</_StipulateUnenforceable>
       <_StipulateLeftOut Condition="'$(StipulateTransitive)' == 'false' And '@(_StipulateDirectReference)' == ''">true</_StipulateLeftOut>
-      <_StipulateReportsLanguage Condition="'$(_StipulateLeftOut)' != 'true' And '$(Language)' != 'C#' And '$(StipulateMode)' != 'None'">true</_StipulateReportsLanguage>
-      <_StipulateLeftOut Condition="'$(Language)' != 'C#'">true</_StipulateLeftOut>
+      <_StipulateReportsLanguage Condition="'$(_StipulateLeftOut)' != 'true' And '$(_StipulateUnenforceable)' == 'true' And '$(StipulateMode)' != 'None'">true</_StipulateReportsLanguage>
+      <_StipulateWeavesFSharp Condition="'$(_StipulateLeftOut)' != 'true' And '$(Language)' == 'F#' And '$(StipulateMode)' == 'Weaving'">true</_StipulateWeavesFSharp>
+      <_StipulateLeftOut Condition="'$(_StipulateUnenforceable)' == 'true'">true</_StipulateLeftOut>
     </PropertyGroup>
     <ItemGroup Condition="'$(_StipulateLeftOut)' == 'true'">
       <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'Stipulate'" />
@@ -89,20 +117,48 @@
       <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'Net.NowhereAtAll.Stipulate.Generator'" />
     </ItemGroup>
     <ItemGroup Condition="'$(_StipulateLeftOut)' != 'true' And ('$(StipulateMode)' == 'Weaving' Or '$(StipulateMode)' == 'Interceptors')">
-      <Compile Include="$(MSBuildThisFileDirectory)Stipulate.ArgumentChecks.cs" />
+      <_StipulateCheck Include="$(MSBuildThisFileDirectory)$(_StipulateCheckSource)" />
+      <!--
+        Once, even if the project's own globs took it in (packages restored inside the project's
+        folder), as a relative path: Visual Basic rejects a file compiled twice.
+      -->
+      <Compile Remove="@(Compile)" Condition="'%(Compile.FullPath)' == '@(_StipulateCheck->'%(FullPath)')'" />
+      <_StipulateProjectSources Include="@(Compile)" Condition="'$(Language)' == 'F#'" />
+      <Compile Remove="@(_StipulateProjectSources)" />
+      <Compile Include="@(_StipulateCheck);@(_StipulateProjectSources)" />
     </ItemGroup>
   </Target>
 
   <!--
-    Say that a project StipulateResolveAnalyzers left out for not being C# isn't enforced, unless
-    StipulateTransitive=false would have left it out anyway or its StipulateMode is None: once per
-    build, not in a design-time build too.
+    StipulateFSharpChecks, in an F# project that is woven: see the top of this file. F# reads
+    OtherFlags when it compiles, after this has added to it.
+  -->
+  <Target Name="StipulateFSharpChecks"
+          AfterTargets="StipulateResolveAnalyzers"
+          Condition="'$(_StipulateWeavesFSharp)' == 'true'">
+    <Error Condition="'$(StipulateFSharpChecks)' != 'EveryCall' And '$(StipulateFSharpChecks)' != 'CallsFromOtherAssemblies' And '$(StipulateFSharpChecks)' != 'NoInliningMethods'"
+           Code="ST0009"
+           Text="StipulateFSharpChecks is '$(StipulateFSharpChecks)', which isn't one of its values, so Stipulate can't tell which calls to check in '$(MSBuildProjectName)'. Set it to EveryCall (the default: every call is checked, and F#'s optimizer inlines nothing), CallsFromOtherAssemblies (calls from other assemblies are checked; within the project, F#'s optimizer may inline a small method, unchecked), or NoInliningMethods (only methods marked [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] are certainly checked; F#'s optimizer works as usual)." />
+    <PropertyGroup>
+      <OtherFlags Condition="'$(StipulateFSharpChecks)' == 'EveryCall'">$(OtherFlags) --localoptimize- --nooptimizationdata</OtherFlags>
+      <OtherFlags Condition="'$(StipulateFSharpChecks)' == 'CallsFromOtherAssemblies'">$(OtherFlags) --nooptimizationdata</OtherFlags>
+    </PropertyGroup>
+  </Target>
+
+  <!--
+    Say that a project StipulateResolveAnalyzers left out because nothing can be enforced in it
+    isn't enforced, unless StipulateTransitive=false would have left it out anyway or its
+    StipulateMode is None: once per build, not in a design-time build too.
   -->
   <Target Name="StipulateReportLanguage"
           AfterTargets="StipulateResolveAnalyzers"
           Condition="'$(_StipulateReportsLanguage)' == 'true' And '$(DesignTimeBuild)' != 'true'">
-    <Warning Code="ST0008"
-             Text="Stipulate enforces validation attributes only in C# projects, and '$(MSBuildProjectName)' is $(Language): the attributes on its parameters aren't checked when its methods are called, and its implementations aren't checked against their contracts. What it calls in C# assemblies that Stipulate wove is still checked. To have its methods checked, move them into a C# project; to acknowledge that they aren't, set StipulateMode to None in this project." />
+    <Warning Condition="'$(_StipulateCheckSource)' == ''"
+             Code="ST0008"
+             Text="Stipulate enforces validation attributes only in C#, Visual Basic and F# projects, and '$(MSBuildProjectName)' is $(Language): the attributes on its parameters aren't checked when its methods are called, and its implementations aren't checked against their contracts. What it calls in assemblies that Stipulate wove is still checked. To have its methods checked, move them into a project in one of those languages; to acknowledge that they aren't, set StipulateMode to None in this project." />
+    <Warning Condition="'$(_StipulateCheckSource)' != ''"
+             Code="ST0008"
+             Text="Stipulate's interceptors are a C# feature, and '$(MSBuildProjectName)' is $(Language): in Interceptors mode, the attributes on its parameters aren't checked when its methods are called. What it calls in assemblies that Stipulate wove is still checked. To have its methods checked, set StipulateMode to Weaving in this project; to acknowledge that they aren't, set it to None." />
   </Target>
 
   <!-- Weaving -->

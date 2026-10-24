@@ -45,8 +45,9 @@ your assembly. To intercept call sites at compile time instead, or only check co
 `StipulateMode` MSBuild property to `Interceptors` or `None`. Projects that reference yours get
 Stipulate too, and are held to your contracts.
 
-Stipulate is for C# projects. Visual Basic and F# projects build with it, with a warning (ST0008),
-but aren't checked; their calls into C# that Stipulate wove are.
+Visual Basic and F# projects are woven too, with the same checks and messages; the analyzer and
+interceptors are C# only. In F#, `StipulateFSharpChecks` chooses how F#'s optimizer, which can
+inline a small method before it is woven, is held back.
 
 Documentation: <https://github.com/nilvon9wo/Stipulate/tree/main/docs>, including every rule,
 the enforcement modes and their messages (with `[ShowValueInMessage]` to show a value), and

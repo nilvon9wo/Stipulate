@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The check Visual Basic projects get, Stipulate.ArgumentChecks.vb, built on its own for
+    Stipulate.ArgumentChecks.Test; see Stipulate.ArgumentChecks.CSharp.
+
+    The project's options are the ones most likely to change what the check does if it didn't set
+    its own: Option Compare Text, Option Strict Off, a root namespace.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <DefineConstants>$(DefineConstants),STIPULATE_MEASURES_ARGUMENT_CHECKS=True</DefineConstants>
+    <OptionCompare>Text</OptionCompare>
+    <OptionStrict>Off</OptionStrict>
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Stipulate.Package\buildTransitive\Stipulate.ArgumentChecks.vb" Link="Stipulate.ArgumentChecks.vb" />
+  </ItemGroup>
+
+</Project>

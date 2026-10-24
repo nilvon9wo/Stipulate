@@ -3,11 +3,18 @@
 // Stipulate enforces (see Stipulate.targets): the woven methods and the interceptors both call
 // ArgumentChecks.Check. It is source, not a library, so that enforcing the attributes adds no
 // dependency at run time. It compiles as C# 7.3, for any target framework.
+//
+// Stipulate.ArgumentChecks.vb and Stipulate.ArgumentChecks.fs are the same check, for Visual Basic
+// and F# projects, and must behave exactly as this one does: Stipulate.ArgumentChecks.Test runs
+// the same tests against all three, and measures their coverage. Change one, change all three.
+// It is excluded from coverage everywhere but there, so that it counts against no project's own.
 // </auto-generated>
 
 namespace Net.NowhereAtAll.Stipulate.Runtime
 {
+#if !STIPULATE_MEASURES_ARGUMENT_CHECKS
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+#endif
     [global::System.Diagnostics.DebuggerNonUserCode]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     internal static class ArgumentChecks

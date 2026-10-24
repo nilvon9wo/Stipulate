@@ -8,8 +8,8 @@ projects' outputs:
 | `lib/netstandard2.0/` | `Stipulate.Contracts`, for `[ComparableValidation]` | the consumer's code |
 | `analyzers/dotnet/cs/` | the analyzer, the code fix, and the generator | the compiler and the IDE |
 | `tools/net8.0/` | the weaver and Mono.Cecil | the build, through `dotnet` |
-| `buildTransitive/Stipulate.targets` | the build integration: the mode, the weaving, the generator's removal outside Interceptors mode, `StipulateTransitive` | MSBuild |
-| `buildTransitive/Stipulate.ArgumentChecks.cs` | the run-time check that woven methods and interceptors call, compiled into each project Stipulate enforces | the compiler, through `Stipulate.targets` |
+| `buildTransitive/Stipulate.targets` | the build integration: the mode, the weaving, the generator's removal outside Interceptors mode, `StipulateTransitive`, `StipulateFSharpChecks` | MSBuild |
+| `buildTransitive/Stipulate.ArgumentChecks.cs`, `.vb`, `.fs` | the run-time check that woven methods and interceptors call, compiled into each project Stipulate enforces, in its language | the compiler, through `Stipulate.targets` |
 
 The package has no dependencies. Package IDs keep the short name; the assemblies inside are
 `Net.NowhereAtAll.Stipulate.*`, as everywhere else.

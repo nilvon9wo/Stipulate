@@ -13,8 +13,8 @@ implement.
 - [Contracts](use/contracts.md): what the analyzer checks, and how to satisfy it.
 - [Custom validation attributes](use/custom-attributes.md): describing your own attributes, or
   someone else's, with `[ComparableValidation]` so the analyzer can compare them.
-- [Other .NET languages](use/other-languages.md): what Visual Basic and F# projects get (little),
-  and why.
+- [Other .NET languages](use/other-languages.md): what Visual Basic and F# projects get (weaving,
+  not the analyzer), why, and `StipulateFSharpChecks` for F#'s optimizer.
 
 ## Reference
 
