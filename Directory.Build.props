@@ -56,40 +56,29 @@
   </ItemGroup>
 
   <!--
-    Enforce DataAnnotations validation attributes on method parameters. Two interchangeable approaches:
-
-      Weaving       (default) After each project compiles, Stipulate.Weaver rewrites the
-                    assembly's IL so every attributed method validates its own arguments.
-                    See Directory.Build.targets.
-      Interceptors  Stipulate.Generator intercepts each call site at compile time, so
-                    only callers built in this folder are validated.
-      None          No enforcement.
-
-    Override per build with e.g. -p:StipulateMode=Interceptors.
+    The version of a local build, as XFTY does it: an obviously-not-a-release 0.0.0-dev. A release's
+    version is the newest `## [x.y.z]` heading in CHANGELOG.md, which publish.yml stamps in at pack
+    time; it is never edited here. See docs/contribute/packaging.md.
   -->
   <PropertyGroup>
-    <StipulateMode Condition="'$(StipulateMode)' == ''">Weaving</StipulateMode>
-    <IsStipulateTool Condition="$(MSBuildProjectName.StartsWith('Stipulate.'))">true</IsStipulateTool>
+    <Version>0.0.0-dev</Version>
   </PropertyGroup>
 
   <!--
-    Whatever the mode, Stipulate.Analyzers checks that implementations and overrides
-    don't strengthen their contract's preconditions or weaken its guarantees (ST1001-ST1003), live
-    in the IDE and in the build; Stipulate.CodeFixes offers to restate a missing attribute.
-    Stipulate.Contracts provides [ComparableValidation], which describes a custom
-    validation attribute so the analyzer can compare it.
+    Every project here that isn't one of Stipulate's own (ArrayFoo, its tests, a consumer the
+    integration tests build) uses Stipulate as a package consumer would, but from this repository's
+    projects: the analyzer and code fix, Stipulate.Contracts, and the build integration the package
+    ships, Stipulate.Package/build/Stipulate.targets, imported by Directory.Build.targets. Choose
+    the enforcement with StipulateMode (Weaving, Interceptors or None); see that file.
 
-    Assemblies whose files are under StipulateSolutionRoot count as part of the
-    solution: an attribute declared in one that can't be compared is reported as ST2001 ("add a
-    [ComparableValidation]") rather than ST2002 ("it's someone else's; describe it from your
-    assembly").
+    The whole repository counts as the solution, for ST2001 against ST2002.
   -->
   <PropertyGroup>
+    <IsStipulateTool Condition="$(MSBuildProjectName.StartsWith('Stipulate.'))">true</IsStipulateTool>
     <StipulateSolutionRoot Condition="'$(StipulateSolutionRoot)' == ''">$(MSBuildThisFileDirectory)</StipulateSolutionRoot>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsStipulateTool)' != 'true'">
-    <CompilerVisibleProperty Include="StipulateSolutionRoot" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)Stipulate.Contracts\Stipulate.Contracts.csproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)Stipulate.Analyzers\Stipulate.Analyzers.csproj"
                       OutputItemType="Analyzer"
@@ -100,10 +89,10 @@
                       ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(StipulateMode)' == 'Interceptors' And '$(IsStipulateTool)' != 'true'">
-    <InterceptorsNamespaces>$(InterceptorsNamespaces);Net.NowhereAtAll.Stipulate.Generated</InterceptorsNamespaces>
-  </PropertyGroup>
-
+  <!--
+    Item conditions see every property's final value, the defaults Stipulate.targets sets included,
+    so these can test StipulateMode here.
+  -->
   <ItemGroup Condition="'$(StipulateMode)' == 'Interceptors' And '$(IsStipulateTool)' != 'true'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)Stipulate.Generator\Stipulate.Generator.csproj"
                       OutputItemType="Analyzer"

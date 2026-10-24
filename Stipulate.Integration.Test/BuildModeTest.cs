@@ -49,6 +49,23 @@ public class BuildModeTest
         Assert.Equal(expected, run.Output.Trim());
     }
 
+    [Theory]
+    [InlineData("Weaving")]
+    [InlineData("Interceptors")]
+    public void Build_WhenTheModeChangesToNone_RecompilesWithoutTheChecks(string enforcingMode)
+    {
+        // Arrange - nothing a change of mode touches is newer than the assembly the last build left
+        using ConsumerProject project = ConsumerProject.Create(Program);
+        _ = project.Build($"StipulateMode={enforcingMode}").AssertSucceeded();
+        _ = project.Build("StipulateMode=None").AssertSucceeded();
+
+        // Act
+        ProcessResult run = project.RunProgram().AssertSucceeded();
+
+        // Assert
+        Assert.Equal(NotValidated, run.Output.Trim());
+    }
+
     [Fact]
     public void Build_ByDefault_Weaves()
     {

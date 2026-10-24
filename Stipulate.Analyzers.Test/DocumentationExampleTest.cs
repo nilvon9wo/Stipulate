@@ -5,8 +5,9 @@ using Net.NowhereAtAll.Stipulate.Testing;
 namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>
-/// Every C# example in README.md and docs/ compiles, and the analyzer reports on it exactly the
-/// diagnostics its comments show: documentation that no longer matches the analyzer fails here.
+/// Every C# example in README.md, docs/ and the package's README compiles, and the analyzer reports
+/// on it exactly the diagnostics its comments show: documentation that no longer matches the
+/// analyzer fails here.
 /// </summary>
 public class DocumentationExampleTest
 {

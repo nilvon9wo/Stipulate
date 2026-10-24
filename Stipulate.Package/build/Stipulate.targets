@@ -1,0 +1,103 @@
+<Project>
+
+  <!--
+    Stipulate's build integration: everything a project referencing the Stipulate package gets,
+    beyond the analyzer and code fix (analyzers/) and Stipulate.Contracts (lib/). This repository
+    imports this same file (Directory.Build.targets), so its own builds exercise what ships.
+
+    It is a .targets file, imported after the project's own properties, so a project can set
+    StipulateMode and the other properties below in its .csproj as well as in a
+    Directory.Build.props or on the command line.
+
+    StipulateMode chooses how the validation attributes are enforced at run time:
+
+      Weaving       (default) After the project compiles, the weaver rewrites its assembly so that
+                    every method with validated parameters checks them on entry.
+      Interceptors  The generator intercepts each call to such a method at compile time.
+      None          No enforcement; the analyzer still checks contracts.
+  -->
+  <PropertyGroup>
+    <StipulateMode Condition="'$(StipulateMode)' == ''">Weaving</StipulateMode>
+  </PropertyGroup>
+
+  <!--
+    Assemblies whose files are under StipulateSolutionRoot count as part of the solution: an
+    attribute declared in one that can't be compared is reported as ST2001 ("describe it") rather
+    than ST2002 ("it's someone else's; describe it from your assembly"). By default, the solution's
+    folder when building one, otherwise the project's own.
+  -->
+  <PropertyGroup Condition="'$(StipulateSolutionRoot)' == ''">
+    <StipulateSolutionRoot Condition="'$(SolutionDir)' != '' And '$(SolutionDir)' != '*Undefined*'">$(SolutionDir)</StipulateSolutionRoot>
+    <StipulateSolutionRoot Condition="'$(StipulateSolutionRoot)' == ''">$(MSBuildProjectDirectory)</StipulateSolutionRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="StipulateSolutionRoot" />
+    <!--
+      A change of mode must recompile: the assembly in obj\ was woven, or compiled with the
+      interceptors, and nothing a change of mode touches is newer than it. MSBuild hashes these
+      items into CoreCompileInputs.cache, which recompiles whenever the hash changes.
+    -->
+    <CoreCompileCache Include="StipulateMode=$(StipulateMode)" />
+  </ItemGroup>
+
+  <!-- Interceptors -->
+  <PropertyGroup Condition="'$(StipulateMode)' == 'Interceptors'">
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Net.NowhereAtAll.Stipulate.Generated</InterceptorsNamespaces>
+  </PropertyGroup>
+
+  <!--
+    The package ships the generator with the analyzers, so the compiler would load it in every
+    mode; outside Interceptors mode, take it out again once NuGet has added the package's analyzers.
+  -->
+  <Target Name="StipulateRemoveGenerator"
+          AfterTargets="ResolveLockFileAnalyzers"
+          Condition="'$(StipulateMode)' != 'Interceptors'">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'Net.NowhereAtAll.Stipulate.Generator'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Weaving -->
+  <PropertyGroup Condition="'$(StipulateMode)' == 'Weaving'">
+    <StipulateWeave>true</StipulateWeave>
+    <StipulateWeaverPath Condition="'$(StipulateWeaverPath)' == ''">$(MSBuildThisFileDirectory)..\tools\net8.0\Net.NowhereAtAll.Stipulate.Weaver.dll</StipulateWeaverPath>
+    <StipulateReferencesFile>$(IntermediateOutputPath)Stipulate.references</StipulateReferencesFile>
+    <StipulateDotnet>$(DOTNET_HOST_PATH)</StipulateDotnet>
+    <StipulateDotnet Condition="'$(StipulateDotnet)' == ''">dotnet</StipulateDotnet>
+  </PropertyGroup>
+
+  <!-- Recompile (and so re-weave) when the weaver itself changes. -->
+  <ItemGroup Condition="'$(StipulateWeave)' == 'true'">
+    <CustomAdditionalCompileInputs Include="$(StipulateWeaverPath)" />
+  </ItemGroup>
+
+  <!--
+    Rewrite the freshly compiled assembly in obj\ before it is copied to bin\. Runs even when
+    CoreCompile was skipped; the weaver recognises an already-woven assembly and leaves it alone.
+  -->
+  <Target Name="StipulateWeave"
+          AfterTargets="CoreCompile"
+          Condition="'$(StipulateWeave)' == 'true'">
+    <Error Condition="!Exists('$(StipulateWeaverPath)')"
+           Code="ST0005"
+           Text="The Stipulate weaver isn't where StipulateWeaverPath says: '$(StipulateWeaverPath)' does not exist." />
+    <WriteLinesToFile File="$(StipulateReferencesFile)"
+                      Lines="@(ReferencePath->'%(FullPath)')"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+    <!--
+      The weaver reports its own failures as canonical "error STxxxx:" lines (which Exec turns into
+      build errors) and then exits with 2. Any other non-zero exit means it crashed or never
+      started, without reporting anything, so that gets a specific error instead of MSB3073.
+    -->
+    <Exec Command="&quot;$(StipulateDotnet)&quot; &quot;$(StipulateWeaverPath)&quot; &quot;@(IntermediateAssembly->'%(FullPath)')&quot; &quot;$(StipulateReferencesFile)&quot;"
+          IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="_StipulateExitCode" />
+    </Exec>
+    <Error Condition="'$(_StipulateExitCode)' != '0' And '$(_StipulateExitCode)' != '2'"
+           Code="ST0004"
+           Text="The Stipulate weaver crashed before it could weave '@(IntermediateAssembly)' (exit code $(_StipulateExitCode)); see the build output above for the exception. On Windows, 'An Application Control policy has blocked this file' means Windows refused to load the weaver; build under WSL or ask for an exception for this folder." />
+  </Target>
+
+</Project>

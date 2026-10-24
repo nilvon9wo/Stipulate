@@ -15,6 +15,11 @@
 7. `scripts/verify-doc-links.py`.
 8. `scripts/verify-gates.py`.
 
+## Publishing
+
+`.github/workflows/publish.yml` publishes the package when a merge to `main` adds a release
+heading to `CHANGELOG.md`; see [packaging](packaging.md#releasing).
+
 ## The Windows job
 
 Builds and runs the tests on Windows. The weaver runs through MSBuild's `Exec`, with Windows

@@ -1,0 +1,82 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Builds nothing of its own: it packs the Stipulate package from the other projects' outputs.
+
+      lib/netstandard2.0/      Stipulate.Contracts, for [ComparableValidation]
+      analyzers/dotnet/cs/     the analyzer, the code fix, and the generator (which
+                               build/Stipulate.targets removes again outside Interceptors mode)
+      tools/net8.0/            the weaver and its dependencies, run by build/Stipulate.targets
+      build/Stipulate.targets  the build integration; build/, not buildTransitive/, so that only
+                               projects that reference Stipulate themselves are woven
+
+    The project references only order the build; each is PrivateAssets="all", so none becomes a
+    package dependency, and the package has none.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IsPackable>true</IsPackable>
+    <PackageId>Stipulate</PackageId>
+    <Authors>Brian Kessler</Authors>
+    <Description>Makes the DataAnnotations validation attributes on method parameters mean something: enforces them on every call (by weaving the IL, or with interceptors), and checks at compile time that implementations and overrides honour the attributes of the interfaces and base classes they implement.</Description>
+    <PackageTags>validation;dataannotations;preconditions;liskov;contracts;analyzer;roslyn;weaving;interceptors</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/nilvon9wo/Stipulate</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nilvon9wo/Stipulate</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);StipulatePackageContent</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stipulate.Contracts\Stipulate.Contracts.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Stipulate.Analyzers\Stipulate.Analyzers.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Stipulate.CodeFixes\Stipulate.CodeFixes.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Stipulate.Generator\Stipulate.Generator.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <!-- A net8.0 executable, which a netstandard2.0 project can't reference: only build it first. -->
+    <ProjectReference Include="..\Stipulate.Weaver\Stipulate.Weaver.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" SkipGetTargetFrameworkProperties="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="build\Stipulate.targets" Pack="true" PackagePath="build\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!--
+    Each project's output, as built in this configuration, where the package wants it. The pack's
+    own TargetFramework is removed: each project has its own.
+  -->
+  <Target Name="StipulatePackageContent">
+    <MSBuild Projects="..\Stipulate.Contracts\Stipulate.Contracts.csproj"
+             Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration)"
+             RemoveProperties="TargetFramework">
+      <Output TaskParameter="TargetOutputs" ItemName="_StipulateContracts" />
+    </MSBuild>
+    <MSBuild Projects="..\Stipulate.Analyzers\Stipulate.Analyzers.csproj;..\Stipulate.CodeFixes\Stipulate.CodeFixes.csproj;..\Stipulate.Generator\Stipulate.Generator.csproj"
+             Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration)"
+             RemoveProperties="TargetFramework">
+      <Output TaskParameter="TargetOutputs" ItemName="_StipulateAnalyzers" />
+    </MSBuild>
+    <MSBuild Projects="..\Stipulate.Weaver\Stipulate.Weaver.csproj"
+             Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration)"
+             RemoveProperties="TargetFramework">
+      <Output TaskParameter="TargetOutputs" ItemName="_StipulateWeaver" />
+    </MSBuild>
+    <PropertyGroup>
+      <_StipulateWeaverDirectory>@(_StipulateWeaver->'%(RootDir)%(Directory)')</_StipulateWeaverDirectory>
+    </PropertyGroup>
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="@(_StipulateContracts);@(_StipulateContracts->'%(RootDir)%(Directory)%(Filename).xml')"
+                              PackagePath="lib\netstandard2.0" />
+      <TfmSpecificPackageFile Include="@(_StipulateAnalyzers)" PackagePath="analyzers\dotnet\cs" />
+      <!-- The weaver runs with `dotnet`, so its apphost isn't needed: only assemblies and runtime configuration. -->
+      <TfmSpecificPackageFile Include="$(_StipulateWeaverDirectory)*.dll;$(_StipulateWeaverDirectory)*.runtimeconfig.json;$(_StipulateWeaverDirectory)*.deps.json"
+                              PackagePath="tools\net8.0" />
+    </ItemGroup>
+  </Target>
+
+</Project>

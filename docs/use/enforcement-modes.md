@@ -9,11 +9,13 @@ at run time:
 | `Interceptors` | `Stipulate.Generator` intercepts each call to such a method at compile time, checking the arguments before forwarding them. | Only calls compiled in a project that uses the generator. |
 | `None` | Nothing at run time. | Nothing; the analyzer still checks contracts. |
 
-Set it for every project in `Directory.Build.props`, or for one build:
+Set it in the project file, for every project in a `Directory.Build.props`, or for one build:
 
 ```shell
 dotnet build -p:StipulateMode=Interceptors
 ```
+
+Changing the mode recompiles the project, so nothing of the previous mode's checks is left behind.
 
 Whatever the mode, a check fails the same way:
 
