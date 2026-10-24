@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Operations;
@@ -6,16 +7,19 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Net.NowhereAtAll.Stipulate.Analyzers;
 
 /// <summary>Works out what is known at compile time about the value an operation passes.</summary>
-internal static class ArgumentValueReader
+internal sealed class ArgumentValueReader(StaticReadOnlyFields fields)
 {
     private const string ListName = "System.Collections.Generic.List<T>";
 
+    private readonly StaticReadOnlyFields _fields = fields;
+
     /// <param name="value">The value as passed, after any conversion to the parameter's type.</param>
     /// <param name="noun">How the messages name it, before what it is: "The argument", "The default value".</param>
+    /// <param name="cancellationToken">Cancels reading a <c>static readonly</c> field's initializer.</param>
     /// <returns>What is known, or <c>null</c> if nothing is.</returns>
-    public static ArgumentValue? Read(IOperation value, string noun)
+    public ArgumentValue? Read(IOperation value, string noun, CancellationToken cancellationToken)
     {
-        IOperation passed = Unwrap(value);
+        IOperation passed = this.Resolve(Unwrap(value), cancellationToken);
         string written = value.Syntax.ToString();
         return passed.ConstantValue is { HasValue: true, Value: var constant }
             ? ArgumentValue.OfConstant(Describe(noun, written, constant), passed.Type, constant)
@@ -45,6 +49,21 @@ internal static class ArgumentValueReader
         => count == 1
             ? noun
             : noun + "s";
+
+    /// <summary>
+    /// A <c>static readonly</c> field's initial value, if nothing can change it: a constant, or an
+    /// array, whose length is fixed. Not a field set from another field, whose value depends on
+    /// which is initialized first, nor a collection that can grow, such as a <c>List&lt;T&gt;</c>.
+    /// Otherwise, <paramref name="passed"/> itself.
+    /// </summary>
+    private IOperation Resolve(IOperation passed, CancellationToken cancellationToken)
+        => passed is IFieldReferenceOperation { Field: var field }
+            && (field.IsStatic, field.IsReadOnly) is (true, true)
+            && this._fields.FindInitialValue(field, cancellationToken) is { } initial
+            && Unwrap(initial) is var value
+            && (value.ConstantValue.HasValue || value.Type is IArrayTypeSymbol)
+            ? value
+            : passed;
 
     /// <summary>
     /// Looks through the conversions that box a value, make it nullable, or change only its static

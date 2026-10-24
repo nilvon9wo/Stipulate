@@ -10,8 +10,9 @@ namespace Net.NowhereAtAll.Stipulate.Analyzers;
 
 /// <summary>
 /// Checks every value passed to a validated parameter that is known at compile time (a constant,
-/// <c>null</c>, or an array or collection written where it is passed) against the parameter's
-/// <c>ValidationAttribute</c>s, and so does every parameter's default value.
+/// <c>null</c>, an array or collection written where it is passed, or a <c>static readonly</c> field set
+/// to a constant or an array) against the parameter's <c>ValidationAttribute</c>s, and so does
+/// every parameter's default value.
 /// </summary>
 /// <remarks>
 /// Only a value an attribute certainly rejects is reported, and only by the attributes the analyzer
@@ -48,18 +49,23 @@ public sealed class ArgumentAnalyzer : DiagnosticAnalyzer
             out string? solutionRoot
         );
         ValidationAttributeDescriber describer = new(start.Compilation, solutionRoot);
+        ArgumentValueReader reader = new(new StaticReadOnlyFields(start.Compilation));
         start.RegisterOperationAction(
-            context => AnalyzeCall(context, describer),
+            context => AnalyzeCall(context, describer, reader),
             OperationKind.Invocation,
             OperationKind.ObjectCreation
         );
         start.RegisterOperationAction(
-            context => AnalyzeDefault(context, describer),
+            context => AnalyzeDefault(context, describer, reader),
             OperationKind.ParameterInitializer
         );
     }
 
-    private static void AnalyzeCall(OperationAnalysisContext context, ValidationAttributeDescriber describer)
+    private static void AnalyzeCall(
+        OperationAnalysisContext context,
+        ValidationAttributeDescriber describer,
+        ArgumentValueReader reader
+    )
     {
         ImmutableArray<IArgumentOperation> arguments = context.Operation is IInvocationOperation invocation
             ? invocation.Arguments
@@ -68,7 +74,7 @@ public sealed class ArgumentAnalyzer : DiagnosticAnalyzer
         {
             ArgumentValue? value = argument.ArgumentKind switch
             {
-                ArgumentKind.Explicit => ArgumentValueReader.Read(argument.Value, ArgumentNoun),
+                ArgumentKind.Explicit => reader.Read(argument.Value, ArgumentNoun, context.CancellationToken),
                 ArgumentKind.ParamArray or ArgumentKind.ParamCollection =>
                     ArgumentValueReader.ReadParams(argument.Value),
                 _ => null,
@@ -77,10 +83,14 @@ public sealed class ArgumentAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static void AnalyzeDefault(OperationAnalysisContext context, ValidationAttributeDescriber describer)
+    private static void AnalyzeDefault(
+        OperationAnalysisContext context,
+        ValidationAttributeDescriber describer,
+        ArgumentValueReader reader
+    )
     {
         IParameterInitializerOperation initializer = (IParameterInitializerOperation)context.Operation;
-        ArgumentValue? value = ArgumentValueReader.Read(initializer.Value, DefaultNoun);
+        ArgumentValue? value = reader.Read(initializer.Value, DefaultNoun, context.CancellationToken);
         Location location = initializer.Value.Syntax.GetLocation();
         Check(context, describer, initializer.Parameter, value, location, CallsOmittingIt);
     }

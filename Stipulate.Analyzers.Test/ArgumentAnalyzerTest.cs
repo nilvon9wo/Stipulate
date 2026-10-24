@@ -127,6 +127,110 @@ public class ArgumentAnalyzerTest
         DiagnosticAssert.MatchesMarkup(markup, diagnostics);
     }
 
+    [Theory]
+    [InlineData("public static readonly int Zero = 0;", "Range(1, 10)", "int", "Values.Zero")]
+    [InlineData("public static readonly long Zero = 0;", "Range(1, 10)", "object", "Values.Zero")]
+    [InlineData("public static readonly string Blank = \" \";", "Required", "string", "Values.Blank")]
+    [InlineData("public static readonly object? Nothing = null;", "Required", "object", "Values.Nothing")]
+    [InlineData("public static readonly int[] None = [];", "MinLength(1)", "int[]", "Values.None")]
+    [InlineData(
+        "public static readonly int[] None = new int[0];",
+        "MinLength(1)",
+        "System.Collections.Generic.IEnumerable<int>",
+        "Values.None"
+    )]
+    [InlineData("public static readonly int Zero = 0; static Values() { }", "Range(1, 10)", "int", "Values.Zero")]
+    [InlineData(
+        "public const int Zero = 0; public static readonly int Copy = Zero - 1;",
+        "Range(1, 10)",
+        "int",
+        "Values.Copy"
+    )]
+    public async Task Analyze_WhenAStaticReadOnlyFieldsInitialValueIsRejected_ReportsST3001(
+        string field,
+        string attribute,
+        string type,
+        string argument
+    )
+    {
+        // Arrange - the field can't be set again, nor an array's length changed
+        DiagnosticMarkup markup = new(PassField(field, attribute, type, $"{{|ST3001:{argument}|}}"));
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
+
+    [Theory]
+
+    // The static constructor might set it again.
+    [InlineData("public static readonly int Zero = 0; static Values() => Zero = 5;", "Values.Zero")]
+
+    // Not set once and for all: not readonly, not static, or not initialized here.
+    [InlineData("public static int Zero = 0;", "Values.Zero")]
+    [InlineData("public readonly int Zero = 0;", "new Values().Zero")]
+    [InlineData("public static readonly int Zero;", "Values.Zero")]
+    [InlineData("public static readonly int Zero = int.Parse(\"0\");", "Values.Zero")]
+
+    // Set from another static readonly field, which may not be initialized yet.
+    [InlineData("public static readonly int Zero = 0; public static readonly int Copy = Zero;", "Values.Copy")]
+    public async Task Analyze_WhenAFieldsValueIsNotCertain_ReportsNothing(string field, string argument)
+    {
+        // Arrange
+        DiagnosticMarkup markup = new(PassField(field, "Range(1, 10)", "int", argument));
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
+
+    [Theory]
+
+    // A list can grow; an array from a method has a length nobody wrote.
+    [InlineData(
+        "public static readonly System.Collections.Generic.List<int> None = [];",
+        "System.Collections.Generic.List<int>"
+    )]
+    [InlineData("public static readonly int[] None = System.Array.Empty<int>();", "int[]")]
+    public async Task Analyze_WhenAFieldsCollectionCanChangeOrIsNotWritten_ReportsNothing(string field, string type)
+    {
+        // Arrange
+        DiagnosticMarkup markup = new(PassField(field, "MinLength(1)", type, "Values.None"));
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
+
+    [Fact]
+    public async Task Analyze_WhenAStaticReadOnlyFieldComesFromAnotherAssembly_ReportsNothing()
+    {
+        // Arrange - its initializer isn't there to read
+        MetadataReference values = TestCompilation.CompileToImage(
+            "public static class Values { public static readonly int Zero = 0; }",
+            "Values"
+        );
+        DiagnosticMarkup markup = new(
+            """
+            public static class Target { public static void Accept([Range(1, 10)] int value) { } }
+
+            public static class Caller { public static void Call() => Target.Accept(Values.Zero); }
+            """
+        );
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup, values);
+
+        // Assert
+        DiagnosticAssert.MatchesMarkup(markup, diagnostics);
+    }
+
     [Fact]
     public async Task Analyze_WhenTheAttributeCanNotBeDescribed_ReportsNothing()
     {
@@ -411,6 +515,12 @@ public class ArgumentAnalyzerTest
             + "[Range(1, 10)], which requires Value >= 1, but Value is 0" + ThrowsAndFix("Range(1, 10)")
         },
         {
+            "public static class Values { public static readonly int[] None = []; }\n"
+            + Call("MinLength(1)", "int[]", "Values.None"),
+            "The argument Values.None for parameter 'value' of 'Target.Accept(int[])' is rejected by "
+            + "[MinLength(1)], which requires Length >= 1, but Length is 0" + ThrowsAndFix("MinLength(1)")
+        },
+        {
             Call("MinLength(1)", "int[]", "[]"),
             "The argument [] for parameter 'value' of 'Target.Accept(int[])' is rejected by [MinLength(1)], which "
             + "requires Length >= 1, but Length is 0" + ThrowsAndFix("MinLength(1)")
@@ -492,6 +602,19 @@ public class ArgumentAnalyzerTest
         => $". Wherever Stipulate enforces the attribute at run time, {calls} throws {exception}. Pass a value "
             + $"[{attribute}] accepts, or, if the value is right, correct the attribute. If the call is meant to "
             + "throw, as in a test of the check, suppress ST3001 there.";
+
+    /// <summary>
+    /// A class <c>Values</c> with <paramref name="field"/>, and a call that passes
+    /// <paramref name="argument"/>, one of its fields, to a validated parameter.
+    /// </summary>
+    private static string PassField(string field, string attribute, string type, string argument)
+        => $$"""
+            public class Values
+            {
+                {{field}}
+            }
+
+            """ + Call(attribute, type, argument);
 
     /// <summary>A method with one validated parameter, and a call that passes it <paramref name="argument"/>.</summary>
     private static string Call(string attribute, string type, string argument)
