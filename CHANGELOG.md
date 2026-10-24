@@ -45,4 +45,5 @@ method parameters mean something.
 - **A code fix** that restates a missing attribute from the contract, one at a time or all at once.
 - **`[ComparableValidation]`**, which describes a custom validation attribute, your own or a
   package's, so the analyzer can compare it with the built-in ones (ST2001-ST2003).
-- **Documentation**, in which every C# example is compiled and checked by a test.
+- **Documentation**, in which every C# example is compiled and checked by a test: the diagnostics
+  its comments show, and the words they quote from each message.

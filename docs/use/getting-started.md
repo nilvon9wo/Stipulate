@@ -69,7 +69,8 @@ public static class Multiplier
 
 public static class Caller
 {
-    // error ST3001: the argument [] is rejected by [MinLength(1)]: Length is 0
+    // error ST3001: The argument [] ... is rejected by [MinLength(1)], which requires Length >= 1, but
+    // Length is 0
     public static int[] Call() => Multiplier.Multiply([]);
 }
 ```
@@ -85,7 +86,9 @@ dotnet add package Stipulate
 The project then gets
 
 - the analyzer and its code fix, live in the IDE and in the build;
-- `Stipulate.Contracts`, for [describing custom attributes](custom-attributes.md);
+- `Stipulate.Contracts`, for [describing custom attributes](custom-attributes.md) and for
+  [showing a parameter's value](enforcement-modes.md#what-the-message-shows-of-the-argument) when a
+  check rejects it;
 - run-time enforcement, by default by weaving (see [enforcement modes](enforcement-modes.md)).
 
 It needs the .NET SDK 9.0.300 or later, or Visual Studio 2022 17.14 or later: the analyzer is

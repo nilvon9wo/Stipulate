@@ -46,4 +46,5 @@ your assembly. To intercept call sites at compile time instead, or only check co
 Stipulate too, and are held to your contracts.
 
 Documentation: <https://github.com/nilvon9wo/Stipulate/tree/main/docs>, including every rule,
-the enforcement modes, and describing your own validation attributes with `[ComparableValidation]`.
+the enforcement modes and their messages (with `[ShowValueInMessage]` to show a value), and
+describing your own validation attributes with `[ComparableValidation]`.

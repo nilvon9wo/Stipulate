@@ -8,8 +8,8 @@ implement.
 ## Using it
 
 - [Getting started](use/getting-started.md): what it does, and a first example.
-- [Enforcement modes](use/enforcement-modes.md): Weaving, Interceptors or None, and what each
-  one validates.
+- [Enforcement modes](use/enforcement-modes.md): Weaving, Interceptors or None, what each
+  one validates, and what a rejected argument throws, with `[ShowValueInMessage]`.
 - [Contracts](use/contracts.md): what the analyzer checks, and how to satisfy it.
 - [Custom validation attributes](use/custom-attributes.md): describing your own attributes, or
   someone else's, with `[ComparableValidation]` so the analyzer can compare them.
@@ -23,5 +23,5 @@ implement.
 - [Contributing](contribute/README.md): coding standards, coverage, local development, CI.
 
 Every C# example in these pages is compiled by a test, which checks that the analyzer reports
-exactly the diagnostics the example's comments show (see
+exactly the diagnostics the example's comments show, in the words of their messages (see
 [test suites](contribute/test-suites.md#documentation-examples)).

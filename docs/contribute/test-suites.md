@@ -29,8 +29,10 @@ dotnet test --project Stipulate.Weaver.Test                              # one p
 block in `README.md`, `docs/` and the package's README (`Stipulate.Package/README.md`, shown on
 nuget.org), compiles it, runs the analyzer over it, and requires exactly
 the diagnostics its comments show: a comment `// error ST1001: ...` or `// warning ST1002` for
-each one, and no compilation errors. A page that claims what the analyzer doesn't do fails the
-build, and so does an example that no longer compiles.
+each one, and no compilation errors. Text after the colon, continued on the comment lines that
+follow, must quote the diagnostic's message: word for word, with `...` where it leaves part out,
+and only its first letter's case free. A page that claims what the analyzer doesn't do, or words
+it differently, fails the build, and so does an example that no longer compiles.
 
 Two markers, on the line just before a fence, change how it is read:
 

@@ -27,7 +27,7 @@ public class Multiplier : IMultiplier
 | `Stipulate.Generator` | Alternatively, intercepts call sites at compile time so callers validate the arguments they pass. |
 | `Stipulate.Analyzers` | Checks implementations and overrides against their contracts, live in the IDE and in the build. |
 | `Stipulate.CodeFixes` | IDE quick fix that restates a contract's missing attribute. |
-| `Stipulate.Contracts` | `[ComparableValidation]`, which describes a custom validation attribute so the analyzer can compare it. |
+| `Stipulate.Contracts` | `[ComparableValidation]`, which describes a custom validation attribute so the analyzer can compare it, and `[ShowValueInMessage]`, which shows a parameter's value when a check rejects it. |
 | `Stipulate.Package` | Packs all of the above, and the build integration, as the `Stipulate` NuGet package. |
 
 Install it with `dotnet add package Stipulate`; see [getting started](docs/use/getting-started.md).
@@ -62,7 +62,7 @@ for describing your own.
 
 [docs/](docs/README.md): using Stipulate, every rule with an example and its fix, and
 contributing. Every C# example in it, and in this README, is compiled by a test that checks the
-analyzer reports exactly what the example shows.
+analyzer reports exactly what the example shows, in the words it shows.
 
 ## Building
 
