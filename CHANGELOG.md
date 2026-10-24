@@ -10,6 +10,8 @@ that to `main` publishes the `Stipulate` package at that version (see
 
 ## [Unreleased]
 
+## [0.2.0-preview.1] - 2026-10-24
+
 ### Added
 
 - **Weaving for Visual Basic and F# projects**, with the run-time check in their own language
@@ -24,6 +26,7 @@ that to `main` publishes the `Stipulate` package at that version (see
   `StipulateFSharpCallsFromOtherAssembliesSwitches`, so a project can pass others should a
   version of F# drop one (see
   [if F# rejects a switch](docs/use/other-languages.md#if-f-rejects-a-switch)).
+
 ### Fixed
 
 - **Visual Basic and F# projects that get Stipulate**, directly or through a library that uses
