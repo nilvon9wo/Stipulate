@@ -10,6 +10,15 @@ that to `main` publishes the `Stipulate` package at that version (see
 
 ## [Unreleased]
 
+### Fixed
+
+- **Visual Basic and F# projects that get Stipulate**, directly or through a library that uses
+  it, no longer fail to build: they were given the C# source of the run-time check to compile.
+  They now get only `Stipulate.Contracts`, and a warning, ST0008, that their attributes aren't
+  enforced, unless their `StipulateMode` is `None`. Their calls into C# assemblies that Stipulate
+  wove are checked as before. See
+  [other .NET languages](docs/use/other-languages.md).
+
 ## [0.1.0-preview.1] - 2026-10-24
 
 The first release of **Stipulate**, which makes the DataAnnotations validation attributes on

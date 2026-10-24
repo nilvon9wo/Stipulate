@@ -14,6 +14,7 @@ internal sealed class ConsumerProject : IDisposable
     private const string NetTarget = "net10.0";
     private const string LibraryName = "Library";
     private const string MiddleLibraryName = "Middle";
+    private const string UnknownLanguage = "Not a language a project can be in.";
 
     /// <summary>The temporary directory, holding the project and any other it references.</summary>
     private readonly string _directory;
@@ -41,7 +42,7 @@ internal sealed class ConsumerProject : IDisposable
         ConsumerProject project = new(directory, directory, NetTarget, buildsProjectReferences: false);
         project.Write("Directory.Build.props", Import("Directory.Build.props"));
         project.Write("Directory.Build.targets", Import("Directory.Build.targets"));
-        project.Write(Name + ".csproj", ProjectFile("Exe", NetTarget, string.Empty));
+        project.Write(Name + ".csproj", ProjectFile(ProjectLanguage.CSharp, "Exe", NetTarget));
         project.Write("Program.cs", program);
         return project;
     }
@@ -50,24 +51,26 @@ internal sealed class ConsumerProject : IDisposable
     /// A project that references the Stipulate package from <paramref name="feed"/>.
     /// </summary>
     /// <param name="feed">Where the package comes from.</param>
-    /// <param name="source">The project's one source file, Program.cs.</param>
+    /// <param name="source">The project's one source file, Program.cs (or .vb, or .fs).</param>
     /// <param name="outputType">The project's OutputType: Exe or Library.</param>
     /// <param name="targetFramework">The project's TargetFramework.</param>
     /// <param name="items">More of the project file's items, such as package references.</param>
+    /// <param name="language">The language the project, and <paramref name="source"/>, are written in.</param>
     public static ConsumerProject CreateFromPackage(
         PackageFeed feed,
         [StringSyntax("C#")] string source,
         string outputType = "Exe",
         string targetFramework = NetTarget,
-        string items = ""
+        string items = "",
+        ProjectLanguage language = ProjectLanguage.CSharp
     )
     {
         string directory = CreateDirectory();
         ConsumerProject project = new(directory, directory, targetFramework, buildsProjectReferences: true);
         WriteFeed(directory, feed);
-        string projectFile = ProjectFile(outputType, targetFramework, string.Empty, PackageReference + items);
-        project.Write(Name + ".csproj", projectFile);
-        project.Write("Program.cs", source);
+        string projectFile = ProjectFile(language, outputType, targetFramework, PackageReference + items);
+        project.Write(Name + ProjectExtension(language), projectFile);
+        project.Write(SourceFileName(language), source);
         return project;
     }
 
@@ -81,15 +84,17 @@ internal sealed class ConsumerProject : IDisposable
     /// How the program references the library, and each library the one before it; a package is
     /// packed here, with the library's defaults, into a feed of the project's own.
     /// </param>
-    /// <param name="library">The library's one source file.</param>
-    /// <param name="program">The program's Program.cs.</param>
+    /// <param name="library">The library's one source file, in C#, as every library here is.</param>
+    /// <param name="program">The program's Program.cs (or .vb, or .fs).</param>
     /// <param name="librariesBetween">How many libraries, with nothing of Stipulate's in them, stand between.</param>
+    /// <param name="language">The language the program is written in.</param>
     public static ConsumerProject CreateOnLibrary(
         PackageFeed feed,
         LibraryReference libraryReference,
         [StringSyntax("C#")] string library,
         [StringSyntax("C#")] string program,
-        int librariesBetween = 0
+        int librariesBetween = 0,
+        ProjectLanguage language = ProjectLanguage.CSharp
     )
     {
         string directory = CreateDirectory();
@@ -105,8 +110,8 @@ internal sealed class ConsumerProject : IDisposable
         string path = System.IO.Path.Combine(directory, Name);
         _ = Directory.CreateDirectory(path);
         ConsumerProject project = new(directory, path, NetTarget, buildsProjectReferences: true);
-        project.Write(Name + ".csproj", ProjectFile("Exe", NetTarget, string.Empty, reference));
-        project.Write("Program.cs", program);
+        project.Write(Name + ProjectExtension(language), ProjectFile(language, "Exe", NetTarget, reference));
+        project.Write(SourceFileName(language), program);
         return project;
     }
 
@@ -175,7 +180,7 @@ internal sealed class ConsumerProject : IDisposable
     {
         string libraryPath = Directory.CreateDirectory(System.IO.Path.Combine(directory, name)).FullName;
         string libraryProject = System.IO.Path.Combine(libraryPath, name + ".csproj");
-        File.WriteAllText(libraryProject, ProjectFile("Library", NetTarget, string.Empty, reference));
+        File.WriteAllText(libraryProject, ProjectFile(ProjectLanguage.CSharp, "Library", NetTarget, reference));
         File.WriteAllText(System.IO.Path.Combine(libraryPath, name + ".cs"), source);
         if (libraryReference == LibraryReference.Project)
         {
@@ -211,20 +216,53 @@ internal sealed class ConsumerProject : IDisposable
     private static string Import(string fileName)
         => $"""<Project><Import Project="{System.IO.Path.Combine(Dotnet.RepositoryRoot, fileName)}" /></Project>""";
 
-    private static string ProjectFile(string outputType, string targetFramework, string properties, string items = "")
+    private static string ProjectFile(
+        ProjectLanguage language,
+        string outputType,
+        string targetFramework,
+        string items = ""
+    )
         => $"""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
                 <OutputType>{outputType}</OutputType>
                 <TargetFramework>{targetFramework}</TargetFramework>
-                <ImplicitUsings>enable</ImplicitUsings>
-                <Nullable>enable</Nullable>
-                <LangVersion>latest</LangVersion>
-                {properties}
+                {LanguageProperties(language)}
               </PropertyGroup>
               <ItemGroup>
+                {LanguageItems(language)}
                 {items}
               </ItemGroup>
             </Project>
             """;
+
+    /// <summary>C#'s conveniences, which the other languages don't have.</summary>
+    private static string LanguageProperties(ProjectLanguage language)
+        => language == ProjectLanguage.CSharp
+            ? "<ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><LangVersion>latest</LangVersion>"
+            : string.Empty;
+
+    /// <summary>An F# project lists its source files; the others find theirs.</summary>
+    private static string LanguageItems(ProjectLanguage language)
+        => language == ProjectLanguage.FSharp
+            ? $"""<Compile Include="{SourceFileName(language)}" />"""
+            : string.Empty;
+
+    private static string ProjectExtension(ProjectLanguage language)
+        => language switch
+        {
+            ProjectLanguage.CSharp => ".csproj",
+            ProjectLanguage.VisualBasic => ".vbproj",
+            ProjectLanguage.FSharp => ".fsproj",
+            _ => throw new ArgumentOutOfRangeException(nameof(language), language, UnknownLanguage),
+        };
+
+    private static string SourceFileName(ProjectLanguage language)
+        => language switch
+        {
+            ProjectLanguage.CSharp => "Program.cs",
+            ProjectLanguage.VisualBasic => "Program.vb",
+            ProjectLanguage.FSharp => "Program.fs",
+            _ => throw new ArgumentOutOfRangeException(nameof(language), language, UnknownLanguage),
+        };
 }
