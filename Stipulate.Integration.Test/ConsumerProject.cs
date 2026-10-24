@@ -12,22 +12,32 @@ internal sealed class ConsumerProject : IDisposable
     private const string Name = "Consumer";
     private const string DirectoryPrefix = "Stipulate.Integration.Test.";
     private const string NetTarget = "net10.0";
+    private const string LibraryName = "Library";
 
+    /// <summary>The temporary directory, holding the project and any other it references.</summary>
+    private readonly string _directory;
     private readonly string _targetFramework;
+    private readonly bool _buildsProjectReferences;
 
-    private ConsumerProject(string path, string targetFramework)
+    private ConsumerProject(string directory, string path, string targetFramework, bool buildsProjectReferences)
     {
+        this._directory = directory;
         this.Path = path;
         this._targetFramework = targetFramework;
+        this._buildsProjectReferences = buildsProjectReferences;
     }
 
     public string Path { get; }
+
+    private static string PackageReference
+        => $"""<PackageReference Include="Stipulate" Version="{Dotnet.PackageVersion}" />""";
 
     /// <summary>A console program wired to this repository's projects.</summary>
     /// <param name="program">The project's Program.cs.</param>
     public static ConsumerProject Create([StringSyntax("C#")] string program)
     {
-        ConsumerProject project = CreateEmpty(NetTarget);
+        string directory = CreateDirectory();
+        ConsumerProject project = new(directory, directory, NetTarget, buildsProjectReferences: false);
         project.Write("Directory.Build.props", Import("Directory.Build.props"));
         project.Write("Directory.Build.targets", Import("Directory.Build.targets"));
         project.Write(Name + ".csproj", ProjectFile("Exe", NetTarget, string.Empty));
@@ -36,8 +46,7 @@ internal sealed class ConsumerProject : IDisposable
     }
 
     /// <summary>
-    /// A project that references the Stipulate package from <paramref name="feed"/>, restored into
-    /// a package folder of its own, so that no other build's copy of the same version is used.
+    /// A project that references the Stipulate package from <paramref name="feed"/>.
     /// </summary>
     /// <param name="feed">Where the package comes from.</param>
     /// <param name="source">The project's one source file, Program.cs.</param>
@@ -52,19 +61,66 @@ internal sealed class ConsumerProject : IDisposable
         string items = ""
     )
     {
-        ConsumerProject project = CreateEmpty(targetFramework);
-        project.Write("nuget.config", feed.NuGetConfig);
-        string packageReference = $"""<PackageReference Include="Stipulate" Version="{Dotnet.PackageVersion}" />""";
-        string packages = System.IO.Path.Combine(project.Path, "packages");
-        string properties = $"<RestorePackagesPath>{packages}</RestorePackagesPath>";
-        project.Write(Name + ".csproj", ProjectFile(outputType, targetFramework, properties, packageReference + items));
+        string directory = CreateDirectory();
+        ConsumerProject project = new(directory, directory, targetFramework, buildsProjectReferences: true);
+        WriteFeed(directory, feed);
+        string projectFile = ProjectFile(outputType, targetFramework, string.Empty, PackageReference + items);
+        project.Write(Name + ".csproj", projectFile);
         project.Write("Program.cs", source);
         return project;
     }
 
     /// <summary>
-    /// Builds the project; the tools it uses are already built, in this configuration, and are not
-    /// built again.
+    /// A console program that doesn't reference the Stipulate package itself, but references a
+    /// library that does: it gets the package only through the library.
+    /// </summary>
+    /// <param name="feed">Where the package comes from.</param>
+    /// <param name="libraryReference">
+    /// How the program references the library; a package is packed here, with the library's
+    /// defaults, into a feed of the project's own.
+    /// </param>
+    /// <param name="library">The library's one source file.</param>
+    /// <param name="program">The program's Program.cs.</param>
+    public static ConsumerProject CreateOnLibrary(
+        PackageFeed feed,
+        LibraryReference libraryReference,
+        [StringSyntax("C#")] string library,
+        [StringSyntax("C#")] string program
+    )
+    {
+        string directory = CreateDirectory();
+        WriteFeed(directory, feed);
+        string libraryPath = System.IO.Path.Combine(directory, LibraryName);
+        string libraryProject = System.IO.Path.Combine(libraryPath, LibraryName + ".csproj");
+        _ = Directory.CreateDirectory(libraryPath);
+        File.WriteAllText(libraryProject, ProjectFile("Library", NetTarget, string.Empty, PackageReference));
+        File.WriteAllText(System.IO.Path.Combine(libraryPath, LibraryName + ".cs"), library);
+
+        string reference = $"""<ProjectReference Include="{libraryProject}" />""";
+        if (libraryReference == LibraryReference.Package)
+        {
+            string[] pack =
+            [
+                "pack", libraryProject,
+                "--nologo",
+                "--configuration", Dotnet.Configuration,
+                "--output", LocalFeed(directory),
+            ];
+            _ = Dotnet.Run(directory, pack).AssertSucceeded();
+            reference = $"""<PackageReference Include="{LibraryName}" Version="1.0.0" />""";
+        }
+
+        string path = System.IO.Path.Combine(directory, Name);
+        _ = Directory.CreateDirectory(path);
+        ConsumerProject project = new(directory, path, NetTarget, buildsProjectReferences: true);
+        project.Write(Name + ".csproj", ProjectFile("Exe", NetTarget, string.Empty, reference));
+        project.Write("Program.cs", program);
+        return project;
+    }
+
+    /// <summary>
+    /// Builds the project. A project wired to this repository doesn't build its references: the
+    /// tools it uses are already built, in this configuration.
     /// </summary>
     /// <param name="properties">MSBuild properties, as <c>Name=Value</c>.</param>
     public ProcessResult Build(params string[] properties)
@@ -74,7 +130,7 @@ internal sealed class ConsumerProject : IDisposable
                 "build",
                 "--nologo",
                 "--configuration", Dotnet.Configuration,
-                "-p:BuildProjectReferences=false",
+                "-p:BuildProjectReferences=" + this._buildsProjectReferences,
                 .. properties.Select(static property => "-p:" + property),
             ]
         );
@@ -89,10 +145,26 @@ internal sealed class ConsumerProject : IDisposable
     public void Write(string fileName, string contents)
         => File.WriteAllText(System.IO.Path.Combine(this.Path, fileName), contents);
 
-    public void Dispose() => Directory.Delete(this.Path, recursive: true);
+    public void Dispose() => Directory.Delete(this._directory, recursive: true);
 
-    private static ConsumerProject CreateEmpty(string targetFramework)
-        => new(Directory.CreateTempSubdirectory(DirectoryPrefix).FullName, targetFramework);
+    private static string CreateDirectory() => Directory.CreateTempSubdirectory(DirectoryPrefix).FullName;
+
+    private static string LocalFeed(string directory) => System.IO.Path.Combine(directory, "feed");
+
+    /// <summary>
+    /// The feeds, for every project under <paramref name="directory"/>, restored into a package
+    /// folder of its own, so that no other build's copy of the same version is used.
+    /// </summary>
+    private static void WriteFeed(string directory, PackageFeed feed)
+    {
+        string localFeed = Directory.CreateDirectory(LocalFeed(directory)).FullName;
+        File.WriteAllText(System.IO.Path.Combine(directory, "nuget.config"), feed.NuGetConfig(localFeed));
+        string packages = System.IO.Path.Combine(directory, "packages");
+        File.WriteAllText(
+            System.IO.Path.Combine(directory, "Directory.Build.props"),
+            $"<Project><PropertyGroup><RestorePackagesPath>{packages}</RestorePackagesPath></PropertyGroup></Project>"
+        );
+    }
 
     private static string Import(string fileName)
         => $"""<Project><Import Project="{System.IO.Path.Combine(Dotnet.RepositoryRoot, fileName)}" /></Project>""";

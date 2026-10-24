@@ -25,13 +25,17 @@ public sealed class PackageFeed : IDisposable
 
     public string PackagePath => System.IO.Path.Combine(this.Path, $"Stipulate.{Dotnet.PackageVersion}.nupkg");
 
-    /// <summary>A nuget.config that finds Stipulate here, and everything else on nuget.org.</summary>
-    public string NuGetConfig
+    /// <summary>
+    /// A nuget.config that finds Stipulate here, packages a test packs itself in
+    /// <paramref name="localFeed"/>, and everything else on nuget.org.
+    /// </summary>
+    public string NuGetConfig(string localFeed)
         => $"""
             <configuration>
               <packageSources>
                 <clear />
                 <add key="Stipulate" value="{this.Path}" />
+                <add key="Local" value="{localFeed}" />
                 <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
               </packageSources>
             </configuration>

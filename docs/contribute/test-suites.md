@@ -10,7 +10,7 @@ One test project per package, each measuring that package at 100% (see
 | `Stipulate.Contracts.Test` | `[ComparableValidation]` records what it is given. |
 | `Stipulate.Generator.Test` | The generator, through Roslyn's driver with interceptors enabled: what an intercepted call does, every kind of attribute constant, which calls are intercepted, and that unrelated edits leave the pipeline cached. |
 | `Stipulate.Weaver.Test` | The weaver, on assemblies compiled to disk, woven, then loaded and called: what a woven method does, every kind of attribute constant, symbols, re-weaving, the command's exit codes and messages. |
-| `Stipulate.Integration.Test` | Real `dotnet build`s of consumer projects: wired to this repository, in each mode, across a change of mode, and the build errors ST0004 and ST0005; and referencing the packed package, in each mode, for net10.0, netstandard2.0 and net472, plus the package's contents. Not measured. |
+| `Stipulate.Integration.Test` | Real `dotnet build`s of consumer projects: wired to this repository, in each mode, across a change of mode, and the build errors ST0004 and ST0005; and referencing the packed package, in each mode, for net10.0, netstandard2.0 and net472, or only through a library, with `StipulateTransitive` on and off, plus the package's contents. Not measured. |
 | `ArrayFooTest` | The sample that started it all, woven by the real build. |
 
 `Stipulate.Testing` holds what the analyzer, code fix and contracts tests share:

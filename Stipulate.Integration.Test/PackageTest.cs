@@ -44,13 +44,60 @@ public class PackageTest(PackageFeed feed)
         }
         """;
 
+    /// <summary>A library with a contract, and a validated method, for a program to build on.</summary>
+    private const string ContractLibrary = """
+        using System.ComponentModel.DataAnnotations;
+
+        public interface IScale { void Set([Range(1, 10)] int level); }
+
+        public static class Levels
+        {
+            public static void Check([Range(1, 10)] int level) { }
+        }
+        """;
+
+    /// <summary>Calls the library's validated method, then its own, saying of each whether it validated.</summary>
+    private const string ProgramOnLibrary = """
+        using System.ComponentModel.DataAnnotations;
+
+        Console.WriteLine(Validates(() => Levels.Check(0)));
+        Console.WriteLine(Validates(() => Target.Check(0)));
+
+        static string Validates(Action call)
+        {
+            try
+            {
+                call();
+                return "not validated";
+            }
+            catch (ArgumentException)
+            {
+                return "validated";
+            }
+        }
+
+        public static class Target
+        {
+            public static void Check([Range(1, 10)] int value) { }
+        }
+        """;
+
+    /// <summary>Implements the library's contract, demanding more than it accepts.</summary>
+    private const string StrongerScale = """
+
+        public class Scale : IScale
+        {
+            public void Set([Range(2, 10)] int level) { }
+        }
+        """;
+
     private static readonly string[] ExpectedFiles =
     [
         "README.md",
         "analyzers/dotnet/cs/Net.NowhereAtAll.Stipulate.Analyzers.dll",
         "analyzers/dotnet/cs/Net.NowhereAtAll.Stipulate.CodeFixes.dll",
         "analyzers/dotnet/cs/Net.NowhereAtAll.Stipulate.Generator.dll",
-        "build/Stipulate.targets",
+        "buildTransitive/Stipulate.targets",
         "lib/netstandard2.0/Net.NowhereAtAll.Stipulate.Contracts.dll",
         "lib/netstandard2.0/Net.NowhereAtAll.Stipulate.Contracts.xml",
         "tools/net8.0/Mono.Cecil.Mdb.dll",
@@ -188,6 +235,74 @@ public class PackageTest(PackageFeed feed)
 
         // Assert
         Assert.Contains("Stipulate: wove 1 method(s) in Consumer.dll.", build.Output, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(LibraryReference.Project)]
+    [InlineData(LibraryReference.Package)]
+    public void Build_WhenAProjectGetsThePackageOnlyThroughALibrary_ChecksItsContracts(LibraryReference reference)
+    {
+        // Arrange
+        _ = this._feed.PackResult.AssertSucceeded();
+        using ConsumerProject project = ConsumerProject.CreateOnLibrary(
+            this._feed,
+            reference,
+            ContractLibrary,
+            ProgramOnLibrary + StrongerScale
+        );
+
+        // Act
+        ProcessResult build = project.Build();
+
+        // Assert
+        Assert.Contains("error ST1001", build.Output, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(LibraryReference.Project)]
+    [InlineData(LibraryReference.Package)]
+    public void Build_WhenAProjectGetsThePackageOnlyThroughALibrary_WeavesIt(LibraryReference reference)
+    {
+        // Arrange
+        _ = this._feed.PackResult.AssertSucceeded();
+        using ConsumerProject project = ConsumerProject.CreateOnLibrary(
+            this._feed,
+            reference,
+            ContractLibrary,
+            ProgramOnLibrary
+        );
+        _ = project.Build().AssertSucceeded();
+
+        // Act
+        ProcessResult run = project.RunProgram().AssertSucceeded();
+
+        // Assert
+        Assert.Equal(["validated", "validated"], run.Output.Trim().Split('\n', StringSplitOptions.TrimEntries));
+    }
+
+    [Theory]
+    [InlineData(LibraryReference.Project)]
+    [InlineData(LibraryReference.Package)]
+    public void Build_WhenTransitiveIsOff_LeavesAProjectThatGetsThePackageOnlyThroughALibraryAlone(
+        LibraryReference reference
+    )
+    {
+        // Arrange - for every project built; the library, which references the package, is still woven
+        _ = this._feed.PackResult.AssertSucceeded();
+        using ConsumerProject project = ConsumerProject.CreateOnLibrary(
+            this._feed,
+            reference,
+            ContractLibrary,
+            ProgramOnLibrary + StrongerScale
+        );
+        ProcessResult build = project.Build("StipulateTransitive=false").AssertSucceeded();
+
+        // Act
+        ProcessResult run = project.RunProgram().AssertSucceeded();
+
+        // Assert
+        Assert.DoesNotContain("ST1001", build.Output, StringComparison.Ordinal);
+        Assert.Equal(["validated", "not validated"], run.Output.Trim().Split('\n', StringSplitOptions.TrimEntries));
     }
 
     /// <summary>Leaves out what every package has: its manifest, and the packaging format's own parts.</summary>

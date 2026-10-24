@@ -38,7 +38,8 @@ dotnet add package Stipulate
 
 That's all: the analyzer runs in the IDE and the build, and the build weaves the checks into
 your assembly. To intercept call sites at compile time instead, or only check contracts, set the
-`StipulateMode` MSBuild property to `Interceptors` or `None`.
+`StipulateMode` MSBuild property to `Interceptors` or `None`. Projects that reference yours get
+Stipulate too, and are held to your contracts.
 
 Documentation: <https://github.com/nilvon9wo/Stipulate/tree/main/docs>, including every rule,
 the enforcement modes, and describing your own validation attributes with `[ComparableValidation]`.

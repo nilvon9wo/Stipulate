@@ -68,7 +68,7 @@
     Every project here that isn't one of Stipulate's own (ArrayFoo, its tests, a consumer the
     integration tests build) uses Stipulate as a package consumer would, but from this repository's
     projects: the analyzer and code fix, Stipulate.Contracts, and the build integration the package
-    ships, Stipulate.Package/build/Stipulate.targets, imported by Directory.Build.targets. Choose
+    ships, Stipulate.Package/buildTransitive/Stipulate.targets, imported by Directory.Build.targets. Choose
     the enforcement with StipulateMode (Weaving, Interceptors or None); see that file.
 
     The whole repository counts as the solution, for ST2001 against ST2002.

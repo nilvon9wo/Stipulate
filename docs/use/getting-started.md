@@ -71,9 +71,12 @@ The project then gets
 
 It needs the .NET SDK 9.0.300 or later, or Visual Studio 2022 17.14 or later: the analyzer is
 built for that version of the compiler. Weaving works for any target framework, the .NET
-Framework and netstandard2.0 included; the weaver itself runs on .NET 8 or later. Only the project that
-references the package is woven; projects that reference that one get `Stipulate.Contracts`, as
-an ordinary library.
+Framework and netstandard2.0 included; the weaver itself runs on .NET 8 or later.
+
+A project that gets Stipulate through another, by referencing a library that uses it, gets all
+of it too: a class there that implements one of the library's interfaces is held to its
+contracts, and its methods are woven. To leave such projects out, see
+[enforcement modes](enforcement-modes.md#projects-that-get-stipulate-through-another).
 
 Every project in this repository uses Stipulate the same way, wired to the repository's own
 projects instead of the package (see [packaging](../contribute/packaging.md)). After rebuilding

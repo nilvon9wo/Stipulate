@@ -67,3 +67,24 @@ is first used.
 
 Choose Interceptors when you can't, or don't want to, rewrite assemblies after compiling; choose
 Weaving when every call must be validated.
+
+## Projects that get Stipulate through another
+
+Stipulate applies to every project that gets the package, whether it references it or only
+references a project or package that does. Each such project has its own `StipulateMode`, and the
+analyzer checks its contracts: an implementation of a library's interface can no more strengthen
+its preconditions than one in the library itself.
+
+To leave those projects out, set `StipulateTransitive` to `false`, for example for every project
+in a `Directory.Build.props`:
+
+```xml
+<PropertyGroup>
+  <StipulateTransitive>false</StipulateTransitive>
+</PropertyGroup>
+```
+
+A project that doesn't reference Stipulate itself then gets only `Stipulate.Contracts`, as an
+ordinary library: no analyzer, and no enforcement of its own methods. The projects that do
+reference it are unaffected: woven, their methods still check their arguments when the others
+call them.

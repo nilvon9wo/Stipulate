@@ -26,6 +26,6 @@
   <PropertyGroup Condition="'$(IsStipulateTool)' != 'true'">
     <StipulateWeaverPath Condition="'$(StipulateWeaverPath)' == ''">$(MSBuildThisFileDirectory)Stipulate.Weaver\bin\$(Configuration)\net8.0\Net.NowhereAtAll.Stipulate.Weaver.dll</StipulateWeaverPath>
   </PropertyGroup>
-  <Import Project="$(MSBuildThisFileDirectory)Stipulate.Package\build\Stipulate.targets" Condition="'$(IsStipulateTool)' != 'true'" />
+  <Import Project="$(MSBuildThisFileDirectory)Stipulate.Package\buildTransitive\Stipulate.targets" Condition="'$(IsStipulateTool)' != 'true'" />
 
 </Project>

@@ -5,10 +5,13 @@
 
       lib/netstandard2.0/      Stipulate.Contracts, for [ComparableValidation]
       analyzers/dotnet/cs/     the analyzer, the code fix, and the generator (which
-                               build/Stipulate.targets removes again outside Interceptors mode)
-      tools/net8.0/            the weaver and its dependencies, run by build/Stipulate.targets
-      build/Stipulate.targets  the build integration; build/, not buildTransitive/, so that only
-                               projects that reference Stipulate themselves are woven
+                               buildTransitive/Stipulate.targets removes again outside
+                               Interceptors mode)
+      tools/net8.0/            the weaver and its dependencies, run by
+                               buildTransitive/Stipulate.targets
+      buildTransitive/Stipulate.targets
+                               the build integration, for every project that gets Stipulate,
+                               directly or not
 
     The project references only order the build; each is PrivateAssets="all", so none becomes a
     package dependency, and the package has none.
@@ -39,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="build\Stipulate.targets" Pack="true" PackagePath="build\" />
+    <None Include="buildTransitive\Stipulate.targets" Pack="true" PackagePath="buildTransitive\" />
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 

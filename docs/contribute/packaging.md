@@ -8,23 +8,28 @@ projects' outputs:
 | `lib/netstandard2.0/` | `Stipulate.Contracts`, for `[ComparableValidation]` | the consumer's code |
 | `analyzers/dotnet/cs/` | the analyzer, the code fix, and the generator | the compiler and the IDE |
 | `tools/net8.0/` | the weaver and Mono.Cecil | the build, through `dotnet` |
-| `build/Stipulate.targets` | the build integration: the mode, the weaving, the generator's removal outside Interceptors mode | MSBuild |
+| `buildTransitive/Stipulate.targets` | the build integration: the mode, the weaving, the generator's removal outside Interceptors mode, `StipulateTransitive` | MSBuild |
 
 The package has no dependencies. Package IDs keep the short name; the assemblies inside are
 `Net.NowhereAtAll.Stipulate.*`, as everywhere else.
 
 ## One build integration, used twice
 
-`build/Stipulate.targets` is the only copy of the build integration. This repository's own
-projects (`ArrayFoo`, and the consumer projects the integration tests build) import it through
-`Directory.Build.targets`, with project references in place of the package's files and the
-repository's own build of the weaver. So every build here exercises what ships, and the package
-tests then check the packed copy: `Stipulate.Integration.Test`'s `PackageTest` packs the package
-once per run and builds projects that reference it, in each mode, for net10.0, netstandard2.0
-and net472.
+`buildTransitive/Stipulate.targets` is the only copy of the build integration. This repository's
+own projects (`ArrayFoo`, and the consumer projects the integration tests build) import it
+through `Directory.Build.targets`, with project references in place of the package's files and
+the repository's own build of the weaver. So every build here exercises what ships, and the
+package tests then check the packed copy: `Stipulate.Integration.Test`'s `PackageTest` packs the
+package once per run and builds projects that reference it, in each mode, for net10.0,
+netstandard2.0 and net472, and programs that get it only through a library, by a project
+reference and by a package reference.
 
-`build/`, not `buildTransitive/`: only a project that references Stipulate itself is woven and
-gets the generator. Its consumers get `Stipulate.Contracts`, as an ordinary library.
+`buildTransitive/`, not `build/`: a project that gets Stipulate only through another project or
+package must be held to the contracts it implements, and woven, like any other. NuGet hands
+`build/` only to the projects that reference the package themselves, but the analyzers to every
+project, so with `build/` the others got the generator without what makes it compile, and failed
+with CS9137. `StipulateTransitive=false` leaves the others out (see
+[enforcement modes](../use/enforcement-modes.md#projects-that-get-stipulate-through-another)).
 
 ## Versions
 

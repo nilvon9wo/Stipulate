@@ -29,6 +29,9 @@ method parameters mean something.
   preconditions (ST1001) or weaken its guarantees (ST1003), and must restate, or explicitly
   weaken, every attribute they drop (ST1002). Parameters, properties and indexers; interface
   implementations of every kind, and overrides.
+- **Every project that gets the package**, directly or through another project or package, is
+  checked and enforced; `StipulateTransitive=false` leaves out the projects that don't reference
+  it themselves.
 - **A code fix** that restates a missing attribute from the contract, one at a time or all at once.
 - **`[ComparableValidation]`**, which describes a custom validation attribute, your own or a
   package's, so the analyzer can compare it with the built-in ones (ST2001-ST2003).
