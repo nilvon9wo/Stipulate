@@ -3,32 +3,17 @@ using Mono.Cecil;
 namespace Net.NowhereAtAll.Stipulate.Weaver;
 
 /// <summary>Recognises the validation attributes among a parameter's custom attributes.</summary>
-internal sealed class ValidationAttributeResolver(WellKnownReferences references)
+internal static class ValidationAttributeResolver
 {
-    private readonly WellKnownReferences _references = references;
-
     /// <returns>
     /// The attribute's type definition if it derives from <c>ValidationAttribute</c>; otherwise <c>null</c>.
     /// </returns>
-    public TypeDefinition? Resolve(CustomAttribute attribute)
+    public static TypeDefinition? Resolve(CustomAttribute attribute)
     {
         TypeDefinition attributeType = CecilTypeHierarchy.Resolve(attribute.AttributeType);
-        TypeDefinition? validationAttribute = CecilTypeHierarchy.SelfAndBaseTypes(attributeType)
-            .FirstOrDefault(static type => type.FullName == WellKnownReferences.ValidationAttributeName);
-        if (validationAttribute is not null)
-        {
-            this._references.EnsureValidationAttribute(validationAttribute);
-        }
-
-        return validationAttribute is null
-            ? null
-            : attributeType;
+        return CecilTypeHierarchy.SelfAndBaseTypes(attributeType)
+            .Any(static type => type.FullName == WellKnownReferences.ValidationAttributeName)
+            ? attributeType
+            : null;
     }
-
-    /// <summary>
-    /// Whether a <c>null</c> rejected by the attribute should be reported as an <c>ArgumentNullException</c>.
-    /// </summary>
-    public static bool IsRequiredAttribute(TypeDefinition attributeType)
-        => CecilTypeHierarchy.SelfAndBaseTypes(attributeType)
-            .Any(static type => type.FullName == WellKnownReferences.RequiredAttributeName);
 }

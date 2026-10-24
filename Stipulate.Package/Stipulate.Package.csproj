@@ -12,6 +12,9 @@
       buildTransitive/Stipulate.targets
                                the build integration, for every project that gets Stipulate,
                                directly or not
+      buildTransitive/Stipulate.ArgumentChecks.cs
+                               the run-time check, which the build integration compiles into
+                               every project that enforces the attributes
 
     The project references only order the build; each is PrivateAssets="all", so none becomes a
     package dependency, and the package has none.
@@ -43,6 +46,7 @@
 
   <ItemGroup>
     <None Include="buildTransitive\Stipulate.targets" Pack="true" PackagePath="buildTransitive\" />
+    <None Include="buildTransitive\Stipulate.ArgumentChecks.cs" Pack="true" PackagePath="buildTransitive\" />
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 

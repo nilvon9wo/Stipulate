@@ -92,6 +92,45 @@ public class WeaverCommandTest
     }
 
     [Fact]
+    public void Run_WhenTheAssemblyLacksTheCheck_ReportsST0007()
+    {
+        // Arrange - compiled without Stipulate.ArgumentChecks.cs, which Stipulate.targets adds
+        using WeavingDirectory directory = WeavingDirectory.Create();
+        directory.Compile(Checked, hasChecks: false);
+        using StringWriter error = new();
+
+        // Act
+        int exitCode = WeaverCommand.Run([directory.AssemblyPath, directory.ReferencesPath], TextWriter.Null, error);
+
+        // Assert
+        Assert.Equal(WeaverCommand.ReportedFailureExitCode, exitCode);
+        Assert.Equal(
+            $"{directory.AssemblyPath} : error ST0007: Test.dll has parameters with validation attributes, but "
+                + "not the check that enforces them, Net.NowhereAtAll.Stipulate.Runtime.ArgumentChecks.Check. "
+                + "Stipulate.targets compiles it into every project it weaves, from Stipulate.ArgumentChecks.cs in "
+                + "the package's buildTransitive folder: check that the project imports Stipulate.targets, and that "
+                + "nothing removes that file from its Compile items.",
+            error.ToString().TrimEnd()
+        );
+    }
+
+    [Fact]
+    public void Run_WhenNothingNeedsTheCheck_WeavesWithoutIt()
+    {
+        // Arrange - an assembly with nothing to check needn't have it
+        using WeavingDirectory directory = WeavingDirectory.Create();
+        directory.Compile("public static class Target { public static void Run(string? text) { } }", hasChecks: false);
+        using StringWriter output = new();
+
+        // Act
+        int exitCode = WeaverCommand.Run([directory.AssemblyPath, directory.ReferencesPath], output, TextWriter.Null);
+
+        // Assert
+        Assert.Equal(WeaverCommand.SuccessExitCode, exitCode);
+        Assert.Equal("Stipulate: wove 0 method(s) in Test.dll.", output.ToString().TrimEnd());
+    }
+
+    [Fact]
     public void Run_WhenTheWeaverFailsUnexpectedly_ReportsAnMSBuildErrorWithTheException()
     {
         // Arrange

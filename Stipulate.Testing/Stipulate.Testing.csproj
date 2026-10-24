@@ -27,4 +27,10 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- The run-time check Stipulate.targets compiles into every enforcing project; see TestCompilation. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\Stipulate.Package\buildTransitive\Stipulate.ArgumentChecks.cs"
+                      LogicalName="Stipulate.ArgumentChecks.cs" />
+  </ItemGroup>
+
 </Project>

@@ -593,6 +593,242 @@ public class ArgumentAnalyzerTest
         Assert.Equal(message, Assert.Single(diagnostics).GetMessage());
     }
 
+    /// <summary>
+    /// A call to an interface's or a virtual method on an object whose type is certain: the message
+    /// says whether the woven check, the object's own, accepts the value.
+    /// </summary>
+    public static TheoryData<string, string, string> Receivers => new()
+    {
+        {
+            Scale("[Range(0, 10)]", "IScale scale = new Scale(); scale.Set(0);"),
+            "IScale.Set(int)",
+            Accepting("Scale", "Scale.Set(int)", "[Range(0, 10)]", "IScale.Set(int)")
+        },
+        {
+            Scale("[Range(0, 10)]", "((IScale)new Scale()).Set(0);"),
+            "IScale.Set(int)",
+            Accepting("Scale", "Scale.Set(int)", "[Range(0, 10)]", "IScale.Set(int)")
+        },
+        {
+            Scale(string.Empty, "IScale scale = new Scale(); scale.Set(0);"),
+            "IScale.Set(int)",
+            Accepting("Scale", "Scale.Set(int)", "it has no validation attributes", "IScale.Set(int)")
+        },
+        {
+            """
+            public interface IScale { void Set([Range(1, 10)] int level); }
+
+            public class Scale : IScale { void IScale.Set([Range(0, 10)] int level) { } }
+
+            public static class Caller { public static void Call() { IScale scale = new Scale(); scale.Set(0); } }
+            """,
+            "IScale.Set(int)",
+            Accepting("Scale", "Scale.IScale.Set(int)", "[Range(0, 10)]", "IScale.Set(int)")
+        },
+        {
+            """
+            public class Base { public virtual void Set([Range(1, 10)] int level) { } }
+
+            public class Derived : Base { public override void Set([Range(0, 10)] int level) { } }
+
+            public static class Caller { public static void Call() { Base scale = new Derived(); scale.Set(0); } }
+            """,
+            "Base.Set(int)",
+            Accepting("Derived", "Derived.Set(int)", "[Range(0, 10)]", "Base.Set(int)")
+        },
+        {
+            Scale(
+                "[Range(0, 10)]",
+                "IScale scale = new Scale(); IScale copy; copy = scale; Inspect(scale); scale.Describe(); scale.Set(0);"
+            ),
+            "IScale.Set(int)",
+            Accepting("Scale", "Scale.Set(int)", "[Range(0, 10)]", "IScale.Set(int)")
+        },
+        {
+            Scale("[Range(1, 10)]", "IScale scale = new Scale(); scale.Set(0);"),
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            Scale("[Undescribed]", "IScale scale = new Scale(); scale.Set(0);"),
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            Scale("[Range(0, 10)]", "IScale scale = new Scale(); scale = new Other(); scale.Set(0);"),
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            Scale("[Range(0, 10)]", "IScale scale; scale = new Scale(); scale.Set(0);"),
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            Scale("[Range(0, 10)]", "IScale scale = new Scale(); Replace(ref scale); scale.Set(0);"),
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            Scale("[Range(0, 10)]", "IScale scale = new Scale(); (scale, _) = (new Other(), 1); scale.Set(0);"),
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            Scale("[Range(0, 10)]", "IScale scale = new Scale(); ref IScale alias = ref scale; alias.Set(0);"),
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            Scale("[Range(0, 10)]", "object created = new Scale(); if (created is IScale scale) { scale.Set(0); }"),
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            Scale("[Range(0, 10)]", "Make().Set(0);"),
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            Scale("[Range(0, 10)]", "((IScale)(Scale)new Scale()).Set(0);"),
+            "IScale.Set(int)",
+            Accepting("Scale", "Scale.Set(int)", "[Range(0, 10)]", "IScale.Set(int)")
+        },
+        {
+            """
+            public interface IScale { void Set([Range(1, 10)] int level); }
+
+            public struct Scale : IScale { public void Set([Range(0, 10)] int level) { } }
+
+            public static class Caller { public static void Call() { IScale scale = new Scale(); scale.Set(0); } }
+            """,
+            "IScale.Set(int)",
+            Accepting("Scale", "Scale.Set(int)", "[Range(0, 10)]", "IScale.Set(int)")
+        },
+        {
+            """
+            public class Base { public virtual void Set([Range(1, 10)] int level) { } }
+
+            public class Derived : Base { public override void Set([Range(0, 10)] int level) { } }
+
+            public class Wrapper { public static implicit operator Base(Wrapper wrapper) => new Derived(); }
+
+            public static class Caller { public static void Call() { Base scale = new Wrapper(); scale.Set(0); } }
+            """,
+            "Base.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            """
+            public interface IScale { void Set([Range(1, 10)] int level); }
+
+            public class Strict : IScale { public void Set([Range(1, 10)] int level) { } }
+
+            public class Wrapper : IScale
+            {
+                public void Set([Range(0, 10)] int level) { }
+
+                public static implicit operator Strict(Wrapper wrapper) => new Strict();
+            }
+
+            public static class Caller
+            {
+                public static void Call() { IScale scale = (Strict)new Wrapper(); scale.Set(0); }
+            }
+            """,
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            Scale("[Range(0, 10)]", "((IScale)new Other2()).Set(0);"),
+            "IScale.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            """
+            public class Base { public virtual void Set([Range(1, 10)] int level) { } }
+
+            public class Derived : Base { public new void Set([Range(0, 10)] int level) { } }
+
+            public static class Caller { public static void Call() { Base scale = new Derived(); scale.Set(0); } }
+            """,
+            "Base.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+        {
+            """
+            public class Base { public virtual void Set([Range(1, 10)] int level) { } }
+
+            public class Derived : Base { }
+
+            public static class Caller { public static void Call() { Base scale = new Derived(); scale.Set(0); } }
+            """,
+            "Base.Set(int)",
+            ThrowsAndFix("Range(1, 10)")
+        },
+    };
+
+    [Theory]
+    [MemberData(nameof(Receivers))]
+    public async Task Analyze_WhenTheObjectsTypeIsCertain_SaysWhetherItsOwnCheckAcceptsTheValue(
+        string source,
+        string contract,
+        string ending
+    )
+    {
+        // Arrange
+        DiagnosticMarkup markup = new(source);
+
+        // Act
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzerRunner.RunAsync(markup);
+
+        // Assert
+        Diagnostic rejected = Assert.Single(diagnostics, static diagnostic => diagnostic.Id == "ST3001");
+        Assert.Equal(
+            $"The argument 0 for parameter 'level' of '{contract}' is rejected by [Range(1, 10)], which requires "
+                + "Value >= 1, but Value is 0" + ending,
+            rejected.GetMessage()
+        );
+    }
+
+    /// <summary>
+    /// An interface <c>IScale</c> whose <c>Set</c> requires 1 to 10, a class <c>Scale</c> that
+    /// implements it with <paramref name="attribute"/>, and a call made by <paramref name="statements"/>.
+    /// </summary>
+    private static string Scale(string attribute, string statements)
+        => $$"""
+            public sealed class UndescribedAttribute : ValidationAttribute { }
+
+            public interface IScale { void Set([Range(1, 10)] int level); }
+
+            public class Scale : IScale { public void Set({{attribute}} int level) { } }
+
+            public class Other : IScale { public void Set([Range(1, 10)] int level) { } }
+
+            public class Other2 { }
+
+            public static class Caller
+            {
+                public static void Call() { {{statements}} }
+
+                private static void Replace(ref IScale scale) => scale = new Other();
+
+                private static IScale Make() => new Scale();
+
+                private static void Inspect(IScale scale) { }
+
+                private static void Describe(this IScale scale) { }
+            }
+            """;
+
+    /// <summary>The end of a message about an object whose own check accepts the value.</summary>
+    private static string Accepting(string type, string method, string attributes, string contract)
+        => $". The object here is a '{type}', whose '{method}' accepts it ({attributes}): woven, this call runs "
+            + $"that method's own check and doesn't throw; with interceptors, it checks '{contract}' and throws "
+            + $"ArgumentException. Declare the variable as '{type}' to rely on what '{method}' accepts, or pass a "
+            + "value [Range(1, 10)] accepts. If the call is meant to throw, as in a test of the check, suppress "
+            + "ST3001 there.";
+
     /// <summary>The end of every message: what the value makes throw, and what to do about it.</summary>
     private static string ThrowsAndFix(
         string attribute,

@@ -62,6 +62,10 @@
 
     The package ships the generator with the analyzers, so the compiler would load it in every
     mode; outside Interceptors mode, take it out again.
+
+    A project that enforces the attributes, by weaving or with interceptors, compiles in the check
+    they both call, Stipulate.ArgumentChecks.cs: as source, so that enforcing them adds no
+    dependency at run time.
   -->
   <Target Name="StipulateResolveAnalyzers" AfterTargets="ResolveLockFileAnalyzers">
     <ItemGroup>
@@ -75,6 +79,9 @@
     </ItemGroup>
     <ItemGroup Condition="'$(StipulateMode)' != 'Interceptors'">
       <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'Net.NowhereAtAll.Stipulate.Generator'" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(_StipulateLeftOut)' != 'true' And ('$(StipulateMode)' == 'Weaving' Or '$(StipulateMode)' == 'Interceptors')">
+      <Compile Include="$(MSBuildThisFileDirectory)Stipulate.ArgumentChecks.cs" />
     </ItemGroup>
   </Target>
 

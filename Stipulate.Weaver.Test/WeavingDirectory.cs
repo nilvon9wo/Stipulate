@@ -50,11 +50,28 @@ internal sealed class WeavingDirectory : IDisposable
     /// Assemblies the source references, beyond the platform's; one with no file is listed as a blank line.
     /// </param>
     public void Compile([StringSyntax("C#")] string source, params MetadataReference[] references)
+        => this.Compile(source, hasChecks: true, references);
+
+    /// <summary>
+    /// Compiles the assembly and its symbols into this directory and lists its references, the way
+    /// the build does before it runs the weaver.
+    /// </summary>
+    /// <param name="source">The assembly's source, after <see cref="TestCompilation.Usings"/>.</param>
+    /// <param name="hasChecks">
+    /// Whether to compile in the run-time check, as Stipulate.targets does for every project it weaves.
+    /// </param>
+    /// <param name="references">
+    /// Assemblies the source references, beyond the platform's; one with no file is listed as a blank line.
+    /// </param>
+    public void Compile([StringSyntax("C#")] string source, bool hasChecks, params MetadataReference[] references)
     {
-        CSharpCompilation compilation = TestCompilation.CompileCleanly(
+        CSharpCompilation written = TestCompilation.CompileCleanly(
             TestCompilation.Usings + source,
             references: references
         );
+        CSharpCompilation compilation = hasChecks
+            ? written.AddSyntaxTrees(TestCompilation.ArgumentChecks)
+            : written;
         this.Emit(compilation, this.SymbolsPath);
         IEnumerable<string> referencePaths = TestCompilation.References
             .Concat(references)

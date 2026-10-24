@@ -17,4 +17,7 @@ internal static class WeavingErrorCodes
 
     /// <summary>A warning: the symbols don't match the assembly, so they were left unchanged.</summary>
     public const string SymbolsMismatch = "ST0006";
+
+    /// <summary>The assembly has something to check but not the check itself, ArgumentChecks.</summary>
+    public const string ChecksMissing = "ST0007";
 }

@@ -36,6 +36,39 @@ public class PackageTest(PackageFeed feed)
         }
         """;
 
+    /// <summary>Prints the message of each check that fails: a number, a string, a string it may show.</summary>
+    private const string MessageProgram = """
+        using System.ComponentModel.DataAnnotations;
+        using Net.NowhereAtAll.Stipulate.Contracts;
+
+        #pragma warning disable ST3001 // Each call is meant to throw.
+
+        Attempt(() => Target.Check(0));
+        Attempt(() => Target.Name("abc"));
+        Attempt(() => Target.Code("abc"));
+
+        static void Attempt(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (ArgumentException exception)
+            {
+                Console.WriteLine(exception.Message);
+            }
+        }
+
+        public static class Target
+        {
+            public static void Check([Range(1, 10)] int value) { }
+
+            public static void Name([MinLength(5)] string name) { }
+
+            public static void Code([MinLength(5), ShowValueInMessage] string code) { }
+        }
+        """;
+
     /// <summary>A library with nothing but a validated method, for any target framework.</summary>
     private const string Library = """
         using System.ComponentModel.DataAnnotations;
@@ -101,6 +134,7 @@ public class PackageTest(PackageFeed feed)
         "analyzers/dotnet/cs/Net.NowhereAtAll.Stipulate.Analyzers.dll",
         "analyzers/dotnet/cs/Net.NowhereAtAll.Stipulate.CodeFixes.dll",
         "analyzers/dotnet/cs/Net.NowhereAtAll.Stipulate.Generator.dll",
+        "buildTransitive/Stipulate.ArgumentChecks.cs",
         "buildTransitive/Stipulate.targets",
         "lib/netstandard2.0/Net.NowhereAtAll.Stipulate.Contracts.dll",
         "lib/netstandard2.0/Net.NowhereAtAll.Stipulate.Contracts.xml",
@@ -165,6 +199,34 @@ public class PackageTest(PackageFeed feed)
 
         // Assert
         Assert.Equal(expected, run.Output.Trim());
+    }
+
+    [Theory]
+    [InlineData("Weaving")]
+    [InlineData("Interceptors")]
+    public void Build_WhenACheckFails_ThrowsTheSameMessageInEitherMode(string mode)
+    {
+        // Arrange
+        _ = this._feed.PackResult.AssertSucceeded();
+        using ConsumerProject project = ConsumerProject.CreateFromPackage(this._feed, MessageProgram);
+        _ = project.Build($"StipulateMode={mode}").AssertSucceeded();
+
+        // Act
+        ProcessResult run = project.RunProgram().AssertSucceeded();
+
+        // Assert
+        Assert.Equal(
+            [
+                "Target.Check(int) rejected argument 'value' by [Range]: The field value must be between 1 and 10. "
+                    + "The argument was 0. (Parameter 'value')",
+                "Target.Name(string) rejected argument 'name' by [MinLength]: The field name must be a string or "
+                    + "array type with a minimum length of '5'. The argument was a string of 3 characters. "
+                    + "(Parameter 'name')",
+                "Target.Code(string) rejected argument 'code' by [MinLength]: The field code must be a string or "
+                    + "array type with a minimum length of '5'. The argument was \"abc\". (Parameter 'code')",
+            ],
+            run.Output.Trim().Split(Environment.NewLine)
+        );
     }
 
     [Fact]

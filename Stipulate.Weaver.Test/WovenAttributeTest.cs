@@ -92,7 +92,7 @@ public class WovenAttributeTest
         );
 
         // Assert
-        Assert.StartsWith(expected, exception.Message, StringComparison.Ordinal);
+        Assert.Contains(expected, exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class WovenAttributeTest
         );
 
         // Assert
-        Assert.StartsWith("null", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("null", exception.Message, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -192,7 +192,7 @@ public class WovenAttributeTest
         );
 
         // Assert
-        Assert.StartsWith("Out of range", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("Out of range", exception.Message, StringComparison.Ordinal);
     }
 
     [Theory]

@@ -24,3 +24,5 @@ Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison.Flag = 0 -> Net.Nowher
 Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison.LowerBound = 1 -> Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison
 Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison.UpperBound = 2 -> Net.NowhereAtAll.Stipulate.Contracts.ValidationComparison
 Net.NowhereAtAll.Stipulate.Contracts.ValidationDimensions
+Net.NowhereAtAll.Stipulate.Contracts.ShowValueInMessageAttribute
+Net.NowhereAtAll.Stipulate.Contracts.ShowValueInMessageAttribute.ShowValueInMessageAttribute() -> void

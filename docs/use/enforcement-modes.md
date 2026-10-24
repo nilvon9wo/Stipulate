@@ -9,7 +9,15 @@ at run time:
 | `Interceptors` | `Stipulate.Generator` intercepts each call to such a method at compile time, checking the arguments before forwarding them. | Only calls compiled in a project that uses the generator. |
 | `None` | Nothing at run time. | Nothing; the analyzer still checks contracts. |
 
-Set it in the project file, for every project in a `Directory.Build.props`, or for one build:
+Set it in the project file, or for every project in a `Directory.Build.props`:
+
+```xml
+<PropertyGroup>
+  <StipulateMode>Interceptors</StipulateMode>
+</PropertyGroup>
+```
+
+or for one build:
 
 ```shell
 dotnet build -p:StipulateMode=Interceptors
@@ -23,10 +31,63 @@ Whatever the mode, a check fails the same way:
   throws `ArgumentNullException`;
 - any other rejected argument throws `ArgumentException`.
 
-Either way, the message is the attribute's own `FormatErrorMessage(parameterName)`, so
-`ErrorMessage` and resources work as usual, and `ParamName` is the parameter's name. When a
-parameter has several attributes, they are checked in the order they are declared, and the first
-to fail throws.
+`ParamName` is the parameter's name, and the message is the same in every mode:
+
+```text
+Multiplier.Multiply(int[]) rejected argument 'array' by [MinLength]: The field array must be a
+string or array type with a minimum length of '1'. The argument was a collection of 0 elements.
+(Parameter 'array')
+```
+
+It says, in order:
+
+- the method, as C# writes it: `Scale.Set(int)`, `Box<T>.Put(T)`, a constructor as
+  `Scale.Scale(int)`, a setter as `Scale.Level.set` (`init` for an init accessor), an indexer's as
+  `Scale.this[int].set`. A call through an interface, intercepted, names the interface's method,
+  whose attributes it checks;
+- the attribute that rejected the argument;
+- the attribute's own `FormatErrorMessage(parameterName)`, so `ErrorMessage` and resources work as
+  usual;
+- what the argument was;
+- the parameter, as .NET adds it.
+
+When a parameter has several attributes, they are checked in the order they are declared, and the
+first to fail throws.
+
+### What the message shows of the argument
+
+Exception messages end up in logs, telemetry and error responses, so the message shows the
+argument itself only where it can't be a secret, and otherwise what the attributes measure of it:
+
+| The argument | Shown as |
+|---|---|
+| `null` | `null` |
+| A number, an enum, a date or a `bool` | Itself, formatted with the invariant culture: `0`, `Monday`, `true` (and a `char` too, on .NET 7 or later) |
+| A string | Its length: `an empty string`, `a string of 3 whitespace characters`, `a string of 12 characters` |
+| An array or collection | Its number of elements: `a collection of 0 elements` |
+| Anything else | Its type: `a value of type Order` |
+
+To show a parameter's value itself, a string as `"ABC-12"` and any other object by its
+`ToString()`, mark it with `[ShowValueInMessage]`, from `Stipulate.Contracts`:
+
+```csharp
+public static class Catalog
+{
+    public static void Order([RegularExpression("^[A-Z]{3}-[0-9]{4}$"), ShowValueInMessage] string sku) { }
+}
+```
+
+`Catalog.Order("ABC-12")` then throws "Catalog.Order(string) rejected argument 'sku' by
+[RegularExpression]: The field sku must match the regular expression '^[A-Z]{3}-[0-9]{4}$'. The
+argument was "ABC-12"." Mark only parameters whose values are safe to show. The attribute changes
+the message, not what the method accepts, so the analyzer doesn't compare it with a contract's.
+
+### What the check adds to a project
+
+The check is source, not a library: Stipulate compiles `Stipulate.ArgumentChecks.cs`, an internal
+class in the `Net.NowhereAtAll.Stipulate.Runtime` namespace, into each project whose attributes it
+enforces. So enforcing them adds no dependency at run time, and the file compiles as C# 7.3, for
+any target framework.
 
 ## Weaving
 

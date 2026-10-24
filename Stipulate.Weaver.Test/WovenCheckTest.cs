@@ -100,7 +100,11 @@ public class WovenCheckTest
 
         // Assert
         Assert.Equal("array", exception.ParamName);
-        Assert.StartsWith("The array field is required.", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(
+            "Target.Count(int[]) rejected argument 'array' by [Required]: The array field is required. "
+            + "The argument was null. (Parameter 'array')",
+            exception.Message
+        );
     }
 
     [Fact]
@@ -116,10 +120,11 @@ public class WovenCheckTest
 
         // Assert
         Assert.Equal("array", exception.ParamName);
-        Assert.StartsWith(
-            "The field array must be a string or array type with a minimum length of '1'.",
-            exception.Message,
-            StringComparison.Ordinal
+        Assert.Equal(
+            "Target.Count(int[]) rejected argument 'array' by [MinLength]: The field array must be a string or "
+            + "array type with a minimum length of '1'. The argument was a collection of 0 elements. "
+            + "(Parameter 'array')",
+            exception.Message
         );
     }
 
