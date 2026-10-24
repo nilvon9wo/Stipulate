@@ -7,8 +7,9 @@ using Net.NowhereAtAll.Stipulate.Testing;
 namespace Net.NowhereAtAll.Stipulate.Analyzers.Test;
 
 /// <summary>
-/// One <c>```csharp</c> example from README.md or docs/, and the diagnostics its comments say the
-/// analyzer reports on it: a comment such as <c>// error ST1001: ...</c> or <c>// warning ST1002</c>.
+/// One <c>```csharp</c> example from README.md, docs/ or the package's README, and the diagnostics
+/// its comments say the analyzer reports on it: a comment such as <c>// error ST1001: ...</c> or
+/// <c>// warning ST1002</c>.
 /// </summary>
 /// <remarks>
 /// A fence just after <c>&lt;!-- sketch --&gt;</c> is illustrative and isn't checked. One just after
@@ -62,6 +63,7 @@ internal sealed partial record DocumentationExample(
         string docs = Path.Combine(RepositoryRoot, "docs");
         IEnumerable<string> docPages = Directory.EnumerateFiles(docs, "*.md", SearchOption.AllDirectories);
         return docPages
+            .Prepend(Path.Combine(RepositoryRoot, "Stipulate.Package", "README.md"))
             .Prepend(Path.Combine(RepositoryRoot, "README.md"))
             .Select(static path => Path.GetRelativePath(RepositoryRoot, path).Replace('\\', '/'));
     }

@@ -57,16 +57,30 @@ See [contracts](contracts.md) for everything the analyzer checks.
 
 ## Setting it up
 
-NuGet packages are planned. Until then, Stipulate is wired in by this repository's
-`Directory.Build.props` and `Directory.Build.targets`: every project under the repository's
-folder (as `ArrayFoo` is) gets
+Reference the `Stipulate` package:
+
+```shell
+dotnet add package Stipulate
+```
+
+The project then gets
 
 - the analyzer and its code fix, live in the IDE and in the build;
 - `Stipulate.Contracts`, for [describing custom attributes](custom-attributes.md);
 - run-time enforcement, by default by weaving (see [enforcement modes](enforcement-modes.md)).
 
-Requires the .NET 10 SDK. After rebuilding the analyzer or the code fix, restart Visual Studio:
-it keeps the analyzer it first loaded.
+It needs the .NET SDK 9.0.300 or later, or Visual Studio 2022 17.14 or later: the analyzer is
+built for that version of the compiler. Weaving works for any target framework, the .NET
+Framework and netstandard2.0 included; the weaver itself runs on .NET 8 or later.
+
+A project that gets Stipulate through another, by referencing a library that uses it, gets all
+of it too: a class there that implements one of the library's interfaces is held to its
+contracts, and its methods are woven. To leave such projects out, see
+[enforcement modes](enforcement-modes.md#projects-that-get-stipulate-through-another).
+
+Every project in this repository uses Stipulate the same way, wired to the repository's own
+projects instead of the package (see [packaging](../contribute/packaging.md)). After rebuilding
+the analyzer or the code fix there, restart Visual Studio: it keeps the analyzer it first loaded.
 
 ## Which attributes it understands
 

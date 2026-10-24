@@ -27,11 +27,15 @@
     <ProjectReference Include="..\Stipulate.Contracts\Stipulate.Contracts.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Stipulate.Generator\Stipulate.Generator.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Stipulate.Weaver\Stipulate.Weaver.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built, so that PackageFeed can pack it without building. -->
+    <ProjectReference Include="..\Stipulate.Package\Stipulate.Package.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
     <AssemblyMetadata Include="RepositoryRoot" Value="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))" />
     <AssemblyMetadata Include="Configuration" Value="$(Configuration)" />
+    <!-- The version this build packs Stipulate at: 0.0.0-dev locally, a release's when publishing. -->
+    <AssemblyMetadata Include="PackageVersion" Value="$(Version)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -11,6 +11,7 @@
   <Project Path="Stipulate.Generator.Test/Stipulate.Generator.Test.csproj" />
   <Project Path="Stipulate.Generator/Stipulate.Generator.csproj" />
   <Project Path="Stipulate.Integration.Test/Stipulate.Integration.Test.csproj" />
+  <Project Path="Stipulate.Package/Stipulate.Package.csproj" />
   <Project Path="Stipulate.Testing/Stipulate.Testing.csproj" />
   <Project Path="Stipulate.Weaver.Test/Stipulate.Weaver.Test.csproj" />
   <Project Path="Stipulate.Weaver/Stipulate.Weaver.csproj" />

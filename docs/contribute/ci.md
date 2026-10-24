@@ -1,6 +1,6 @@
 # CI
 
-`.github/workflows/ci.yml` runs on every push to `main` and every pull request into it.
+`.github/workflows/ci.yml` runs on every push to `main` and every pull request, whatever it merges into.
 
 ## The Linux job
 
@@ -14,6 +14,11 @@
    doesn't imply Release coverage.
 7. `scripts/verify-doc-links.py`.
 8. `scripts/verify-gates.py`.
+
+## Publishing
+
+`.github/workflows/publish.yml` publishes the package when a merge to `main` adds a release
+heading to `CHANGELOG.md`; see [packaging](packaging.md#releasing).
 
 ## The Windows job
 

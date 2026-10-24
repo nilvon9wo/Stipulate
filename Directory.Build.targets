@@ -19,45 +19,13 @@
     </PackageReference>
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(StipulateMode)' == 'Weaving' And '$(IsStipulateTool)' != 'true'">
-    <StipulateWeave>true</StipulateWeave>
-    <StipulateWeaverPath Condition="'$(StipulateWeaverPath)' == ''">$(MSBuildThisFileDirectory)Stipulate.Weaver\bin\$(Configuration)\net8.0\Net.NowhereAtAll.Stipulate.Weaver.dll</StipulateWeaverPath>
-    <StipulateReferencesFile>$(IntermediateOutputPath)Stipulate.references</StipulateReferencesFile>
-    <StipulateDotnet>$(DOTNET_HOST_PATH)</StipulateDotnet>
-    <StipulateDotnet Condition="'$(StipulateDotnet)' == ''">dotnet</StipulateDotnet>
-  </PropertyGroup>
-
-  <!-- Recompile (and so re-weave) when the weaver itself changes. -->
-  <ItemGroup Condition="'$(StipulateWeave)' == 'true'">
-    <CustomAdditionalCompileInputs Include="$(StipulateWeaverPath)" />
-  </ItemGroup>
-
   <!--
-    Rewrite the freshly compiled assembly in obj\ before it is copied to bin\. Runs even when
-    CoreCompile was skipped; the weaver recognises an already-woven assembly and leaves it alone.
+    The build integration the Stipulate package ships, for every project here that isn't one of
+    Stipulate's own; see Directory.Build.props. The weaver is this repository's own build of it.
   -->
-  <Target Name="WeaveStipulate"
-          AfterTargets="CoreCompile"
-          Condition="'$(StipulateWeave)' == 'true'">
-    <Error Condition="!Exists('$(StipulateWeaverPath)')"
-           Code="ST0005"
-           Text="Stipulate.Weaver has not been built: '$(StipulateWeaverPath)' does not exist." />
-    <WriteLinesToFile File="$(StipulateReferencesFile)"
-                      Lines="@(ReferencePath->'%(FullPath)')"
-                      Overwrite="true"
-                      WriteOnlyWhenDifferent="true" />
-    <!--
-      The weaver reports its own failures as canonical "error STxxxx:" lines (which Exec turns into
-      build errors) and then exits with 2. Any other non-zero exit means it crashed or never
-      started, without reporting anything, so that gets a specific error instead of MSB3073.
-    -->
-    <Exec Command="&quot;$(StipulateDotnet)&quot; &quot;$(StipulateWeaverPath)&quot; &quot;@(IntermediateAssembly->'%(FullPath)')&quot; &quot;$(StipulateReferencesFile)&quot;"
-          IgnoreExitCode="true">
-      <Output TaskParameter="ExitCode" PropertyName="_StipulateExitCode" />
-    </Exec>
-    <Error Condition="'$(_StipulateExitCode)' != '0' And '$(_StipulateExitCode)' != '2'"
-           Code="ST0004"
-           Text="Stipulate.Weaver crashed before it could weave '@(IntermediateAssembly)' (exit code $(_StipulateExitCode)); see the build output above for the exception. On Windows, 'An Application Control policy has blocked this file' means Windows refused to load the freshly built weaver; build under WSL or ask for an exception for this folder." />
-  </Target>
+  <PropertyGroup Condition="'$(IsStipulateTool)' != 'true'">
+    <StipulateWeaverPath Condition="'$(StipulateWeaverPath)' == ''">$(MSBuildThisFileDirectory)Stipulate.Weaver\bin\$(Configuration)\net8.0\Net.NowhereAtAll.Stipulate.Weaver.dll</StipulateWeaverPath>
+  </PropertyGroup>
+  <Import Project="$(MSBuildThisFileDirectory)Stipulate.Package\buildTransitive\Stipulate.targets" Condition="'$(IsStipulateTool)' != 'true'" />
 
 </Project>

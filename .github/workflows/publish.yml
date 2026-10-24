@@ -1,0 +1,208 @@
+# Cutting a release = adding a `## [x.y.z] - <date>` heading to CHANGELOG.md in
+# your PR (move the `## [Unreleased]` notes down under it). Merging that PR to
+# main runs this workflow, which:
+#
+#   1. reads the newest `## [x.y.z]` heading from CHANGELOG.md
+#   2. if there is none yet, or a `vx.y.z` tag already exists -> exits, nothing to do
+#   3. otherwise stamps x.y.z into Directory.Build.props, builds and tests in
+#      Release, packs the Stipulate package and pushes it to nuget.org
+#   4. tags the commit `vx.y.z` and opens a GitHub Release with that CHANGELOG
+#      section as the notes
+#
+# The version lives in exactly one place - the CHANGELOG heading - and is never
+# hand-edited into a project file. Adapted from ExtremeCSharpTestDataFactory's.
+# See docs/contribute/packaging.md, including the one-time nuget.org setup.
+
+name: Publish to NuGet
+
+on:
+  push:
+    branches: [main]
+    paths: ["CHANGELOG.md"]
+  workflow_dispatch:
+    inputs:
+      republish_version:
+        description: >-
+          Re-pack and re-push this exact version (e.g. 0.1.0-preview.1), bypassing
+          the "tag already exists" guard - for recovering a release whose
+          nuget.org push half-failed. No new tag or GitHub Release is made.
+          Leave blank for a normal run.
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Pack + push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write # push the vX.Y.Z tag + create the GitHub Release
+      id-token: write # NuGet/login exchanges a GitHub OIDC token for a short-lived API key
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # all tags (the release guard) + full history (the release-notes slice)
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Resolve target version from CHANGELOG
+        id: resolve
+        shell: pwsh
+        run: |
+          $forced = "${{ github.event.inputs.republish_version }}".Trim()
+
+          if ($forced) {
+              $version = $forced
+              Write-Host "workflow_dispatch: forced republish of $version"
+          }
+          else {
+              $version = $null
+              foreach ($line in Get-Content CHANGELOG.md) {
+                  if ($line -match '^\s*##\s*\[([^\]]+)\]') {
+                      $candidate = $Matches[1].Trim()
+                      if ($candidate -ne 'Unreleased') { $version = $candidate; break }
+                  }
+              }
+          }
+
+          if (-not $version) {
+              Write-Host "No '## [x.y.z]' release heading in CHANGELOG.md yet."
+              "should_release=false" >> $env:GITHUB_OUTPUT
+              exit 0
+          }
+
+          if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+              Write-Error "Resolved version '$version' is not valid SemVer."
+              exit 1
+          }
+
+          $tag = "v$version"
+          $tagExists = [bool](git tag --list $tag)
+          $shouldRelease = [bool]$forced -or -not $tagExists
+          $isPrerelease = $version.Contains('-')
+
+          Write-Host "version           : $version"
+          Write-Host "tag               : $tag"
+          Write-Host "tag already exists: $tagExists"
+          Write-Host "forced republish  : $([bool]$forced)"
+          Write-Host "=> will release   : $shouldRelease"
+
+          "version=$version"                                      >> $env:GITHUB_OUTPUT
+          "tag=$tag"                                              >> $env:GITHUB_OUTPUT
+          "is_prerelease=$($isPrerelease.ToString().ToLower())"   >> $env:GITHUB_OUTPUT
+          "should_release=$($shouldRelease.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          "is_forced=$(([bool]$forced).ToString().ToLower())"     >> $env:GITHUB_OUTPUT
+
+      - name: Nothing to release
+        if: steps.resolve.outputs.should_release != 'true'
+        run: echo "::notice::No new release heading in CHANGELOG.md, or its version is already tagged - nothing published."
+
+      - name: Stamp the version into Directory.Build.props
+        if: steps.resolve.outputs.should_release == 'true'
+        shell: pwsh
+        run: |
+          $v = "${{ steps.resolve.outputs.version }}"
+          $path = "Directory.Build.props"
+          $content = Get-Content $path -Raw
+          $updated = $content -replace '<Version>0\.0\.0-dev</Version>', "<Version>$v</Version>"
+          if ($updated -eq $content) {
+              Write-Error "Could not find '<Version>0.0.0-dev</Version>' in $path to stamp."
+              exit 1
+          }
+          Set-Content -Path $path -Value $updated -NoNewline
+          Select-String -Path $path -Pattern '<Version>'
+
+      - name: Restore
+        if: steps.resolve.outputs.should_release == 'true'
+        run: dotnet restore Stipulate.slnx
+
+      - name: Build (Release)
+        if: steps.resolve.outputs.should_release == 'true'
+        run: dotnet build Stipulate.slnx -c Release --no-restore
+
+      # The package's own tests pack it too, with the stamped version - a check
+      # that the same version installs and works before it is pushed.
+      - name: Test (Release)
+        if: steps.resolve.outputs.should_release == 'true'
+        run: python3 scripts/run-tests.py --solution Stipulate.slnx -c Release --no-build
+
+      - name: Pack
+        if: steps.resolve.outputs.should_release == 'true'
+        run: dotnet pack Stipulate.Package/Stipulate.Package.csproj -c Release --no-build -o ./packages
+
+      - name: Verify the packed version
+        if: steps.resolve.outputs.should_release == 'true'
+        shell: pwsh
+        run: |
+          $package = "./packages/Stipulate.${{ steps.resolve.outputs.version }}.nupkg"
+          if (-not (Test-Path $package)) {
+              Write-Error "Missing $package - the package did not pack at the resolved version."
+              exit 1
+          }
+          Write-Host "OK $package"
+
+      - name: NuGet login (OIDC -> short-lived API key, no stored secret)
+        if: steps.resolve.outputs.should_release == 'true'
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ vars.NUGET_USERNAME }} # nuget.org profile name, not email - see docs/contribute/packaging.md
+
+      - name: Push to nuget.org
+        if: steps.resolve.outputs.should_release == 'true'
+        run: >
+          dotnet nuget push "./packages/*.nupkg"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Tag the release commit
+        if: steps.resolve.outputs.should_release == 'true' && steps.resolve.outputs.is_forced != 'true'
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+
+      # Best-effort: the package and tag are already out by this point, so a
+      # hiccup here shouldn't red the run. `gh release create <tag> --notes-file ...`
+      # can be run by hand after.
+      - name: GitHub Release
+        if: steps.resolve.outputs.should_release == 'true' && steps.resolve.outputs.is_forced != 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          VERSION: ${{ steps.resolve.outputs.version }}
+          PRERELEASE: ${{ steps.resolve.outputs.is_prerelease }}
+        shell: pwsh
+        run: |
+          $lines = Get-Content CHANGELOG.md
+          $out = New-Object System.Collections.Generic.List[string]
+          $inSection = $false
+          foreach ($line in $lines) {
+              if ($line -match '^\s*##\s*\[([^\]]+)\]') {
+                  if ($inSection) { break }
+                  if ($Matches[1].Trim() -eq $env:VERSION) { $inSection = $true }
+                  continue
+              }
+              if ($inSection) { $out.Add($line) }
+          }
+          $notes = ($out -join "`n").Trim()
+          if (-not $notes) { $notes = "See CHANGELOG.md." }
+          Set-Content -Path release-notes.md -Value $notes
+
+          $ghArgs = @("release", "create", $env:TAG, "--title", $env:TAG, "--notes-file", "release-notes.md", "--verify-tag")
+          if ($env:PRERELEASE -eq 'true') { $ghArgs += "--prerelease" }
+          gh @ghArgs

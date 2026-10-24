@@ -3,8 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
+  # Every pull request, whatever it merges into, so a PR stacked on another's branch is checked too.
   pull_request:
-    branches: [main]
 
 jobs:
   build-and-test:
