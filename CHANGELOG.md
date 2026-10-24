@@ -10,6 +10,8 @@ that to `main` publishes the `Stipulate` package at that version (see
 
 ## [Unreleased]
 
+## [0.1.0-preview.1] - 2026-10-24
+
 The first release of **Stipulate**, which makes the DataAnnotations validation attributes on
 method parameters mean something.
 
