@@ -76,9 +76,6 @@ ANALYZERS_TEST_PROJECT = os.path.join(
     "Stipulate.Analyzers.Test", "Stipulate.Analyzers.Test.csproj"
 )
 COVERAGE_PROJECT = os.path.join("Stipulate.Contracts.Test", "Stipulate.Contracts.Test.csproj")
-COVERAGE_REPORTS = os.path.join(
-    "Stipulate.Contracts.Test", "bin", "Debug", "net10.0", "TestResults", "coverage.cobertura.*.xml"
-)
 UNSTARTABLE_PROJECT = os.path.join("Stipulate.CodeFixes.Test", "Stipulate.CodeFixes.Test.csproj")
 UNSTARTABLE_APPHOST = os.path.join(
     "Stipulate.CodeFixes.Test", "bin", "Debug", "net10.0",
@@ -156,32 +153,39 @@ def with_temporary_file(path: str, content: str, check):
         os.remove(absolute)
 
 
-def latest_report_measured_uncovered_class() -> bool:
-    """The newest coverage report lists the canary class, with no line of it hit."""
-    reports = glob.glob(os.path.join(ROOT, COVERAGE_REPORTS))
-    if not reports:
-        return False
-    report = ElementTree.parse(max(reports, key=os.path.getmtime))
-    canary = [
-        element for element in report.iter("class")
+def coverage_reports() -> set:
+    return set(glob.glob(os.path.join(ROOT, "**", "coverage.cobertura.*.xml"), recursive=True))
+
+
+def uncovered_class_rates(reports: set) -> list:
+    """The canary class's line rate in each report that lists it."""
+    return [
+        element.get("line-rate")
+        for report in reports
+        for element in ElementTree.parse(report).iter("class")
         if element.get("name", "").endswith("." + UNCOVERED_CLASS)
     ]
-    return bool(canary) and all(element.get("line-rate") == "0" for element in canary)
 
 
 def coverage_gate_fails() -> bool:
     """The Contracts tests must fail on the threshold - every test passing, the canary measured."""
     def check() -> bool:
+        before = coverage_reports()
         code, output = run(["dotnet", "test", "--project", COVERAGE_PROJECT])
+        new_reports = coverage_reports() - before
+        rates = uncovered_class_rates(new_reports)
         conditions = {
             "the run failed": code != 0,
             "tests ran": re.search(r"total: [1-9]", output) is not None,
             "no test failed": re.search(r"failed: 0\b", output) is not None,
-            "the class was measured": latest_report_measured_uncovered_class(),
+            "the class was measured, uncovered": bool(rates) and all(float(rate) == 0 for rate in rates),
         }
         unmet = [name for name, is_met in conditions.items() if not is_met]
         if unmet:
-            print(f"coverage gate: not met: {', '.join(unmet)}; the run's output ends:\n{output[-3000:]}")
+            print(
+                f"coverage gate: not met: {', '.join(unmet)}; new reports: {sorted(new_reports)}; "
+                f"the class's line rates in them: {rates}; the run's output ends:\n{output[-3000:]}"
+            )
         return not unmet
 
     caught = with_temporary_file(UNCOVERED_PATH, UNCOVERED_SOURCE, check)
