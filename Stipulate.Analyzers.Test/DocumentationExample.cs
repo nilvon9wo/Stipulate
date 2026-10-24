@@ -40,6 +40,9 @@ internal sealed partial record DocumentationExample(
         + @"```csharp\n(?<code>.*?)\n\k<indent>```";
 
     private const string ShownDiagnosticPattern = @"//\s*(?<severity>error|warning) (?<id>ST\d{4})\b";
+    private const string QuotedDiagnosticPattern = @"//\s*(?<severity>error|warning) (?<id>ST\d{4}): (?<text>.*)$";
+    private const string ContinuationPattern = @"^\s*//\s?(?<text>.*)$";
+    private const string Ellipsis = "...";
 
     /// <summary>The examples the analyzer must check: every page's, except sketches and references.</summary>
     public static IEnumerable<DocumentationExample> ReadAll() => Pages().SelectMany(ReadPage);
@@ -51,12 +54,80 @@ internal sealed partial record DocumentationExample(
     public ImmutableArray<string> ShownDiagnostics
         => [.. ShownDiagnostic().Matches(this.Code).Select(Describe).Order(StringComparer.Ordinal)];
 
+    /// <summary>
+    /// What the comments quote of the diagnostics' messages: the text after <c>// error ST1001:</c>,
+    /// and after the <c>//</c> of each comment line that continues it, with its whitespace collapsed.
+    /// </summary>
+    public ImmutableArray<(string Diagnostic, string Quote)> Quotes
+    {
+        get
+        {
+            List<(string Diagnostic, string Quote)> quotes = [];
+            string[] lines = this.Code.Split('\n');
+            for (int index = 0; index < lines.Length; index++)
+            {
+                Match quoted = QuotedDiagnostic().Match(lines[index]);
+                if (!quoted.Success)
+                {
+                    continue;
+                }
+
+                List<string> parts = [quoted.Groups["text"].Value];
+                while (index + 1 < lines.Length
+                    && Continuation().Match(lines[index + 1]) is { Success: true } continuation
+                    && !ShownDiagnostic().IsMatch(lines[index + 1]))
+                {
+                    parts.Add(continuation.Groups["text"].Value);
+                    index++;
+                }
+
+                quotes.Add((Describe(quoted), Collapse(string.Join(' ', parts))));
+            }
+
+            return [.. quotes];
+        }
+    }
+
+    /// <summary>
+    /// Whether <paramref name="quote"/> quotes <paramref name="message"/>: its parts between
+    /// <c>...</c> each appear in the message, in order. Only the first letter's case may differ, as a
+    /// quote can begin a comment's sentence mid-message.
+    /// </summary>
+    public static bool IsQuoteOf(string quote, string message)
+    {
+        string searched = LowerFirst(Collapse(message));
+        int from = 0;
+        IEnumerable<string> parts = quote.Split(Ellipsis)
+            .Select(static part => part.Trim())
+            .Where(static part => part.Length > 0);
+        foreach (string part in parts)
+        {
+            string collapsed = Collapse(part);
+            int found = searched.IndexOf(from == 0 ? LowerFirst(collapsed) : collapsed, from, StringComparison.Ordinal);
+            if (found < 0)
+            {
+                return false;
+            }
+
+            from = found + collapsed.Length;
+        }
+
+        return true;
+    }
+
     public MetadataReference[] CompileReferences()
         => [.. this.References.Select(static reference => Compile(reference.Name, reference.Code))];
 
     public override string ToString() => $"{this.Page}:{this.Line}";
 
     private static string Describe(Match match) => $"{match.Groups["severity"].Value} {match.Groups["id"].Value}";
+
+    private static string Collapse(string text) => Whitespace().Replace(text, " ").Trim();
+
+    private static string LowerFirst(string text)
+        => text.Length == 0
+            ? text
+            : char.ToLowerInvariant(text[0]) + text.Substring(1);
 
     private static IEnumerable<string> Pages()
     {
@@ -104,6 +175,15 @@ internal sealed partial record DocumentationExample(
 
     [GeneratedRegex(ShownDiagnosticPattern)]
     private static partial Regex ShownDiagnostic();
+
+    [GeneratedRegex(QuotedDiagnosticPattern)]
+    private static partial Regex QuotedDiagnostic();
+
+    [GeneratedRegex(ContinuationPattern)]
+    private static partial Regex Continuation();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex Whitespace();
 
     private static int LineOf(string text, int index) => text.AsSpan(0, index).Count('\n') + 1;
 }

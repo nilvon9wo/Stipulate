@@ -23,7 +23,7 @@ public class WideScale : IScale
 
 public class NarrowScale : IScale
 {
-    // error ST1001: [Range(2, 10)] rejects 1, which the contract accepts
+    // error ST1001: ... [Range(2, 10)] requires Value >= 2, but the contract accepts Value >= 1
     public void Set([Range(2, 10)] int level) { }
 }
 ```
@@ -76,7 +76,7 @@ public class SmallInventory : IInventory
 
 public class BottomlessInventory : IInventory
 {
-    // error ST1003: [Range(0, 2000)] allows 2000, which the contract rules out
+    // error ST1003: ... [Range(0, 1000)] requires Value <= 1000, but the implementation accepts Value <= 2000
     [Range(0, 2000)]
     public int Count => 3;
 }

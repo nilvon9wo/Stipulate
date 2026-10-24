@@ -23,6 +23,9 @@ public class PreconditionAnalyzerPreconditionTest
     [InlineData("Required", "Required(AllowEmptyStrings = true)", "string")]
     [InlineData("", "MaxLength", "string")]
     [InlineData("Range(0, 10)", "Range(double.NegativeInfinity, 10)", "double")]
+    [InlineData("Range(1, 10), ShowValueInMessage", "Range(1, 10)", "int")]
+    [InlineData("Range(1, 10)", "Range(1, 10), ShowValueInMessage", "int")]
+    [InlineData("", "ShowValueInMessage", "string")]
     public async Task Analyze_WhenTheImplementationIsNoStronger_ReportsNothing(
         string contract,
         string implementation,

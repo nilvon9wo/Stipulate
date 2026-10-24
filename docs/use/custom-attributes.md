@@ -51,7 +51,7 @@ public class Tagger : ITagger
 
 public class StrictTagger : ITagger
 {
-    // error ST1001: [MinLength(3)] rejects lengths 1 and 2, which the contract accepts
+    // error ST1001: ... [MinLength(3)] requires Length >= 3, but the contract accepts Length >= 1
     public void Tag([MinLength(3)] string tag) { }
 }
 ```
@@ -104,7 +104,7 @@ public class OpenThermostat : IThermostat
 public class BoundedThermostat : IThermostat
 {
     // The same lower bound, but [Range(5, 30)] adds an upper one, which the contract doesn't have.
-    // error ST1001: [Range(5, 30)] rejects values above 30, which the contract accepts
+    // error ST1001: ... [Range(5, 30)] requires Value <= 30, but the contract has no upper bound on Value
     public void Set([Range(5, 30)] int degrees) { }
 }
 ```
@@ -135,7 +135,8 @@ public interface ILimiter { void Limit([AtMost(10)] int count); }
 
 public class Limiter : ILimiter
 {
-    // error ST1001: below 10 rejects 10, which the contract accepts
+    // error ST1001: ... [AtMost(10, IsExclusive = true)] requires Value < 10, but the contract accepts
+    // Value <= 10
     public void Limit([AtMost(10, IsExclusive = true)] int count) { }
 }
 ```
