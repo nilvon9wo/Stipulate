@@ -79,9 +79,41 @@ Two things no setting changes:
 
 - **An F# `inline` member** is never checked when F# code calls it: F# always copies it into its
   callers. C# and Visual Basic code calling it does call the woven method, and is checked.
-- **`EveryCall` is a compiler switch F# doesn't document**, `--localoptimize-`, with the
-  documented `--nooptimizationdata`. If a future F# drops it, F# rejects it and the build fails,
-  rather than leaving calls silently unchecked.
+- **`EveryCall` relies on a compiler switch F# doesn't document**, `--localoptimize-`, with the
+  documented `--nooptimizationdata`. If a version of F# drops it, F# rejects it and the build
+  fails, rather than leaving calls silently unchecked (see
+  [if F# rejects a switch](#if-f-rejects-a-switch)).
+
+### If F# rejects a switch
+
+A version of F# that no longer knows one of the switches fails the build with an error naming it:
+
+```text
+FSC : error FS0243: Unrecognized option: '--localoptimize-'. Use '--help' to learn about
+recognized command line options.
+```
+
+The switches each setting passes are MSBuild properties of their own, so a project needn't wait
+for a release of Stipulate to pass others:
+
+| Property | Default |
+|---|---|
+| `StipulateFSharpEveryCallSwitches` | `--localoptimize- --nooptimizationdata` |
+| `StipulateFSharpCallsFromOtherAssembliesSwitches` | `--nooptimizationdata` |
+
+`--optimize-`, a documented switch, turns F#'s optimizer off altogether, so it inlines nothing
+either, at the cost of its other optimizations:
+
+```xml
+<PropertyGroup>
+  <StipulateFSharpEveryCallSwitches>--optimize- --nooptimizationdata</StipulateFSharpEveryCallSwitches>
+</PropertyGroup>
+```
+
+Stipulate's own tests build with that fallback as well as with the defaults, and a scheduled
+build tries the defaults on the newest preview of the .NET SDK, so a switch F# is about to drop
+should be noticed before its release. Changing a property recompiles the project, as changing
+`StipulateFSharpChecks` does.
 
 ## Mixing languages
 

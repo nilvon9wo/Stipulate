@@ -56,6 +56,16 @@
   </ItemGroup>
 
   <!--
+    A test project is a program, which xunit.v3's build files say, but restore reads them only once
+    they are restored: so the first restore doesn't download the apphost the build needs, and an SDK
+    newer than the target framework, without that apphost bundled, fails the build (MSB3030). Said
+    here, restore sees it.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Test'))">
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <!--
     The version of a local build, as XFTY does it: an obviously-not-a-release 0.0.0-dev. A release's
     version is the newest `## [x.y.z]` heading in CHANGELOG.md, which publish.yml stamps in at pack
     time; it is never edited here. See docs/contribute/packaging.md.
