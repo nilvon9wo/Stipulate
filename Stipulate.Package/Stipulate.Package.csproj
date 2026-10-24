@@ -27,7 +27,7 @@
     <PackageId>Stipulate</PackageId>
     <Authors>Brian Kessler</Authors>
     <Description>Makes the DataAnnotations validation attributes on method parameters mean something: enforces them on every call (by weaving the IL, or with interceptors), and checks at compile time that implementations and overrides honour the attributes of the interfaces and base classes they implement.</Description>
-    <PackageTags>validation;dataannotations;preconditions;liskov;contracts;analyzer;roslyn;weaving;interceptors</PackageTags>
+    <PackageTags>validation;dataannotations;preconditions;liskov;contracts;analyzer;roslyn;weaving;interceptors;csharp;vb;fsharp</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/nilvon9wo/Stipulate</PackageProjectUrl>
     <RepositoryUrl>https://github.com/nilvon9wo/Stipulate</RepositoryUrl>
